@@ -1,0 +1,44 @@
+{
+  "name": "@roro-ai/server",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "name": "server",
+    "projectType": "application",
+    "sourceRoot": "apps/server/src",
+    "targets": {
+      "serve": {
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "server:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "server:build:development"
+          },
+          "production": {
+            "buildTarget": "server:build:production"
+          }
+        }
+      },
+      "test": {
+        "options": {
+          "passWithNoTests": true
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "better-auth": "^1.1.14",
+    "mediasoup": "^3.15.2",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "prisma": "^6.2.1"
+  }
+}
