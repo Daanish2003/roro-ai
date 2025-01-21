@@ -7,5 +7,5 @@
     "noImplicitAny": false
   },
   "include": ["jest.config.ts", "src/**/*.ts"],
-  "references": [{ "path": "../server" }]
+  "references": []
 }
