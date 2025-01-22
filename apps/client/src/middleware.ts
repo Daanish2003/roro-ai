@@ -9,14 +9,14 @@ type DataSession = {
 
 export default async function authMiddleware(request: NextRequest) {
 	const { data: session, error } = await betterFetch<DataSession>(
-		"/api/get-session",  // Updated to match the Express route
+		"/api/get-session",  
 		{
-			baseURL: "http://localhost:4000",  // Change to your Express server URL
+			baseURL: "http://localhost:4000", 
 			headers: {
-				// Forward the cookies from the request
+				
 				cookie: request.headers.get("cookie") || "",
 			},
-			credentials: "include",  // Ensure cookies are sent with the request
+			credentials: "include",
 		},
 	);
 
