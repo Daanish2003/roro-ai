@@ -1,7 +1,7 @@
-import type { Router, Worker } from "mediasoup/node/lib/types";
-import type { Config } from "../module/config";
+import type { Router, Worker } from "mediasoup/node/lib/types.js";
+import type { Config } from "../module/config.js";
 import * as mediasoup from "mediasoup";
-import logger from "../module/logger";
+import logger from "../module/logger.js";
 
 export class MediasoupServer {
     private config: Config;

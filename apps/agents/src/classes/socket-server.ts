@@ -1,6 +1,5 @@
 import { Server, type Socket } from "socket.io";
 import type { Server as HttpServer } from "node:http";
-import { logger } from "better-auth";
 import { v4 as uuidv4 } from 'uuid'
 
 type Room = {
@@ -34,7 +33,7 @@ export class SocketServer {
 
     public initialize(): Server {
         this.io.on('connection', (socket: Socket) => {
-			logger.info('Client connected:', socket.id);
+			console.log('Client connected:', socket.id);
 
 
 			socket.on('createRoom', (callback: (response: { roomId: string }) => void) => {
