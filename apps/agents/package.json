@@ -1,42 +1,48 @@
 {
-  "name": "@roro-ai/agents",
-  "version": "0.0.1",
-  "private": true,
-  "nx": {
-    "name": "agents",
-    "projectType": "application",
-    "sourceRoot": "apps/agents/src",
-    "targets": {
-      "serve": {
-        "executor": "@nx/js:node",
-        "defaultConfiguration": "development",
-        "dependsOn": [
-          "build"
-        ],
-        "options": {
-          "buildTarget": "agents:build",
-          "runBuildTargetDependencies": false
-        },
-        "configurations": {
-          "development": {
-            "buildTarget": "agents:build:development"
-          },
-          "production": {
-            "buildTarget": "agents:build:production"
-          }
-        }
-      },
-      "test": {
-        "options": {
-          "passWithNoTests": true
-        }
-      }
-    }
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "mediasoup": "^3.15.2",
-    "socket.io": "^4.8.1"
-  }
+	"name": "@roro-ai/agents",
+	"version": "0.0.1",
+	"private": true,
+	"nx": {
+		"name": "agents",
+		"projectType": "application",
+		"sourceRoot": "apps/agents/src",
+		"targets": {
+			"serve": {
+				"executor": "@nx/js:node",
+				"defaultConfiguration": "development",
+				"dependsOn": ["build"],
+				"options": {
+					"buildTarget": "agents:build",
+					"runBuildTargetDependencies": false
+				},
+				"configurations": {
+					"development": {
+						"buildTarget": "agents:build:development"
+					},
+					"production": {
+						"buildTarget": "agents:build:production"
+					}
+				}
+			},
+			"test": {
+				"options": {
+					"passWithNoTests": true
+				}
+			}
+		}
+	},
+	"dependencies": {
+		"@huggingface/transformers": "^3.3.2",
+		"@langchain/community": "^0.3.26",
+		"@langchain/core": "^0.3.33",
+		"cors": "^2.8.5",
+		"dotenv": "^16.4.7",
+		"mediasoup": "^3.15.2",
+		"socket.io": "^4.8.1",
+		"uuid": "^11.0.5",
+		"winston": "^3.17.0"
+	},
+	"devDependencies": {
+		"@types/cors": "^2.8.17"
+	}
 }

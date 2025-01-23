@@ -4,11 +4,11 @@ import 'dotenv/config'
 import { initializeSockets } from "./module/socket";
 
 const port = process.env.PORT || 3333;
-const server = createServer(app);
+export const server = createServer(app);
 
 (async () => {
   try {
-    await initializeSockets(server)
+    const io = await initiaalizeSockets(server)
   } catch(error) {
     console.log("Socket Initialization Error:", error)
   }
@@ -18,3 +18,6 @@ server.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
 });
 server.on('error', console.error);
+
+
+

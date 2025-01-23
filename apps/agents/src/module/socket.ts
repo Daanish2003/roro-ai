@@ -18,7 +18,7 @@ export const initializeSockets = async (server: HttpServer) => {
         });
     });
 
-    
+    return io
 
 
 } 
