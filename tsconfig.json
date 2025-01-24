@@ -1,6 +1,25 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compileOnSave": false,
-  "files": [],
-  "references": []
+	"extends": "./tsconfig.base.json",
+	"compileOnSave": false,
+	"files": [],
+	"references": [
+		{
+			"path": "./apps/client-e2e"
+		},
+		{
+			"path": "./apps/client"
+		},
+		{
+			"path": "./apps/server-e2e"
+		},
+		{
+			"path": "./apps/server"
+		},
+		{
+			"path": "./apps/agents-e2e"
+		},
+		{
+			"path": "./apps/agents"
+		}
+	]
 }
