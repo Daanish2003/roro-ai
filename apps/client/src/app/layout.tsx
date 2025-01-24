@@ -1,10 +1,12 @@
 import { ThemeProvider } from '@/components/providers/theme-providers';
 import './global.css';
 import { Poppins } from "next/font/google"
+import { MediasoupProvider } from '@/hooks/use-mediasoup';
+import { SocketProvider } from '@/hooks/use-socket';
 
 const roboto = Poppins({
-    weight: ['100','200' ,'300', '400', '500','600', '700','800', '900'],
-    subsets: ['latin']
+  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+  subsets: ['latin']
 })
 
 export const metadata = {
@@ -21,12 +23,16 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${roboto.className}`}>
         <ThemeProvider
-        attribute={"class"}
-        defaultTheme='system'
-        enableSystem
-        disableTransitionOnChange
+          attribute={"class"}
+          defaultTheme='system'
+          enableSystem
+          disableTransitionOnChange
         >
-        {children}
+          <SocketProvider>
+            <MediasoupProvider>
+              {children}
+            </MediasoupProvider>
+          </SocketProvider>
         </ThemeProvider>
       </body>
     </html>

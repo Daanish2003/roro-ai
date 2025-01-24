@@ -1,110 +1,73 @@
 import { Server, type Socket } from "socket.io";
 import type { Server as HttpServer } from "node:http";
-import { v4 as uuidv4 } from 'uuid'
-
-type Room = {
-	id: string;
-	peers: Set<string>;
-};
-
-type Peer = {
-	roomId: string;
-	socketId: string;
-};
+import { RoomManager } from "../managers/room-manager";
 
 export class SocketServer {
-	private io: Server;
-	private peers: Map<string, Peer>;
-	private rooms: Map<string, Room>;
+    private io: Server;
+    private roomManager: RoomManager; // Use RoomManager for centralized room management
 
+    constructor(httpServer: HttpServer) {
+        this.io = new Server(httpServer, {
+            cors: {
+                origin: "http://localhost:3000",
+                methods: ["GET", "POST"],
+            },
+        });
 
-	constructor(httpServer: HttpServer) {
-
-		this.io = new Server(httpServer, {
-			cors: {
-				origin: "http://localhost:3000",
-				methods: ["GET", "POST"],
-			},
-		});
-
-		this.peers = new Map<string, Peer>();
-		this.rooms = new Map<string, Room>();
-	}
+        this.roomManager = new RoomManager();
+    }
 
     public initialize(): Server {
-        this.io.on('connection', (socket: Socket) => {
-			console.log('Client connected:', socket.id);
+        this.io.on("connection", (socket: Socket) => {
+            console.log("Client connected:", socket.id);
 
+            socket.on(
+                "createRoom",
+                (callback: (response: { roomId: string }) => void) => {
+                    const roomId = this.roomManager.createRoom(); // Create room using RoomManager
+                    callback({ roomId });
+                }
+            );
 
-			socket.on('createRoom', (callback: (response: { roomId: string }) => void) => {
-				const roomId = uuidv4();
-				this.createRoom(roomId);
-				callback({ roomId })
-			})
+            socket.on(
+                "joinRoom",
+                ({ roomId }: { roomId: string }, callback: (response: { success: boolean }) => void) => {
+                    const success = this.roomManager.joinRoom(roomId, socket.id); // Join room using RoomManager
+                    callback({ success });
+                }
+            );
 
+            socket.on("audioStream", ({ roomId, audio }: { roomId: string; audio: Buffer }) => {
+                console.log(`Received audio from ${socket.id} in room ${roomId}`);
+                const room = this.roomManager.getRoomById(roomId);
+                if (room) {
+                    room.handleAudioStream(socket.id, audio);
+                }
+            });
 
-			socket.on('joinRoom', ({ roomId }: { roomId: string}, callback: (response: { success: boolean}) => void) => {
-				this.joinRoom(roomId, socket.id)
-				callback({ success: true });
-			})
-
-
-			socket.on('disconnect', () => {
-				this.handleDisconnect(socket.id);
-			});
-		})
-
-		return this.io
-    }
     
-	private createRoom(roomId: string): Room {
+            socket.on("disconnect", () => {
+                this.handleDisconnect(socket.id);
+            });
+        });
 
-		if(!this.rooms.has(roomId)) {
-			this.rooms.set(roomId, { id: roomId, peers: new Set<string>()})
-		}
+        return this.io;
+    }
 
-		return this.rooms.get(roomId) as Room
-	}
+    // Handle peer disconnection from all rooms
+    private handleDisconnect(peerId: string): void {
+        const allRoomIds = this.roomManager.getAllRoomIds();
+        for (const roomId of allRoomIds) {
+            this.roomManager.removePeerFromRoom(roomId, peerId);
+        }
+    }
 
-	private joinRoom(roomId: string, peerId: string): Room | undefined {
-
-		const room = this.rooms.get(roomId)
-
-		if(room) {
-			room.peers.add(peerId);
-
-			this.peers.set(peerId, { roomId, socketId: peerId})
-		}
-
-		return room
-	}
-
-	private handleDisconnect(peerId: string): void {
-		const peerInfo = this.peers.get(peerId)
-
-		if(peerInfo) {
-			const room = this.rooms.get(peerInfo.roomId)
-
-			if (room) {
-				room.peers.delete(peerId);
-			}
-
-			this.peers.delete(peerId)
-		}
-	}
-
-	public broadcast(roomId: string, event: string, data: () => Promise<void>): void {
-		const room = this.rooms.get(roomId)
-        if(room) {
-			// biome-ignore lint/complexity/noForEach: <explanation>
-			room.peers.forEach((peerId) => this.io.to(peerId).emit(event, data))
-		}
-	}
-
-	public close(): void {
-		this.io.close();
-		this.rooms.clear();
-		this.peers.clear()
-	}
-
+    // Close all rooms and the Socket.IO server
+    public close(): void {
+        this.io.close();
+        const allRoomIds = this.roomManager.getAllRoomIds();
+        for (const roomId of allRoomIds) {
+            this.roomManager.closeRoom(roomId);
+        }
+    }
 }

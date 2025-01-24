@@ -15,13 +15,20 @@ export class MediasoupServer {
     }
 
     public async initialize() {
-        this.worker = await mediasoup.createWorker(this.config.mediasoup.worker)
-        this.router = await this.worker.createRouter(this.config.mediasoup.router)
+        try {
+            this.worker = await mediasoup.createWorker(this.config.mediasoup.worker);
+            this.router = await this.worker.createRouter(this.config.mediasoup.router);
 
-        this.worker.on('died', () => {
-            logger.error('Mediasoup worker died, exiting')
-            process.exit(1)
-        })
+            this.worker.on('died', () => {
+                logger.error('Mediasoup worker died, exiting');
+                process.exit(1);
+            });
+
+            console.log('Mediasoup Server initialized');
+        } catch (error) {
+            logger.error('Error initializing Mediasoup server:', error);
+            throw error;
+        }
     }
 
     async createWebRtcTransport() {
@@ -29,17 +36,27 @@ export class MediasoupServer {
             throw new Error('Router not initialized')
         }
 
-        return await this.router.createWebRtcTransport(
-            this.config.mediasoup.webRtcTransport
-        )
+        try {
+            const transport = await this.router.createWebRtcTransport(this.config.mediasoup.webRtcTransport);
+            console.log("WebRTC Transport created");
+            return transport;
+        } catch (error) {
+            console.error('Error creating WebRTC transport:', error);
+            throw error;
+        }
     }
 
     public getRtpCapabilities() {
         return this.router?.rtpCapabilities || null
     }
 
-    public close() {
-       this.worker?.close();
-       this.router?.close();
+    public close(): void {
+        if (this.worker) {
+            this.worker.close();
+        }
+        if (this.router) {
+            this.router.close();
+        }
+        console.log('Mediasoup server closed');
     }
 }

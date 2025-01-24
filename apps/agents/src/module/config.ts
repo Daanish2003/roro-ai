@@ -42,3 +42,16 @@ export type Config = {
         webRtcTransport: WebRtcTransportOptions
     }
 }
+
+
+export type STTModels =
+  | 'nova-2-conversationalai'
+
+export type STTLanguages =
+  | 'en'
+  | 'en-AU'
+  | 'en-GB'
+  | 'en-IN'
+  | 'en-NZ'
+  | 'en-US'
+;

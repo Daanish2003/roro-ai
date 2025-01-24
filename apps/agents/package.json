@@ -2,7 +2,6 @@
 	"name": "@roro-ai/agents",
 	"version": "0.0.1",
 	"private": true,
-	"type": "module",
 	"nx": {
 		"name": "agents",
 		"projectType": "application",
@@ -11,7 +10,9 @@
 			"serve": {
 				"executor": "@nx/js:node",
 				"defaultConfiguration": "development",
-				"dependsOn": ["build"],
+				"dependsOn": [
+					"build"
+				],
 				"options": {
 					"buildTarget": "agents:build",
 					"runBuildTargetDependencies": false
@@ -33,6 +34,7 @@
 		}
 	},
 	"dependencies": {
+		"@deepgram/sdk": "^3.9.0",
 		"@huggingface/transformers": "^3.3.2",
 		"@langchain/community": "^0.3.26",
 		"@langchain/core": "^0.3.33",

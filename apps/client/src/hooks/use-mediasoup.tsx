@@ -30,6 +30,9 @@ export const MediasoupProvider = ({ children }: MediasoupProviderProps) => {
                 const { routerRtpCapabilities } = await socket.emitWithAck('getRouterRtpCapabilities');
                 const mediasoupDevice = new mediasoupClient.Device()
                 await mediasoupDevice.load({ routerRtpCapabilities })
+
+                setDevice(mediasoupDevice);
+
             } catch (error) {
                 console.error('Error initializing Mediasoup:', error);
             }
