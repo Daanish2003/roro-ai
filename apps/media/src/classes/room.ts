@@ -1,10 +1,11 @@
 import { config } from "../module/config";
 import { MediasoupServer } from "./mediasoup-server";
 
+
 export class Room {
 	private roomId: string;
 	private mediasoupServer: MediasoupServer;
-	private peers: Set<string>;
+	private peers: Map<string>;
 
 	constructor(roomId: string) {
 		this.roomId = roomId;

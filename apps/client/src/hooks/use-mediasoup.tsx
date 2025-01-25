@@ -1,3 +1,4 @@
+"use client"
 import * as mediasoupClient from 'mediasoup-client'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useSocket } from './use-socket';
