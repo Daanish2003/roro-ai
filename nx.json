@@ -54,7 +54,7 @@
 			"options": {
 				"targetName": "test"
 			},
-			"exclude": ["apps/server-e2e/**/*", "apps/agents-e2e/**/*"]
+			"exclude": ["apps/server-e2e/**/*", "apps/media-e2e/**/*"]
 		},
 		{
 			"plugin": "@nx/webpack/plugin",

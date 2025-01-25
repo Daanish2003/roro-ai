@@ -1,28 +1,26 @@
 {
-	"name": "@roro-ai/agents",
+	"name": "@roro-ai/media",
 	"version": "0.0.1",
 	"private": true,
 	"nx": {
-		"name": "agents",
+		"name": "media",
 		"projectType": "application",
-		"sourceRoot": "apps/agents/src",
+		"sourceRoot": "apps/media/src",
 		"targets": {
 			"serve": {
 				"executor": "@nx/js:node",
 				"defaultConfiguration": "development",
-				"dependsOn": [
-					"build"
-				],
+				"dependsOn": ["build"],
 				"options": {
-					"buildTarget": "agents:build",
+					"buildTarget": "media:build",
 					"runBuildTargetDependencies": false
 				},
 				"configurations": {
 					"development": {
-						"buildTarget": "agents:build:development"
+						"buildTarget": "media:build:development"
 					},
 					"production": {
-						"buildTarget": "agents:build:production"
+						"buildTarget": "media:build:production"
 					}
 				}
 			},

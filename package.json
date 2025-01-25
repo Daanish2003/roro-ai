@@ -2,7 +2,11 @@
   "name": "@roro-ai/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "dev:client": "nx dev client",
+    "dev:server": "nx serve server",
+    "dev:media": "nx serve media"
+  },
   "private": true,
   "devDependencies": {
     "@eslint/compat": "^1.1.1",

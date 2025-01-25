@@ -16,10 +16,10 @@
 			"path": "./apps/server"
 		},
 		{
-			"path": "./apps/agents-e2e"
+			"path": "./apps/media-e2e"
 		},
 		{
-			"path": "./apps/agents"
+			"path": "./apps/media"
 		}
 	]
 }
