@@ -1,4 +1,5 @@
-import { Room } from '../classes/room';
+import type { DtlsParameters } from 'mediasoup/node/lib/types';
+import { Room } from '../classes/room'
 
 export class RoomManager {
     private rooms: Map<string, Room>;
@@ -40,6 +41,49 @@ export class RoomManager {
         return {
             success: false
         }
+    }
+
+    public async createWebRtcTransportForRoom(
+        { 
+            roomId, 
+            direction, 
+            peerId
+        }: {
+            roomId: string, 
+            direction: 'send' | 'recieve', 
+            peerId: string
+        }) {
+        const room = this.getRoomById(roomId)
+
+        if(!room) {
+            throw new Error("Room not found")
+        }
+
+        const { clientTransportParams } = await room.handleCreateWebRtcTransport({peerId, direction})
+
+        return { clientTransportParams }
+
+    }
+
+    public async connectProducerTransport(
+        {
+            dtlsParameters,
+            roomId,
+            peerId
+        }: {
+            dtlsParameters: DtlsParameters,
+            roomId: string,
+            peerId: string
+        }
+    ) {
+        const room = this.getRoomById(roomId)
+
+        if(!room) {
+            throw new Error("Room not found")
+        }
+
+        await room.handleConnectProducerTransport({dtlsParameters, peerId})
+
     }
 
     public removePeerFromRoom(roomId: string, peerId: string): boolean {

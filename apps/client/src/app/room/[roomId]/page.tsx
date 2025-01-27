@@ -30,6 +30,7 @@ export default function RoomPage() {
 
           setDevice(mediaDevice)
           setIsJoined(true)
+          return true
         }
         console.error(`Failed to join room: ${roomId}`);
         return false;
@@ -71,85 +72,92 @@ export default function RoomPage() {
       socket.off('connect', onConnect)
       socket.off('connect_error', onError)
       socket.off('disconnect', onDisconnect)
+      socket.disconnect()
     }
   }, [roomId])
 
-  if (!roomId) {
-    return null // Router will handle redirection
-  }
+  useEffect(() => {
 
-  const createProducer = async () => {
-    try {
-      const localstream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 16000
+    if(!device && !isJoined) return;
 
-        }
-      })
-      console.log(localstream)
-
-      const audioTrack = localstream.getAudioTracks()[0]
-
-      setLocalAudioTrack(audioTrack)
-
-      const { transport } = await socket.emitWithAck('createWebRtcTransport', {
-        roomId,
-        direction: 'send'
-      })
-
-      if(!device) return;
-
-      const sendTransport = device.createSendTransport({
-        id: transport.id,
-        iceParameters: transport.iceParameters,
-        iceCandidates: transport.iceCandidates,
-        dtlsParameters: transport.dtlaParameters,
-        iceServers: []
-      })
-
-      setSendTransport(sendTransport)
-
-      sendTransport.on('connect', async({ dtlsParameters }, callback, errback) => {
+      const createProducer = async () => {
         try {
-          await socket.emitWithAck('connect-producer-transport', {
+          const localstream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+              sampleRate: 16000
+    
+            }
+          })
+    
+          const audioTrack = localstream.getAudioTracks()[0]
+    
+          setLocalAudioTrack(audioTrack)
+    
+          const { clientTransportParams } = await socket.emitWithAck('createProducerTransport', {
             roomId,
-            transportId: sendTransport.id,
-            dtlsParameters
+            direction: 'send'
           })
 
-          callback();
-        } catch (error) {
-          errback(error as Error)
-        }
-      });
-
-      sendTransport.on('produce', async ({kind, rtpParameters}, callback, errback) => {
-        try {
-          const { producerId } = await socket.emitWithAck('start-produce', {
-            roomId,
-            transportId: sendTransport.id,
-            kind,
-            rtpParameters
+          console.log(clientTransportParams)
+    
+          if(!device) return;
+    
+          const sendTransport = device.createSendTransport(clientTransportParams)
+  
+          // console.log(sendTransport)
+    
+          setSendTransport(sendTransport)
+    
+          sendTransport.on('connect', async({ dtlsParameters }, callback, errback) => {
+            try {
+              const response = await socket.emitWithAck('connect-producer-transport', {
+                roomId,
+                transportId: sendTransport.id,
+                dtlsParameters
+              })
+    
+              console.log(response)
+              if (response.success) {
+                callback();
+              }
+            } catch (error) {
+              errback(error as Error)
+            }
           });
-
-          callback({ id: producerId })
+    
+          sendTransport.on('produce', async ({kind, rtpParameters}, callback, errback) => {
+            try {
+              const { producerId } = await socket.emitWithAck('start-produce', {
+                roomId,
+                transportId: sendTransport.id,
+                kind,
+                rtpParameters
+              });
+    
+              callback({ id: producerId })
+            } catch (error) {
+              errback(error as Error)
+            }
+          });
+    
+          await sendTransport.produce({
+            track: audioTrack,
+          })
+    
         } catch (error) {
-          errback(error as Error)
+          console.error("Creating Producer Error: ", error)
         }
-      });
-
-      const producer = await sendTransport.produce({
-        track: localAudioTrack,
-      })
-
-    } catch (error) {
-      console.error("Creating Producer Error: ", error)
     }
 
-  }
+    createProducer()
+  }, [device, isJoined, roomId])
+
+    if (!roomId) {
+      return null // Router will handle redirection
+    }
 
   return (
     <div className="p-4">

@@ -23,10 +23,14 @@ export const config: Config = {
             ]
         },
         webRtcTransport: {
-            listenIps: [
+            listenInfos: [
                 {
-                    ip: '0.0.0.0',
-                    announcedIp: '127.0.0.1'
+                    protocol: 'udp',
+                    ip: '127.0.0.1',
+                },
+                {
+                    protocol: 'tcp',
+                    ip: '127.0.0.1'
                 }
             ],
             enableUdp: true,
