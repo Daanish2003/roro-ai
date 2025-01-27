@@ -115,7 +115,6 @@ export default function RoomPage() {
             try {
               const response = await socket.emitWithAck('connect-producer-transport', {
                 roomId,
-                transportId: sendTransport.id,
                 dtlsParameters
               })
     
@@ -130,14 +129,15 @@ export default function RoomPage() {
     
           sendTransport.on('produce', async ({kind, rtpParameters}, callback, errback) => {
             try {
-              const { producerId } = await socket.emitWithAck('start-produce', {
+              const { id } = await socket.emitWithAck('start-produce', {
                 roomId,
-                transportId: sendTransport.id,
                 kind,
                 rtpParameters
               });
+
+              console.log(id)
     
-              callback({ id: producerId })
+              callback({ id })
             } catch (error) {
               errback(error as Error)
             }

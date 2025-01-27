@@ -4,6 +4,7 @@ import type {
 } from "mediasoup/node/lib/WebRtcTransportTypes";
 import { DeepgramSTT } from "./deepgram-sst";
 import { MediasoupServer } from "./mediasoup-server";
+import type { MediaKind, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes";
 
 export class Room {
 	private roomId: string;
@@ -143,6 +144,33 @@ export class Room {
             throw new Error("Failed to connect producer transport");
 		}
 	}
+
+	public async handleStartProduce(
+		{
+			peerId,
+			kind,
+			rtpParameters
+		}: {
+			peerId: string,
+			kind: MediaKind,
+			rtpParameters: RtpParameters,
+		}) {
+			try {
+				const peer = this.getPeerById(peerId)
+
+				if (!peer?.sendTransport) {
+					throw new Error(`Send transport for peer ${peerId} is not available`);
+				}
+
+				const id = await this.mediasoupServer.produce({kind, rtpParameters})
+
+				return id
+
+			} catch(error) {
+				console.error(`Error start produce transport for peer ${peerId}:`, error);
+                throw new Error("Failed to start produce transport");
+			}
+		}
 
 	public close(): void {
 		this.mediasoupServer.close();

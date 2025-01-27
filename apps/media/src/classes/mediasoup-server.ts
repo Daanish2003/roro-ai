@@ -1,4 +1,4 @@
-import type { DtlsParameters, Router, WebRtcTransport, Worker } from "mediasoup/node/lib/types";
+import type { DtlsParameters, MediaKind, Producer, Router, RtpParameters, WebRtcTransport, Worker } from "mediasoup/node/lib/types";
 import { type Config, config } from "../module/config";
 import * as mediasoup from "mediasoup";
 
@@ -7,6 +7,8 @@ export class MediasoupServer {
 	private worker: Worker | null;
 	private router: Router | null;
 	private clientProducerTransport: WebRtcTransport | null
+	private clientProducer:  Producer | null
+	private producer: Producer | null
 
 
 	constructor() {
@@ -14,6 +16,8 @@ export class MediasoupServer {
 		this.worker = null;
 		this.router= null;
 		this.clientProducerTransport = null;
+		this.clientProducer = null;
+		this.producer = null
 	}
 
 	public async initialize() {
@@ -79,6 +83,40 @@ export class MediasoupServer {
 		} catch (error) {
 			console.error("Error connecting WebRTC transport:", error)
 			throw new Error("Error connecting webRTC transport")
+		}
+	}
+
+	public async produce(
+		{
+			kind,
+			rtpParameters
+		} : {
+			kind: MediaKind,
+			rtpParameters: RtpParameters
+		}
+	) {
+		try {
+			if(!this.clientProducerTransport) {
+				throw new Error("Create Producer Not Initialized")
+			}
+
+			this.clientProducer = await this.clientProducerTransport.produce({ kind, rtpParameters })
+
+			this.producer = this.clientProducer
+
+			this.clientProducer.on('transportclose',()=>{
+				if (!this.clientProducer) {
+					throw new Error("Client Producer Not Found")
+				}
+                console.log("Producer transport closed. Just fyi")
+                this.clientProducer.close()
+            })  
+
+			return this.clientProducer.id
+
+		} catch (error) {
+			console.error("Error start produce WebRTC transport:", error)
+			throw new Error("Error start produce webRTC transport")
 		}
 	}
 

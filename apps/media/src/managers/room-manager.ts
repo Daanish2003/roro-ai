@@ -1,4 +1,4 @@
-import type { DtlsParameters } from 'mediasoup/node/lib/types';
+import type { DtlsParameters, MediaKind, RtpParameters } from 'mediasoup/node/lib/types';
 import { Room } from '../classes/room'
 
 export class RoomManager {
@@ -84,6 +84,31 @@ export class RoomManager {
 
         await room.handleConnectProducerTransport({dtlsParameters, peerId})
 
+    }
+
+    public async startProduce(
+        {
+            rtpParameters,
+            kind,
+            peerId,
+            roomId,
+        }: {
+            rtpParameters: RtpParameters,
+            kind: MediaKind,
+            peerId: string,
+            roomId: string
+
+        }
+    ) {
+        const room = this.getRoomById(roomId)
+
+        if(!room) {
+            throw new Error("Room not found")
+        }
+
+        const id = await room.handleStartProduce({rtpParameters, kind, peerId})
+
+        return id
     }
 
     public removePeerFromRoom(roomId: string, peerId: string): boolean {

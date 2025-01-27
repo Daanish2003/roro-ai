@@ -1,7 +1,7 @@
 import { Server, type Socket } from "socket.io";
 import type { Server as HttpServer } from "node:http";
 import { RoomManager } from "../managers/room-manager";
-import type { RtpCapabilities } from "mediasoup/node/lib/rtpParametersTypes";
+import type { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes";
 import type { DtlsParameters, IceCandidate, IceParameters } from "mediasoup/node/lib/types";
 
 export class SocketServer {
@@ -101,6 +101,29 @@ export class SocketServer {
                     })
                 }
             )
+
+			socket.on(
+				"start-produce",
+				async (
+					{ 
+						roomId, 
+						kind, 
+						rtpParameters 
+					} : { 
+						roomId: string, 
+						kind: MediaKind, 
+						rtpParameters: RtpParameters
+					}, callback: (
+						{
+							id
+						} : {
+						    id: string
+						}) => void) => {
+							const id = await this.roomManager.startProduce({rtpParameters, roomId, peerId:socket.id, kind})
+
+							callback({ id })
+						}
+			)
 
 			socket.on(
 				"audioStream",
