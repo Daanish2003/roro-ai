@@ -4,7 +4,7 @@ import type {
 } from "mediasoup/node/lib/WebRtcTransportTypes";
 import { DeepgramSTT } from "./deepgram-sst";
 import { MediasoupServer } from "./mediasoup-server";
-import type { MediaKind, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes";
+import type { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes";
 
 export class Room {
 	private roomId: string;
@@ -105,15 +105,18 @@ export class Room {
 
 		try {
 			const clientTransportParams =
-				await this.mediasoupServer.createWebRtcTransport();
+				await this.mediasoupServer.createWebRtcTransport(direction);
 
 			const peer = this.getPeerById(peerId);
 
 			if (peer) {
 				if (direction === "send") {
 					peer.sendTransport = clientTransportParams as WebRtcTransport;
+					// console.log("created send transport", peer.sendTransport)
 				} else if (direction === "recieve") {
+					// console.log("create reciever transport")
 					peer.recieveTransport = clientTransportParams as WebRtcTransport;
+					// console.log("created reciever transport", peer.recieveTransport)
 				}
 			}
 
@@ -123,25 +126,35 @@ export class Room {
 		}
 	}
 
-	public async handleConnectProducerTransport({
+	public async handleConnectTransport({
 		dtlsParameters,
 		peerId,
+		type,
 	}: {
-		dtlsParameters: DtlsParameters;
-		peerId: string;
+		dtlsParameters: DtlsParameters,
+		peerId: string,
+		type: 'producer' | 'consumer'
 	}) {
 		try {
 			const peer = this.getPeerById(peerId)
 
-		if (!peer?.sendTransport) {
-			throw new Error(`Send transport for peer ${peerId} is not available`);
-		}
+			console.log(peer)
 
-		   await this.mediasoupServer.connectProducerTransport({dtlsParameters})
+
+		if(type === 'producer') {
+			if (!peer?.sendTransport) {
+				throw new Error(`Send transport for peer ${peerId} is not available`);
+			}
+		} else if (type === 'consumer') {
+			if (!peer?.recieveTransport) {
+				throw new Error(`Reciever transport for peer ${peerId} is not available`);
+			}
+		}
+		   await this.mediasoupServer.connectTransport({dtlsParameters, type})
 
 		} catch (error) {
-			console.error(`Error connecting producer transport for peer ${peerId}:`, error);
-            throw new Error("Failed to connect producer transport");
+			console.error(`Error connecting transport for peer ${peerId}:`, error);
+            throw new Error("Failed to connect transport");
 		}
 	}
 
@@ -171,6 +184,34 @@ export class Room {
                 throw new Error("Failed to start produce transport");
 			}
 		}
+
+	public async handleStartConsume(
+		{
+			peerId,
+			rtpCapabilities
+		}: {
+			peerId: string,
+			rtpCapabilities: RtpCapabilities,
+		}
+	) {
+		try {
+			const peer = this.getPeerById(peerId)
+
+			if (!peer?.recieveTransport) {
+				console.error(`Recieve transport for peer ${peerId} is not available`);
+				throw new Error(`Recieve transport for peer ${peerId} is not available`);
+			}
+			
+
+			const consumerParams = await this.mediasoupServer.consume({ rtpCapabilities })
+
+			return consumerParams
+
+		} catch(error) {
+			console.error(`Error start consumer transport for peer ${peerId}:`, error);
+			throw new Error("Failed to start consumer transport");
+		}
+	}
 
 	public close(): void {
 		this.mediasoupServer.close();

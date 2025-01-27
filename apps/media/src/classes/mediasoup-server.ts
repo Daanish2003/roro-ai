@@ -1,4 +1,4 @@
-import type { DtlsParameters, MediaKind, Producer, Router, RtpParameters, WebRtcTransport, Worker } from "mediasoup/node/lib/types";
+import type { Consumer, DtlsParameters, MediaKind, Producer, Router, RtpCapabilities, RtpParameters, WebRtcTransport, Worker } from "mediasoup/node/lib/types";
 import { type Config, config } from "../module/config";
 import * as mediasoup from "mediasoup";
 
@@ -8,6 +8,8 @@ export class MediasoupServer {
 	private router: Router | null;
 	private clientProducerTransport: WebRtcTransport | null
 	private clientProducer:  Producer | null
+	private clientConsumerTransport: WebRtcTransport | null
+	private clientConsumer: Consumer | null
 	private producer: Producer | null
 
 
@@ -17,7 +19,9 @@ export class MediasoupServer {
 		this.router= null;
 		this.clientProducerTransport = null;
 		this.clientProducer = null;
-		this.producer = null
+		this.clientConsumerTransport = null;
+		this.clientConsumer = null;
+		this.producer = null;
 	}
 
 	public async initialize() {
@@ -38,7 +42,7 @@ export class MediasoupServer {
 		}
 	}
 
-	public async createWebRtcTransport() {
+	public async createWebRtcTransport(direction: 'send' | 'recieve') {
 		if (!this.router) {
 			throw new Error("Router not Initialized")
 		};
@@ -48,9 +52,13 @@ export class MediasoupServer {
 				this.config.mediasoup.webRtcTransport,
 			);
 
-			console.log("WebRTC Transport created:", transport);
+			if (direction === 'send') {
+                this.clientProducerTransport = transport
+			} 
 
-			this.clientProducerTransport = transport
+			if (direction === 'recieve') {
+				this.clientConsumerTransport = transport
+			}
 
 			const clientTransportParams = {
 				id: transport.id,
@@ -67,22 +75,38 @@ export class MediasoupServer {
 		}
 	}
 
-	public async connectProducerTransport(
+	public async connectTransport(
 		{
-			dtlsParameters
+			dtlsParameters,
+			type
 		}: {
 			dtlsParameters: DtlsParameters,
+			type: 'producer' | 'consumer'
 		}
 	) {
-		try {
-           if(!this.clientProducerTransport) {
-			throw new Error("Create Producer Not Initialized")
-		   }
 
-			await this.clientProducerTransport.connect({dtlsParameters})
-		} catch (error) {
-			console.error("Error connecting WebRTC transport:", error)
-			throw new Error("Error connecting webRTC transport")
+		if (type === 'producer') {
+			try {
+				if(!this.clientProducerTransport) {
+				 throw new Error("Create Producer Not Initialized")
+				}
+	 
+				 await this.clientProducerTransport.connect({dtlsParameters})
+			 } catch (error) {
+				 console.error("Error connecting WebRTC transport:", error)
+				 throw new Error("Error connecting webRTC transport")
+			 }
+		} else if (type === 'consumer') {
+			try {
+				if(!this.clientConsumerTransport) {
+				 throw new Error("Create Consumer Not Initialized")
+				}
+	 
+				 await this.clientConsumerTransport.connect({dtlsParameters})
+			 } catch (error) {
+				 console.error("Error connecting WebRTC transport:", error)
+				 throw new Error("Error connecting webRTC transport")
+			 }
 		}
 	}
 
@@ -118,6 +142,53 @@ export class MediasoupServer {
 			console.error("Error start produce WebRTC transport:", error)
 			throw new Error("Error start produce webRTC transport")
 		}
+	}
+
+	public async consume(
+		{
+			rtpCapabilities
+		}: {
+			rtpCapabilities: RtpCapabilities
+		}
+	) {
+		if(!this.producer) {
+            return {
+				message : "noProducer"
+			}
+		} 
+			
+		if (!this.router?.canConsume({producerId: this.producer.id, rtpCapabilities})) {
+			return {
+				message: "cannotConsume"
+		    }
+		}
+
+		if(!this.clientConsumerTransport) {
+			throw new Error("Create Consumer Not Initialized")
+		}
+				
+		this.clientConsumer = await this.clientConsumerTransport.consume({
+			producerId: this.producer.id,
+			rtpCapabilities,
+			paused: true,
+		})
+
+		this.clientConsumer.on('transportclose', () => {
+			if(!this.clientConsumer) {
+				throw new Error("Consumer not found")
+		    }
+			console.log("Consumer transport closed. Just fyi")
+            this.clientConsumer.close()
+		})
+
+        const consumerParams = {
+			producerId: this.producer.id,
+			id: this.clientConsumer.id,
+			kind:this.clientConsumer.kind,
+			rtpParameters: this.clientConsumer.rtpParameters,
+		}
+
+		return consumerParams
 	}
 
 

@@ -1,4 +1,4 @@
-import type { DtlsParameters, MediaKind, RtpParameters } from 'mediasoup/node/lib/types';
+import type { DtlsParameters, MediaKind, RtpCapabilities, RtpParameters } from 'mediasoup/node/lib/types';
 import { Room } from '../classes/room'
 
 export class RoomManager {
@@ -56,7 +56,7 @@ export class RoomManager {
         const room = this.getRoomById(roomId)
 
         if(!room) {
-            throw new Error("Room not found")
+            throw new Error("Room not found webRtc transport")
         }
 
         const { clientTransportParams } = await room.handleCreateWebRtcTransport({peerId, direction})
@@ -65,24 +65,26 @@ export class RoomManager {
 
     }
 
-    public async connectProducerTransport(
+    public async connectTransport(
         {
             dtlsParameters,
             roomId,
-            peerId
+            peerId,
+            type
         }: {
             dtlsParameters: DtlsParameters,
             roomId: string,
-            peerId: string
+            peerId: string,
+            type: 'producer' | 'consumer'
         }
     ) {
         const room = this.getRoomById(roomId)
 
         if(!room) {
-            throw new Error("Room not found")
+            throw new Error("Room not found connect transport")
         }
 
-        await room.handleConnectProducerTransport({dtlsParameters, peerId})
+        await room.handleConnectTransport({dtlsParameters, peerId, type})
 
     }
 
@@ -103,12 +105,34 @@ export class RoomManager {
         const room = this.getRoomById(roomId)
 
         if(!room) {
-            throw new Error("Room not found")
+            throw new Error("Room not found produce")
         }
 
         const id = await room.handleStartProduce({rtpParameters, kind, peerId})
 
         return id
+    }
+
+    public async startConsume(
+        {
+            rtpCapabilities,
+            peerId,
+            roomId,
+        }: {
+            rtpCapabilities : RtpCapabilities,
+            peerId: string,
+            roomId: string,
+        }
+    ) {
+        const room = this.getRoomById(roomId)
+
+        if(!room) {
+            throw new Error("Room not found consume")
+        }
+
+        const consumerParams = await room.handleStartConsume({rtpCapabilities, peerId})
+
+        return consumerParams
     }
 
     public removePeerFromRoom(roomId: string, peerId: string): boolean {

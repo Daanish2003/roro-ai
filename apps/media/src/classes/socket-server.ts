@@ -1,8 +1,16 @@
 import { Server, type Socket } from "socket.io";
 import type { Server as HttpServer } from "node:http";
 import { RoomManager } from "../managers/room-manager";
-import type { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes";
-import type { DtlsParameters, IceCandidate, IceParameters } from "mediasoup/node/lib/types";
+import type {
+	MediaKind,
+	RtpCapabilities,
+	RtpParameters,
+} from "mediasoup/node/lib/rtpParametersTypes";
+import type {
+	DtlsParameters,
+	IceCandidate,
+	IceParameters,
+} from "mediasoup/node/lib/types";
 
 export class SocketServer {
 	private io: Server;
@@ -54,7 +62,7 @@ export class SocketServer {
 						direction,
 					}: {
 						roomId: string;
-						direction: "send" | "recieve";
+						direction: "send";
 					},
 					callback: ({
 						clientTransportParams,
@@ -80,56 +88,171 @@ export class SocketServer {
 				},
 			);
 
-            socket.on(
-                "connect-producer-transport",
-                async (
-                    {
-                        roomId,
-                        dtlsParameters
-                    }: {
-                        roomId: string,
-                        dtlsParameters: DtlsParameters
-                    },
-                    callback: (
-                      {success}: {success: boolean}
-                    ) => void
-                ) => {
-                    await this.roomManager.connectProducerTransport({dtlsParameters, roomId, peerId: socket.id})
+			socket.on(
+				"connect-producer-transport",
+				async (
+					{
+						roomId,
+						dtlsParameters,
+						type,
+					}: {
+						roomId: string;
+						dtlsParameters: DtlsParameters;
+						type: "producer";
+					},
+					callback: ({ success }: { success: boolean }) => void,
+				) => {
+					await this.roomManager.connectTransport({
+						dtlsParameters,
+						roomId,
+						peerId: socket.id,
+						type,
+					});
 
-                    callback({
-                        success: true
-                    })
-                }
-            )
+					callback({
+						success: true,
+					});
+				},
+			);
 
 			socket.on(
 				"start-produce",
 				async (
-					{ 
-						roomId, 
-						kind, 
-						rtpParameters 
-					} : { 
-						roomId: string, 
-						kind: MediaKind, 
-						rtpParameters: RtpParameters
-					}, callback: (
-						{
-							id
-						} : {
-						    id: string
-						}) => void) => {
-							const id = await this.roomManager.startProduce({rtpParameters, roomId, peerId:socket.id, kind})
+					{
+						roomId,
+						kind,
+						rtpParameters,
+					}: {
+						roomId: string;
+						kind: MediaKind;
+						rtpParameters: RtpParameters;
+					},
+					callback: ({
+						id,
+					}: {
+						id: string;
+					}) => void,
+				) => {
+					const id = await this.roomManager.startProduce({
+						rtpParameters,
+						roomId,
+						peerId: socket.id,
+						kind,
+					});
 
-							callback({ id })
-						}
-			)
+					callback({ id });
+				},
+			);
+
+			socket.on(
+				"createConsumerTransport",
+				async (
+					{
+						roomId,
+						direction,
+					}: {
+						roomId: string;
+						direction: "recieve";
+					},
+					callback: ({
+						clientTransportParams,
+					}: {
+						clientTransportParams: {
+							id: string;
+							iceParameters: IceParameters;
+							iceCandidates: IceCandidate[];
+							dtlsParameters: DtlsParameters;
+						};
+					}) => void,
+				) => {
+					const { clientTransportParams } =
+						await this.roomManager.createWebRtcTransportForRoom({
+							roomId,
+							direction,
+							peerId: socket.id,
+						});
+
+					console.log(clientTransportParams);
+
+					callback({ clientTransportParams });
+				},
+			);
+
+			socket.on(
+				"connect-consumer-transport",
+				async (
+					{
+						roomId,
+						dtlsParameters,
+						type,
+					}: {
+						roomId: string;
+						dtlsParameters: DtlsParameters;
+						type: "consumer";
+					},
+					callback: ({ success }: { success: boolean }) => void,
+				) => {
+					await this.roomManager.connectTransport({
+						dtlsParameters,
+						roomId,
+						peerId: socket.id,
+						type,
+					});
+
+					callback({
+						success: true,
+					});
+				},
+			);
+
+			socket.on(
+				"consume-media",
+				async (
+					{
+						roomId,
+						rtpCapabilities,
+					}: {
+						roomId: string;
+						rtpCapabilities: RtpCapabilities;
+					},
+					callback: ({
+						consumerParams,
+					}: {
+						consumerParams:
+							| {
+									producerId: string;
+									id: string;
+									kind: MediaKind;
+									rtpParameters: RtpParameters;
+							  }
+							| {
+									message: string;
+							  };
+					}) => void,
+				) => {
+					const consumerParams = await this.roomManager.startConsume({
+						rtpCapabilities,
+						roomId,
+						peerId: socket.id,
+					});
+
+					callback({ consumerParams });
+				},
+			);
 
 			socket.on(
 				"audioStream",
-				({ roomId, audio }: { roomId: string; audio: Buffer }) => {
+				({
+					roomId,
+					audio,
+				}: {
+					roomId: string;
+					audio: Buffer;
+				}) => {
 					console.log(`Received audio from ${socket.id} in room ${roomId}`);
+
 					const room = this.roomManager.getRoomById(roomId);
+
 					if (room) {
 						room.handleAudioStream(socket.id, audio);
 					}
