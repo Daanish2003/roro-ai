@@ -3,6 +3,7 @@ import type { WebRtcTransportOptions } from "mediasoup/node/lib/WebRtcTransportT
 import type { WorkerSettings } from "mediasoup/node/lib/WorkerTypes"
 
 
+
 export const config: Config = {
     mediasoup: {
         worker: {

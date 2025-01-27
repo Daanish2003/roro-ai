@@ -1,5 +1,4 @@
 import { Room } from '../classes/room';
-import { v4 as uuidv4} from "uuid"
 
 export class RoomManager {
     private rooms: Map<string, Room>;
@@ -8,23 +7,39 @@ export class RoomManager {
         this.rooms = new Map<string, Room>();
     }
 
-    public createRoom(): string {
-        const roomId = uuidv4();  
-        const newRoom = new Room(roomId);
-        newRoom.initialize(); 
-        this.rooms.set(roomId, newRoom);
-        console.log(`Room ${roomId} created`);
+    public async createRoom(roomId: string): Promise<string> {
+        if (!this.rooms.has(roomId)) {
+            
+            console.log(roomId)
+            const newRoom = new Room(roomId);
+
+            await newRoom.initialize(); 
+            this.rooms.set(roomId, newRoom);
+            console.log(`Room ${roomId} created`);
+        }
         return roomId;
     }
 
-    public joinRoom(roomId: string, peerId: string): boolean {
+    public async joinRoom(roomId: string, peerId: string) {
+        if (!this.rooms.has(roomId)) {
+           await this.createRoom(roomId);
+        }
         const room = this.rooms.get(roomId);
+        
         if (room) {
             room.addPeer(peerId);
-            return true;
-        } 
-            console.warn(`Room ${roomId} not found`);
-            return false;
+            const routerRtpCap = await room.getRouterRtpCap()
+            console.log(`Peer ${peerId} joined room ${roomId}`);
+            
+            console.log(routerRtpCap)
+            return {
+                success: true,
+                routerRtpCap,
+            };
+        }
+        return {
+            success: false
+        }
     }
 
     public removePeerFromRoom(roomId: string, peerId: string): boolean {

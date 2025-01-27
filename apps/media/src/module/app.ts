@@ -4,7 +4,7 @@ import cors from "cors"
 export const app: Application = express();
 
 app.use(cors({
-    origin: "http://localhosr:3000",
+    origin: "http://localhost:3000",
     methods: ["GET" , "POST", "DELETE", "PUT"],
     credentials: true,
 }))

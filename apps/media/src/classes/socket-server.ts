@@ -1,16 +1,19 @@
 import { Server, type Socket } from "socket.io";
 import type { Server as HttpServer } from "node:http";
 import { RoomManager } from "../managers/room-manager";
+import type { RtpCapabilities } from "mediasoup/node/lib/rtpParametersTypes";
 
 export class SocketServer {
     private io: Server;
-    private roomManager: RoomManager; // Use RoomManager for centralized room management
+    private roomManager: RoomManager;
 
     constructor(httpServer: HttpServer) {
         this.io = new Server(httpServer, {
             cors: {
                 origin: "http://localhost:3000",
                 methods: ["GET", "POST"],
+                credentials: true,
+                allowedHeaders: ['content-Type']
             },
         });
 
@@ -22,18 +25,16 @@ export class SocketServer {
             console.log("Client connected:", socket.id);
 
             socket.on(
-                "createRoom",
-                (callback: (response: { roomId: string }) => void) => {
-                    const roomId = this.roomManager.createRoom(); // Create room using RoomManager
-                    callback({ roomId });
-                }
-            );
-
-            socket.on(
                 "joinRoom",
-                ({ roomId }: { roomId: string }, callback: (response: { success: boolean }) => void) => {
-                    const success = this.roomManager.joinRoom(roomId, socket.id); // Join room using RoomManager
-                    callback({ success });
+                async ({ roomId }: { roomId: string }, callback: (response: { success: boolean ; routerRtpCap: RtpCapabilities} | {success: boolean}) => void) => {
+                    console.log("Received the Join Room Event");
+                    try {
+                        const response = await this.roomManager.joinRoom(roomId, socket.id);
+                        callback(response);
+                    } catch (error) {
+                        console.error("Error in joining room:", error);
+                        callback({ success: false });
+                    }
                 }
             );
 
@@ -46,20 +47,27 @@ export class SocketServer {
             });
 
     
-            socket.on("disconnect", () => {
-                this.handleDisconnect(socket.id);
+            socket.on("disconnect", async () => {
+                await this.handleDisconnect(socket.id);
             });
         });
 
         return this.io;
     }
 
-    // Handle peer disconnection from all rooms
-    private handleDisconnect(peerId: string): void {
+    
+    private async handleDisconnect(peerId: string): Promise<void> {
+        console.log(`Peer ${peerId} disconnected`);
+
         const allRoomIds = this.roomManager.getAllRoomIds();
         for (const roomId of allRoomIds) {
-            this.roomManager.removePeerFromRoom(roomId, peerId);
+            const room = this.roomManager.getRoomById(roomId);
+            if (room) {
+                room.removePeer(peerId); 
+            }
         }
+
+        console.log(`Cleaned up peer ${peerId} from all rooms`);
     }
 
     // Close all rooms and the Socket.IO server

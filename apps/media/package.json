@@ -10,7 +10,9 @@
 			"serve": {
 				"executor": "@nx/js:node",
 				"defaultConfiguration": "development",
-				"dependsOn": ["build"],
+				"dependsOn": [
+					"build"
+				],
 				"options": {
 					"buildTarget": "media:build",
 					"runBuildTargetDependencies": false
@@ -36,6 +38,7 @@
 		"@huggingface/transformers": "^3.3.2",
 		"@langchain/community": "^0.3.26",
 		"@langchain/core": "^0.3.33",
+		"@ricky0123/vad-web": "^0.0.22",
 		"cors": "^2.8.5",
 		"dotenv": "^16.4.7",
 		"mediasoup": "^3.15.2",
@@ -44,6 +47,8 @@
 		"winston": "^3.17.0"
 	},
 	"devDependencies": {
-		"@types/cors": "^2.8.17"
+		"@types/cors": "^2.8.17",
+		"node-loader": "^2.1.0",
+		"ts-loader": "^9.5.2"
 	}
 }
