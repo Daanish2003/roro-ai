@@ -1,91 +1,199 @@
-# RoroAi
+# Turborepo + Prisma ORM starter
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+This is a example designed to help you quickly set up a Turborepo monorepo with a Next.js app and Prisma ORM. This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
+## What's inside?
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/js?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+This turborepo includes the following packages/apps:
 
-## Finish your CI setup
+### Apps and packages
 
-[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/gZTrVxuRnA)
+- `web`: a [Next.js](https://nextjs.org/) app
+- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
+- `@repo/database`: [Prisma ORM](https://prisma.io/) to manage & access your database
+- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
 
+Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
 
-## Generate a library
+### Utilities
 
-```sh
-npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
-```
+This turborepo has some additional tools already setup for you:
 
-## Run tasks
+- [TypeScript](https://www.typescriptlang.org/) for static type checking
+- [ESLint](https://eslint.org/) for code linting
+- [Prettier](https://prettier.io) for code formatting
+- [Prisma ORM](https://prisma.io/) for accessing the database
+- [Docker Compose](https://docs.docker.com/compose/) for a local MySQL database
 
-To build the library use:
+## Getting started
 
-```sh
-npx nx build pkg1
-```
+Follow these steps to set up and run your Turborepo project with Prisma ORM:
 
-To run any task with Nx use:
+### 1. Create a Turborepo project
 
-```sh
-npx nx <target> <project-name>
-```
-
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
-
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Versioning and releasing
-
-To version and release the library use
-
-```
-npx nx release
-```
-
-Pass `--dry-run` to see what would happen without actually releasing the library.
-
-[Learn more about Nx release &raquo;](hhttps://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Keep TypeScript project references up to date
-
-Nx automatically updates TypeScript [project references](https://www.typescriptlang.org/docs/handbook/project-references.html) in `tsconfig.json` files to ensure they remain accurate based on your project dependencies (`import` or `require` statements). This sync is automatically done when running tasks such as `build` or `typecheck`, which require updated references to function correctly.
-
-To manually trigger the process to sync the project graph dependencies information to the TypeScript project references, run the following command:
+Start by creating a new Turborepo project using the following command:
 
 ```sh
-npx nx sync
+npx create-turbo@latest -e with-prisma
 ```
 
-You can enforce that the TypeScript project references are always in the correct state when running in CI by adding a step to your CI job configuration that runs the following command:
+Choose your desired package manager when prompted and a name for the app (e.g., `my-turborepo`). This will scaffold a new Turborepo project with Prisma ORM included and dependencies installed.
+
+Navigate to your project directory:
+
+```bash
+cd ./my-turborepo
+```
+
+### 2. Setup a local database with Docker Compose
+
+We use [Prisma ORM](https://prisma.io/) to manage and access our database. As such you will need a database for this project, either locally or hosted in the cloud.
+
+To make this process easier, a [`docker-compose.yml` file](./docker-compose.yml) is included to setup a MySQL server locally with a new database named `turborepo`:
+
+Start the MySQL database using Docker Compose:
 
 ```sh
-npx nx sync:check
+docker-compose up -d
 ```
 
-[Learn more about nx sync](https://nx.dev/reference/nx-commands#sync)
+To change the default database name, update the `MYSQL_DATABASE` environment variable in the [`docker-compose.yml` file](/docker-compose.yml).
 
+### 3. Setup environment variables
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Once the database is ready, copy the `.env.example` file to the [`/packages/database`](./packages/database/) and [`/apps/web`](./apps/web/) directories as `.env`:
 
-## Install Nx Console
+```bash
+cp .env.example ./packages/database/.env
+cp .env.example ./apps/web/.env
+```
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+This ensures Prisma has access to the `DATABASE_URL` environment variable, which is required to connect to your database.
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+If you added a custom database name, or use a cloud based database, you will need to update the `DATABASE_URL` in your `.env` accordingly.
 
-## Useful links
+### 4. Migrate your database
 
-Learn more:
+Once your database is running, you’ll need to create and apply migrations to set up the necessary tables. Run the database migration command:
 
-- [Learn more about this workspace setup](https://nx.dev/nx-api/js?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+```bash
+# Using npm
+npm run db:migrate:dev
+```
 
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-# roro-ai
+<details>
+
+<summary>Expand for <code>yarn</code>, <code>pnpm</code> or <code>bun</code></summary>
+
+```bash
+# Using yarn
+yarn run db:migrate:dev
+
+# Using pnpm
+pnpm run db:migrate:dev
+
+# Using bun
+bun run db:migrate:dev
+```
+
+</details>
+
+You’ll be prompted to name the migration. Once you provide a name, Prisma will create and apply the migration to your database.
+
+> Note: The `db:migrate:dev` script (located in [packages/database/package.json](/packages/database/package.json)) uses [Prisma Migrate](https://www.prisma.io/migrate) under the hood.
+
+For production environments, always push schema changes to your database using the [`prisma migrate deploy` command](https://www.prisma.io/docs/orm/prisma-client/deployment/deploy-database-changes-with-prisma-migrate). You can find an example `db:migrate:deploy` script in the [`package.json` file](/packages/database/package.json) of the `database` package.
+
+### 5. Seed your database
+
+To populate your database with initial or fake data, use [Prisma's seeding functionality](https://www.prisma.io/docs/guides/database/seed-database).
+
+Update the seed script located at [`packages/database/src/seed.ts`](/packages/database/src/seed.ts) to include any additional data that you want to seed. Once edited, run the seed command:
+
+```bash
+# Using npm
+npm run db:seed
+```
+
+<details>
+
+<summary>Expand for <code>yarn</code>, <code>pnpm</code> or <code>bun</code></summary>
+
+```bash
+# Using yarn
+yarn run db:seed
+
+# Using pnpm
+pnpm run db:seed
+
+# Using bun
+bun run db:seed
+```
+
+</details>
+
+### 6. Build your application
+
+To build all apps and packages in the monorepo, run:
+
+```bash
+# Using npm
+npm run build
+```
+
+<details>
+
+<summary>Expand for <code>yarn</code>, <code>pnpm</code> or <code>bun</code></summary>
+
+```bash
+# Using yarn
+yarn run build
+
+# Using pnpm
+pnpm run build
+
+# Using bun
+bun run build
+```
+
+</details>
+
+### 7. Start the application
+
+Finally, start your application with:
+
+```bash
+yarn run dev
+```
+
+<details>
+
+<summary>Expand for <code>yarn</code>, <code>pnpm</code> or <code>bun</code></summary>
+
+```bash
+# Using yarn
+yarn run dev
+
+# Using pnpm
+pnpm run dev
+
+# Using bun
+bun run dev
+```
+
+</details>
+
+Your app will be running at `http://localhost:3000`. Open it in your browser to see it in action!
+
+You can also read the official [detailed step-by-step guide from Prisma ORM](https://pris.ly/guide/turborepo?utm_campaign=turborepo-example) to build a project from scratch using Turborepo and Prisma ORM.
+
+## Useful Links
+
+Learn more about the power of Turborepo:
+
+- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
+- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
+- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
+- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
+- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
+- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
