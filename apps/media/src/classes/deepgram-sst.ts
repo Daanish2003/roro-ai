@@ -1,4 +1,5 @@
 import { createClient, type ListenLiveClient, type DeepgramClient, LiveTranscriptionEvents } from "@deepgram/sdk"
+import "dotenv/config"
 
 export class DeepgramSTT {
     private deepgram: DeepgramClient;
@@ -76,5 +77,4 @@ export class DeepgramSTT {
         }
     }
 }
-
 

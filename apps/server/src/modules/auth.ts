@@ -29,20 +29,26 @@ export const auth = betterAuth(
             trustedProviders: ["github", "google"],
           },
         },
+        secret: process.env.BETTER_AUTH_SECRET,
         trustedOrigins: ['http://localhost:3000', 'http://localhost:4000'],
-        plugins: [anonymous(), oAuthProxy(), admin(), jwt({
-          jwt: {
-            issuer: process.env.NEXT_PUBLIC_APP_URL as string,
-            audience: process.env.BACKEND_URL as string,
-            expirationTime: "1h",
-            definePayload: (data) => {
-              return {
-                id: data.user.id,
-                email: data.user.email,
-                role: data.user.role
+        plugins: [
+          anonymous(), 
+          oAuthProxy(), 
+          admin(), 
+          jwt({
+            jwt: {
+              issuer: process.env.NEXT_PUBLIC_APP_URL as string,
+              audience: process.env.BACKEND_URL as string,
+              expirationTime: "1h",
+              definePayload: (data) => {
+                return {
+                  id: data.user.id,
+                  email: data.user.email,
+                  role: data.user.role
+                }
               }
-            }
-          }
-        })],
+            } 
+          }),
+        ],
       }
 );

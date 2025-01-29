@@ -1,25 +1,25 @@
 {
-	"extends": "./tsconfig.base.json",
-	"compileOnSave": false,
-	"files": [],
-	"references": [
-		{
-			"path": "./apps/client-e2e"
-		},
-		{
-			"path": "./apps/client"
-		},
-		{
-			"path": "./apps/server-e2e"
-		},
-		{
-			"path": "./apps/server"
-		},
-		{
-			"path": "./apps/agents-e2e"
-		},
-		{
-			"path": "./apps/agents"
-		}
-	]
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/client-e2e"
+    },
+    {
+      "path": "./apps/client"
+    },
+    {
+      "path": "./apps/server-e2e"
+    },
+    {
+      "path": "./apps/server"
+    },
+    {
+      "path": "./apps/media-e2e"
+    },
+    {
+      "path": "./apps/media"
+    },
+  ]
 }

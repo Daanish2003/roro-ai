@@ -3,6 +3,7 @@ import type { WebRtcTransportOptions } from "mediasoup/node/lib/WebRtcTransportT
 import type { WorkerSettings } from "mediasoup/node/lib/WorkerTypes"
 
 
+
 export const config: Config = {
     mediasoup: {
         worker: {
@@ -18,14 +19,36 @@ export const config: Config = {
                     mimeType: 'audio/opus',
                     clockRate: 48000,
                     channels: 2
+                },
+                {
+                    kind: 'video',
+                    mimeType: 'video/H264',
+                    clockRate: 90000,
+                    parameters: 
+                    {
+                        "packetization-mode"      : 1,
+                        "profile-level-id"        : "42e01f",
+                        "level-asymmetry-allowed" : 1
+                    }
+                    
+                },
+                {
+                    kind: 'video',
+                    mimeType: 'video/VP8',
+                    clockRate: 90000,
+                    parameters: {}
                 }
             ]
         },
         webRtcTransport: {
-            listenIps: [
+            listenInfos: [
                 {
-                    ip: '0.0.0.0',
-                    announcedIp: '127.0.0.1'
+                    protocol: 'udp',
+                    ip: '127.0.0.1',
+                },
+                {
+                    protocol: 'tcp',
+                    ip: '127.0.0.1'
                 }
             ],
             enableUdp: true,

@@ -1,12 +1,13 @@
 generator client {
   provider = "prisma-client-js"
-  output = "../../../node_modules/@prisma/client"
+  output = "../../../../node_modules/@prisma/client"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 
 model User {
   id               String    @id @default(cuid())
@@ -24,6 +25,8 @@ model User {
 
   Sessions         Session[]
   Accounts         Account[]
+  rooms            UsersOnRooms[]
+
 
   @@map("user")
 }
@@ -82,4 +85,32 @@ model Jwks {
   publicKey String
   privateKey String
   createdAt  DateTime @default(now())
+
+  @@map("jwks")
 }
+
+model Room {
+  id    String @id @default(cuid())
+  name  String
+  adminId String @unique
+  active  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users   UsersOnRooms[]
+}
+
+model UsersOnRooms {
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  String @unique
+  Room   Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId  String @unique
+
+
+  @@unique([userId, roomId])
+  @@id([roomId, userId])
+}
+
+
+

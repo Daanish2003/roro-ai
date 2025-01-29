@@ -1,5 +1,5 @@
 export default {
-	displayName: "agents",
+	displayName: "media",
 	preset: "../../jest.preset.js",
 	testEnvironment: "node",
 	transform: {

@@ -1,7 +1,7 @@
 {
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
-		"outDir": "out-tsc/agents-e2e",
+		"outDir": "out-tsc/media-e2e",
 		"esModuleInterop": true,
 		"noUnusedLocals": false,
 		"noImplicitAny": false
