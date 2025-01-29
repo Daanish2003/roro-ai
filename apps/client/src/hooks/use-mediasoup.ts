@@ -45,6 +45,7 @@ export default function useMediasoup(roomId: string) {
 
         const [audioTrack] = stream.getAudioTracks()
         const [videoTrack] = stream.getVideoTracks()
+        
         setLocalStream(stream)
 
         if (localVideoRef.current) {

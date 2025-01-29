@@ -15,7 +15,7 @@ module.exports = {
 			optimization: false,
 			outputHashing: "none",
 			generatePackageJson: true,
-			externalDependencies: ["@prisma/client", "cors", "dotenv", "express"],
+			externalDependencies: ["cors", "dotenv", "express"],
 		}),
 	],
 };

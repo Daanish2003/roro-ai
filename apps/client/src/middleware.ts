@@ -1,35 +1,28 @@
 import { betterFetch } from "@better-fetch/fetch";
-import type { User, Session } from "better-auth/types";
+
 import { NextResponse, type NextRequest } from "next/server";
-
-type DataSession = {
-    user: User;
-    session: Session;
-}
-
+import { $Infer } from "./lib/auth-client";
+ 
+type Session = typeof $Infer.Session;
+ 
 export default async function authMiddleware(request: NextRequest) {
-	const { data: session, error } = await betterFetch<DataSession>(
-		"/api/get-session",  
+	const { data: session } = await betterFetch<Session>(
+		"/api/auth/get-session",
 		{
-			baseURL: "http://localhost:4000", 
+			baseURL: request.nextUrl.origin,
 			headers: {
-				
+				//get the cookie from the request
 				cookie: request.headers.get("cookie") || "",
 			},
-			credentials: "include",
 		},
 	);
-
-    if(error) {
-        console.log(error.message)
-    }
-
+ 
 	if (!session) {
 		return NextResponse.redirect(new URL("/sign-in", request.url));
 	}
 	return NextResponse.next();
 }
-
+ 
 export const config = {
 	matcher: ["/dashboard"],
 };

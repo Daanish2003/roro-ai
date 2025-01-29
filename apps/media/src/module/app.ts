@@ -3,6 +3,8 @@ import cors from "cors"
 
 export const app: Application = express();
 
+
+
 app.use(cors({
     origin: "http://localhost:3000",
     methods: ["GET" , "POST", "DELETE", "PUT"],
@@ -10,5 +12,7 @@ app.use(cors({
 }))
 
 app.use(express.json())
+
+
 
 

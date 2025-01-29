@@ -1,13 +1,13 @@
 import { socket } from "@/lib/socket";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export function useSocket(){
+export default function useSocket(){
     const [isConnected, setIsConnected] = useState<boolean>(false)
     const [loading, setIsLoading] = useState<boolean>(false)
     const [error, setError] = useState<string>("")
     const isMounted = useRef<boolean>(true)
 
-    //TODO: Connect socket
+    
     const connect = useCallback(() => {
         if (socket.connected) {
             setIsLoading(false)
@@ -19,12 +19,12 @@ export function useSocket(){
         socket.connect()
     }, [])
 
-    //TODO: Disconnect socket
+    
     const disconnect = useCallback(() => {
         socket.disconnect();
       }, []);
     
-    //TODO: handleConnect, handleDisconnect and handleError in useEffect
+    
     useEffect(() => {
         isMounted.current = true;
 
