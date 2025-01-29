@@ -153,8 +153,6 @@ export default function RoomPage() {
           track: audioTrack,
         })
 
-        console.log(produce)
-
         setProducer(produce)
 
       } catch (error) {
