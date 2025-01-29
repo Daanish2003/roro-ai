@@ -1,5 +1,5 @@
 import { socket } from "@/lib/socket";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useSocket(){
     const [isConnected, setIsConnected] = useState<boolean>(false)
@@ -8,10 +8,61 @@ export function useSocket(){
     const isMounted = useRef<boolean>(true)
 
     //TODO: Connect socket
-    //TODO: Disconnect socket
-    //TODO: handleConnect, handleDisconnect and handleError in useEffect
+    const connect = useCallback(() => {
+        if (socket.connected) {
+            setIsLoading(false)
+            return;
+        }
 
-    return () => {
-        //TODO: return a states and functions
+        setIsLoading(true)
+        setError("")
+        socket.connect()
+    }, [])
+
+    //TODO: Disconnect socket
+    const disconnect = useCallback(() => {
+        socket.disconnect();
+      }, []);
+    
+    //TODO: handleConnect, handleDisconnect and handleError in useEffect
+    useEffect(() => {
+        isMounted.current = true;
+
+        const handleConnect = () => {
+            if(!isMounted.current) return;
+            setIsConnected(true);
+            setIsLoading(false);
+            setError("")
+        };
+
+        const handleDisconnect = () => {
+            if (!isMounted.current) return;
+            setIsConnected(true)
+        }
+
+        const handleConnectError = (err: Error) => {
+            if(!isMounted.current) return;
+            setError(err.message);
+            setIsLoading(false)
+        }
+
+        socket.on("connect", handleConnect);
+        socket.on("disconnect", handleDisconnect)
+        socket.on("connect_error", handleConnectError);
+
+        return () => {
+            isMounted.current = false;
+            socket.off("connect", handleConnect);
+            socket.off("disconnect", handleDisconnect);
+            socket.off("connect_error", handleConnectError);
+        }
+    }, [])
+
+    return {
+        isConnected,
+        loading,
+        error,
+        connect,
+        disconnect,
     }
     }
