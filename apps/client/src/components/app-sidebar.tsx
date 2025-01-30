@@ -17,15 +17,13 @@ import {
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
-// import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  // SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
+} from "@roro-ai/ui/components/ui/sidebar"
 
 // This is sample data.
 const data = {

@@ -9,7 +9,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@roro-ai/ui/components/ui/sidebar"
 import Link from "next/link"
 import React from "react"
 import { usePathname } from "next/navigation"

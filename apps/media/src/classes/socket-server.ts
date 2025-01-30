@@ -1,16 +1,16 @@
 import { Server, type Socket } from "socket.io";
 import type { Server as HttpServer } from "node:http";
-import { RoomManager } from "../managers/room-manager";
+import { RoomManager } from "../managers/room-manager.js";
 import type {
 	MediaKind,
 	RtpCapabilities,
 	RtpParameters,
-} from "mediasoup/node/lib/rtpParametersTypes";
+} from "mediasoup/node/lib/rtpParametersTypes.js";
 import type {
 	DtlsParameters,
 	IceCandidate,
 	IceParameters,
-} from "mediasoup/node/lib/types";
+} from "mediasoup/node/lib/types.js";
 
 export class SocketServer {
 	private io: Server;

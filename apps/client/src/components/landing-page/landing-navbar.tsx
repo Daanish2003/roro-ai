@@ -3,7 +3,7 @@ import Logo from './logo'
 import LoginButton from './login-button'
 import GithubStarButton from './github-start-button'
 import { ToggleThemeButton } from './toggle-theme-button'
-import { Separator } from '../ui/separator'
+import { Separator } from '@roro-ai/ui/components/ui/separator'
 
 export default function LandingNavbar() {
   return (

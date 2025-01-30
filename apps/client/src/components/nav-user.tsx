@@ -13,7 +13,7 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/components/ui/avatar"
+} from "@roro-ai/ui/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,15 +22,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@roro-ai/ui/components/ui/dropdown-menu"
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
+} from "@roro-ai/ui/components/ui/sidebar"
 import { useSession } from "@/lib/auth-client"
-import LogoutButton from "./auth/logout-button"
+import LogoutButton  from "./auth/logout-button"
 
 export function NavUser() {
   const { data:session } = useSession()

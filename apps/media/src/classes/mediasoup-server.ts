@@ -1,5 +1,5 @@
-import type { Consumer, DtlsParameters, MediaKind, Producer, Router, RtpCapabilities, RtpParameters, WebRtcTransport, Worker } from "mediasoup/node/lib/types";
-import { type Config, config } from "../module/config";
+import type { Consumer, DtlsParameters, MediaKind, Producer, Router, RtpCapabilities, RtpParameters, WebRtcTransport, Worker } from "mediasoup/node/lib/types.js";
+import { type Config, config } from "../module/config.js";
 import * as mediasoup from "mediasoup";
 
 export class MediasoupServer {

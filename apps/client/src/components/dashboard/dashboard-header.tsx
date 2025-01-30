@@ -1,9 +1,9 @@
 "use client"
 
 import React from 'react'
-import { SidebarTrigger } from '../ui/sidebar'
-import { Separator } from '../ui/separator'
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '../ui/breadcrumb'
+import { SidebarTrigger } from '@roro-ai/ui/components/ui/sidebar'
+import { Separator } from '@roro-ai/ui/components/ui/separator'
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@roro-ai/ui/components/ui/breadcrumb'
 import { usePathname } from 'next/navigation'
 
 export default function DashboardHeader() {

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button } from '../ui/button'
+import { Button } from '@roro-ai/ui/components/ui/button'
 import Link from 'next/link'
 
 export default function LoginButton() {

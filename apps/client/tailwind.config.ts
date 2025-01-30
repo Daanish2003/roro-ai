@@ -1,0 +1,1 @@
+export * from "@roro-ai/ui/tailwind.config";

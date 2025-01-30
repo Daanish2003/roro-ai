@@ -1,5 +1,5 @@
-import type { DtlsParameters, MediaKind, RtpCapabilities, RtpParameters } from 'mediasoup/node/lib/types';
-import { Room } from '../classes/room'
+import type { DtlsParameters, MediaKind, RtpCapabilities, RtpParameters } from 'mediasoup/node/lib/types.js';
+import { Room } from '../classes/room.js'
 
 export class RoomManager {
     private rooms: Map<string, Room>;

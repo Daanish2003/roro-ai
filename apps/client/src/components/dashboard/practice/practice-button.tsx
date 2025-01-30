@@ -1,57 +1,50 @@
 "use client"
 
-import { Button } from '@/components/ui/button'
-import { createRoom } from '@/helpers/room';
-import useShowToast from '@/hooks/use-show-toast';
-import { useSession } from '@/lib/auth-client'
-import { ArrowUpRight } from 'lucide-react'
-import { useRouter } from 'next/navigation';
-import { v4 as uuidv4 } from "uuid"
+import React from 'react'
+import { SidebarTrigger } from '@roro-ai/ui/components/ui/sidebar'
+import { Separator } from '@roro-ai/ui/components/ui/separator'
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@roro-ai/ui/components/ui/breadcrumb'
+import { usePathname } from 'next/navigation'
 
+export default function DashboardHeader() {
+  const pathname = usePathname()
 
-export default function PracticeButton() {
-  const showToast = useShowToast()
-  const { data:session } = useSession()
-  const router = useRouter()
-
-  if(!session) {
-    return;
-  }
-
-  const startPracticeHandler = async () => {
-    console.log("click")
-    const randomId = uuidv4()
-
-    const response = await createRoom(
-      {
-        userId: session.user.id,
-        name: `${session.user.name} Room - ${randomId}`
+  
+  const pathSegments = pathname
+    .split('/')
+    .filter(segment => segment)
+    .map((segment, index, array) => {
+      const href = `/${array.slice(0, index + 1).join('/')}`
+      return {
+        name: segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' '), // Capitalize first letter and replace hyphens with spaces
+        href
       }
-    )
-
-    console.log(response)
-
-      if(response.success) {
-        router.replace(`/room/${response.roomId}`)
-      }
-
-      if(response.error) {
-        showToast({
-          title:"Room Creation Error",
-          description: `${response.error}`,
-          type: 'error'
-        })
-      }
-  }
+    })
 
   return (
-    <>
-    <Button
-    onClick={() => startPracticeHandler()}
-    >
-        Start Practing
-        <ArrowUpRight />
-    </Button>
-    </>
+    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+      <div className="flex items-center gap-2 px-4">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-2 h-4" />
+        <Breadcrumb>
+          <BreadcrumbList>
+            {pathSegments.length > 0 && <BreadcrumbSeparator className="hidden md:block" />}
+
+            {pathSegments.map((segment, index) => (
+              <React.Fragment key={segment.href}>
+                <BreadcrumbItem>
+                  {index === pathSegments.length - 1 ? (
+                    <BreadcrumbPage>{segment.name}</BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink href={segment.href}>{segment.name}</BreadcrumbLink>
+                  )}
+                </BreadcrumbItem>
+                {index < pathSegments.length - 1 && <BreadcrumbSeparator />}
+              </React.Fragment>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+    </header>
   )
 }

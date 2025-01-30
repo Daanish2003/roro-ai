@@ -5,15 +5,15 @@ import { useState } from "react";
 import { FaGithub } from "react-icons/fa";
 import { FaGoogle } from "react-icons/fa";
 import { toast as sonnerToast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@roro-ai/ui/components/ui/button";
 import {
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
-} from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+} from "@roro-ai/ui/components/ui/card";
+import { useToast } from "@roro-ai/ui/hooks/use-toast";
 import { signIn } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 

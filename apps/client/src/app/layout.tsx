@@ -1,5 +1,5 @@
 import { ThemeProvider } from '@/components/providers/theme-providers';
-import './global.css';
+import '@roro-ai/ui/global.css';
 import { Poppins } from "next/font/google"
 
 const roboto = Poppins({

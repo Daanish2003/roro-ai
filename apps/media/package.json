@@ -1,54 +1,33 @@
 {
-	"name": "@roro-ai/media",
-	"version": "0.0.1",
-	"private": true,
-	"nx": {
-		"name": "media",
-		"projectType": "application",
-		"sourceRoot": "apps/media/src",
-		"targets": {
-			"serve": {
-				"executor": "@nx/js:node",
-				"defaultConfiguration": "development",
-				"dependsOn": [
-					"build"
-				],
-				"options": {
-					"buildTarget": "media:build",
-					"runBuildTargetDependencies": false
-				},
-				"configurations": {
-					"development": {
-						"buildTarget": "media:build:development"
-					},
-					"production": {
-						"buildTarget": "media:build:production"
-					}
-				}
-			},
-			"test": {
-				"options": {
-					"passWithNoTests": true
-				}
-			}
-		}
-	},
-	"dependencies": {
-		"@deepgram/sdk": "^3.9.0",
-		"@huggingface/transformers": "^3.3.2",
-		"@langchain/community": "^0.3.26",
-		"@langchain/core": "^0.3.33",
-		"@ricky0123/vad-web": "^0.0.22",
-		"cors": "^2.8.5",
-		"dotenv": "^16.4.7",
-		"mediasoup": "^3.15.2",
-		"socket.io": "^4.8.1",
-		"uuid": "^11.0.5",
-		"winston": "^3.17.0"
-	},
-	"devDependencies": {
-		"@types/cors": "^2.8.17",
-		"node-loader": "^2.1.0",
-		"ts-loader": "^9.5.2"
-	}
+  "name": "media",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx --watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@deepgram/sdk": "^3.9.0",
+    "@roro-ai/eslint-config": "workspace:*",
+    "@roro-ai/typescript-config": "workspace:*",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "mediasoup": "^3.15.3",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.12.0",
+    "node-loader": "^2.1.0",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.7.3"
+  }
 }

@@ -1,4 +1,7 @@
 {
-	"WillLuke.nextjs.addTypesOnSave": true,
-	"WillLuke.nextjs.hasPrompted": true
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ]
 }

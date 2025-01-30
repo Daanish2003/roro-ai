@@ -1,7 +1,6 @@
-import type { RouterOptions } from "mediasoup/node/lib/RouterTypes"
-import type { WebRtcTransportOptions } from "mediasoup/node/lib/WebRtcTransportTypes"
-import type { WorkerSettings } from "mediasoup/node/lib/WorkerTypes"
-
+import type { RouterOptions } from "mediasoup/node/lib/RouterTypes.js"
+import type { WebRtcTransportOptions } from "mediasoup/node/lib/WebRtcTransportTypes.js"
+import type { WorkerSettings } from "mediasoup/node/lib/WorkerTypes.js"
 
 
 export const config: Config = {

@@ -2,6 +2,6 @@ import React from 'react'
 
 export default function LeaderBoardPage() {
   return (
-    <div>LeaderBoard</div>
+    <div>LeaderBoardPage</div>
   )
 }

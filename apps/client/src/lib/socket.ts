@@ -1,6 +1,6 @@
 import { io, type Socket } from "socket.io-client";
 
-const URL = "http://localhost:5000";
+const URL = process.env.NEXT_PUBLIC_MEDIA_URL;
 
 export const socket: Socket = io(URL, {
 	withCredentials: true,

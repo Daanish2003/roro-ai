@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "../ui/button";
+import { Button } from "@roro-ai/ui/components/ui/button";
 import { FaGithub } from "react-icons/fa"
 
 

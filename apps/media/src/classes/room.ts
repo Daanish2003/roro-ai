@@ -1,10 +1,10 @@
 import type {
 	DtlsParameters,
 	WebRtcTransport,
-} from "mediasoup/node/lib/WebRtcTransportTypes";
-import { DeepgramSTT } from "./deepgram-sst";
-import { MediasoupServer } from "./mediasoup-server";
-import type { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes";
+} from "mediasoup/node/lib/WebRtcTransportTypes.js";
+import { DeepgramSTT } from "./deepgram-sst.js";
+import { MediasoupServer } from "./mediasoup-server.js";
+import type { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes.js";
 
 export class Room {
 	private roomId: string;
