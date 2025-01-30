@@ -14,7 +14,7 @@
     "dev": "tsup src/* --watch",
     "format": "prisma format",
     "generate": "prisma generate",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint src --max-warnings 0",
     "prebuild": "npm run generate",
     "predev": "npm run generate",
     "studio": "prisma studio"
@@ -27,7 +27,6 @@
     "@roro-ai/eslint-config": "workspace:*",
     "@roro-ai/typescript-config": "workspace:*",
     "@types/node": "^22.12.0",
-    "eslint": "^8.57.0",
     "prisma": "latest",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.2",
