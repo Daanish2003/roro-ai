@@ -1,0 +1,15 @@
+{
+  "extends": ["@roro-ai/typescript-config/base.json"],
+  "exclude": ["node_modules", "dist"],
+  "include": ["src/**/*.ts"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+        "@roro-ai/database" : ["@roro-ai/database/src/*"]
+    },
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    
+  }
+}

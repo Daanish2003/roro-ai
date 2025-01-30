@@ -1,0 +1,1 @@
+export { default } from "@roro-ai/ui/postcss.config";
