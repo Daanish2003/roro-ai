@@ -16,7 +16,7 @@ export default function DashboardHeader() {
     .map((segment, index, array) => {
       const href = `/${array.slice(0, index + 1).join('/')}`
       return {
-        name: segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' '), // Capitalize first letter and replace hyphens with spaces
+        name: segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' '),
         href
       }
     })
