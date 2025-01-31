@@ -95,7 +95,7 @@ model Room {
   id    String @id @default(cuid())
   name  String
   adminId String @unique
-  active  Boolean @default(false)
+  active  Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

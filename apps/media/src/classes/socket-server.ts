@@ -43,7 +43,7 @@ export class SocketServer {
 							| { success: boolean },
 					) => void,
 				) => {
-					console.log("Received the Join Room Event");
+					
 					try {
 						const response = await this.roomManager.joinRoom(roomId, socket.id);
 						callback(response);

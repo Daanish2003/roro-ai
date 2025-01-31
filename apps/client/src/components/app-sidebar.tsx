@@ -77,7 +77,7 @@ const data = {
     },
     {
       title: "Leaderboard",
-      url: "/dashboard/leadboard",
+      url: "/dashboard/leaderboard",
       icon: ShieldHalf
     },
     {
