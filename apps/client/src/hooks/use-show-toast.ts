@@ -1,6 +1,6 @@
 "use client";
 
-import { useToast } from "@roro-ai/ui/hooks";
+import { useToast } from "@roro-ai/ui/hooks/use-toast";
 
 export default function useShowToast() {
   const { toast } = useToast();

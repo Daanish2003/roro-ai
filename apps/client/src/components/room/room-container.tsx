@@ -4,9 +4,15 @@ import useMediasoup from '@/hooks/use-mediasoup'
 import useSocket from '@/hooks/use-socket'
 import React, { useEffect } from 'react'
 
-export default function RoomContainer({ roomId }:{roomId: string}) {
-  const { connect, disconnect, loading, error, isConnected } = useSocket()
-  const { getUserMedia, cleanup } = useMediasoup(roomId)
+export default function RoomContainer(
+  { 
+    roomId 
+  }:{
+    roomId: string
+  }
+) {
+  const { connect, disconnect } = useSocket()
+  const { cleanup } = useMediasoup(roomId)
 
   useEffect(() => {
     connect()
@@ -16,16 +22,16 @@ export default function RoomContainer({ roomId }:{roomId: string}) {
     }
   }, [connect, disconnect, cleanup])
 
-  useEffect(() => {
-    if(!isConnected) return;
+  // useEffect(() => {
+  //   if(!isConnected) return;
     
-    const initializeMedia = async () => {
-      await getUserMedia();
+  //   const initializeMedia = async () => {
+  //     await getUserMedia();
       
       
-    }
+  //   }
 
-  })
+  // })
 
   //TODO: setup mediasoup connection
   //TODO: getUserMedia

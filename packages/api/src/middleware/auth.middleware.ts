@@ -1,5 +1,5 @@
 import { fromNodeHeaders } from 'better-auth/node';
-import { auth } from '../config/auth-config';
+import { auth } from '../config/auth-config.js';
 import { Request, Response, NextFunction } from 'express';
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
@@ -11,7 +11,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     if (!session) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-
+    
     next();
   } catch (error) {
     console.error('Error in authMiddleware:', error);

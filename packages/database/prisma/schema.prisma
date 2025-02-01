@@ -27,7 +27,7 @@ model User {
 
   Sessions         Session[]
   Accounts         Account[]
-  rooms            UsersOnRooms[]
+  rooms            Room[]
 
 
   @@map("user")
@@ -82,34 +82,21 @@ model Verification {
   @@map("verification")
 }
 
-model Jwks {
-  id    String @id @default(cuid())
-  publicKey String
-  privateKey String
-  createdAt  DateTime @default(now())
-
-  @@map("jwks")
-}
 
 model Room {
   id    String @id @default(cuid())
   name  String
-  adminId String @unique
-  active  Boolean @default(true)
-
+  userId String @unique
+  username String
+  active  Boolean @default(false)
+  activeTime DateTime?
+  endedTime   DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users   UsersOnRooms[]
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model UsersOnRooms {
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId  String @unique
-  Room   Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  roomId  String @unique
 
 
-  @@unique([userId, roomId])
-  @@id([roomId, userId])
-}
+

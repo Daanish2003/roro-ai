@@ -1,12 +1,12 @@
-"use client"
-import { useParams } from 'next/navigation'
+import RoomContainer from '@/components/room/room-container'
 import React from 'react'
 
-export default function RoomPage() {
-    const params = useParams()
-    const roomId = params?.roomId as string
+export default async function RoomPage({params}: {params: Promise<{roomId: string}>}) {
+  const roomId = (await params).roomId
 
   return (
-    <div>{roomId}</div>
+    <RoomContainer 
+    roomId={roomId}
+    />
   )
 }

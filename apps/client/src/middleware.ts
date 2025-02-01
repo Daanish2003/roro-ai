@@ -4,7 +4,7 @@ import { extractRoomId, redirectToDashboard, verifyRoomAccess } from "./middlewa
 import { AuthRoutes, matchesProtectedRoute, PublicRoutes } from "./middleware/routes";
 
 
-export async function middleware(request: NextRequest) {
+async function middleware(request: NextRequest) {
   const isPublicRoute = PublicRoutes.includes(request.nextUrl.pathname);
   const isProtectedRoute = matchesProtectedRoute(request.nextUrl.pathname);
   const isAuthRoute = AuthRoutes.includes(request.nextUrl.pathname)
@@ -40,3 +40,5 @@ export const config = {
     '/((?!api/auth|_next/static|_next/image|favicon.ico).*)'
   ],
 };
+
+export default middleware

@@ -7,10 +7,11 @@ export function extractRoomId(url: URL): string | null {
 
 export async function verifyRoomAccess(roomId: string, request: NextRequest): Promise<boolean> {
   try {
-    const response = await fetch(new URL(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/rooms/${roomId}/verify-access`, request.nextUrl.origin), {
+    const response = await fetch(new URL(`/api/v1/rooms/${roomId}/verify-access`, process.env.NEXT_PUBLIC_BACKEND_URL), {
       headers: { 
         cookie: request.headers.get('cookie') || '',
       }
+
     });
     
     if (!response.ok) return false;

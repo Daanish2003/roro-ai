@@ -1,6 +1,7 @@
 import { ThemeProvider } from '@/components/providers/theme-providers';
 import '@roro-ai/ui/global.css';
 import { Poppins } from "next/font/google"
+import { Toaster } from 'sonner';
 
 const roboto = Poppins({
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
@@ -26,6 +27,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <Toaster />
               {children}
         </ThemeProvider>
       </body>

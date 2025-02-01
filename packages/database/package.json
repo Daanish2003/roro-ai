@@ -1,9 +1,9 @@
 {
   "name": "@roro-ai/database",
   "version": "1.0.0",
+  "type": "module",
   "exports": {
-    "./client": "./src/index.ts",
-    "./query/room": "./src/room/index.ts"
+    "./client": "./src/index.ts"
   },
   "scripts": {
     "db:migrate:deploy": "prisma migrate deploy",
@@ -20,12 +20,14 @@
   },
   "dependencies": {
     "@prisma/client": "latest",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "redis": "^4.7.0"
   },
   "devDependencies": {
     "@roro-ai/eslint-config": "workspace:*",
     "@roro-ai/typescript-config": "workspace:*",
     "@types/node": "^22.12.0",
+    "@types/redis": "^4.0.11",
     "prisma": "latest",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.2",

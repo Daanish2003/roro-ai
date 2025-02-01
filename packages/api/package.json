@@ -5,10 +5,10 @@
   "main": "index.js",
   "type": "module",
   "exports": {
-    "./app" : "./src/index.ts"
+    "./app": "./src/index.ts"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint src max-warnings 0 "
   },
   "keywords": [],
   "author": "",
@@ -16,12 +16,21 @@
   "dependencies": {
     "@roro-ai/database": "workspace:*",
     "better-auth": "^1.1.15",
+    "connect-redis": "^8.0.1",
+    "cookie-parser": "^1.4.7",
+    "cookies": "^0.9.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "jose": "^5.9.6",
+    "uuid": "^11.0.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@roro-ai/eslint-config": "workspace:*",
+    "@roro-ai/typescript-config": "workspace:*",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/cookies": "^0.9.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.12.0",

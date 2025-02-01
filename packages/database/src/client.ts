@@ -1,4 +1,4 @@
-import { PrismaClient } from "../generated/client";
+import { PrismaClient } from "../generated/client/index.js";
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
@@ -7,4 +7,4 @@ export const prisma =
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
-export * from "../generated/client";
+export * from "../generated/client/index.js";

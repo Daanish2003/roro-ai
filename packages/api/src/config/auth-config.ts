@@ -1,8 +1,8 @@
+import { prisma, redis } from "@roro-ai/database/client";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { admin, anonymous, jwt, oAuthProxy } from "better-auth/plugins";
+import { admin, anonymous, oAuthProxy } from "better-auth/plugins";
 import 'dotenv/config'
-import { prisma } from "@roro-ai/database/client"
 
 export const auth = betterAuth(
     {
@@ -22,6 +22,29 @@ export const auth = betterAuth(
             redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/callback/github`,
           },
         },
+        session: {
+          cookieCache: {
+            enabled: true,
+            maxAge: 60 * 60 * 1000
+          },
+          storeSessionInDatabase: true,
+          preserveSessionInDatabase: true,
+          
+        },
+        secondaryStorage: {
+          get: async (key) => {
+            const value = await redis.get(key);
+            return value ? value : null
+          },
+          set: async (key, value, ttl) => {
+            if(ttl) await redis.set(key, value, ttl)
+              else await redis.set(key, value)
+          },
+          delete: async (key) => {
+            await redis.del(key)
+          }
+
+        },
         account: {
           accountLinking: {
             enabled: true,
@@ -34,20 +57,6 @@ export const auth = betterAuth(
           anonymous(), 
           oAuthProxy(), 
           admin(), 
-          jwt({
-            jwt: {
-              issuer: process.env.NEXT_PUBLIC_APP_URL as string,
-              audience: process.env.BACKEND_URL as string,
-              expirationTime: "1h",
-              definePayload: (data) => {
-                return {
-                  id: data.user.id,
-                  email: data.user.email,
-                  role: data.user.role
-                }
-              }
-            } 
-          }),
         ],
-      }
+    }
 );
