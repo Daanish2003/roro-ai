@@ -6,7 +6,7 @@ type RoomPayload = {
   roomName: string,
   username: string,
   userId: string,
-  expiresAt: Date
+  expiresAt: number
 }
 
 const secretKey = process.env.ROOM_SECRET;
@@ -45,18 +45,22 @@ export async function createRoomSession(
     username: string,
   }
 ) {
-  const expiresAt = new Date(Date.now() + 60 * 20 * 1000);
+  const expiresAt = Date.now() + 60 * 20 * 1000
   const session = await encrypt({ userId, roomId, roomName, username , expiresAt})
   return session
 }
 
-export async function verifyRoomSession(roomSessionToken: string){
+export async function verifyRoomSession(roomSessionToken: string): Promise<Pick<RoomPayload, "roomId" | "expiresAt"| "userId">> {
   const room_session = await decrypt(roomSessionToken)
 
   if(!room_session?.roomId) {
     console.error("Room Id is not available")
   }
 
-  return room_session
+  return {
+    roomId: room_session?.id as string,
+    userId: room_session?.userId as string,
+    expiresAt: room_session?.expiresAt as number
+  }
 
 }

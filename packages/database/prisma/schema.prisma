@@ -86,7 +86,7 @@ model Verification {
 model Room {
   id    String @id @default(cuid())
   name  String
-  userId String @unique
+  userId String
   username String
   active  Boolean @default(false)
   activeTime DateTime?
@@ -95,8 +95,9 @@ model Room {
   updatedAt DateTime @updatedAt
 
   user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
 
+  @@index([userId])
+}
 
 
 
