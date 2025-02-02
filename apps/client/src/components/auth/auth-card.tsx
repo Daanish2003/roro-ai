@@ -13,13 +13,13 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@roro-ai/ui/components/ui/card";
-import { useToast } from "@roro-ai/ui/hooks/use-toast";
 import { signIn } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import useShowToast from "@/hooks/use-show-toast";
 
 export function AuthCard() {
 	const router = useRouter()
-	const { toast } = useToast();
+	const showToast = useShowToast();
 	const [loading, setLoading] = useState(false);
 
 	const socialSignInHandler = async (provider: "github" | "google") => {
@@ -31,11 +31,14 @@ export function AuthCard() {
 				},
 				{
 					onSuccess: () => {
-						sonnerToast("Login Successfully");
+						showToast({
+							title: "Login Successfully",
+							type: "success"
+						});
 					},
 					onError: (ctx) => {
-						toast({
-							variant: "destructive",
+						showToast({
+							type: "error",
 							title: "Login failed",
 							description: ctx.error.message,
 						});
@@ -46,8 +49,8 @@ export function AuthCard() {
 			);
 		} catch (error) {
 			console.error("Social SignIn Error:", error);
-			toast({
-				variant: "destructive",
+			showToast({
+				type: "error",
 				title: "Something went wrong... please try again",
 			});
 		}
@@ -59,12 +62,15 @@ export function AuthCard() {
 				{},
 				{
 					onSuccess: () => {
-						sonnerToast("Login Successfully");
+						showToast({
+							title: "Login Successfully",
+							type: "success"
+						});
 						router.replace("/dashboard/overview")
 					},
 					onError: (ctx) => {
-						toast({
-							variant: "destructive",
+						showToast({
+							type: "error",
 							title: "Login failed",
 							description: ctx.error.message,
 						});
@@ -75,8 +81,8 @@ export function AuthCard() {
 			);
 		} catch (error) {
 			console.error("Anonynous SignIn Error:", error);
-			toast({
-				variant: "destructive",
+			showToast({
+				type: "error",
 				title: "Something went wrong... please try again",
 			});
 		}

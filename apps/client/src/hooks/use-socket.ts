@@ -37,13 +37,13 @@ export default function useSocket(){
 
         const handleDisconnect = () => {
             if (!isMounted.current) return;
-            setIsConnected(true)
+            setIsConnected(false)
         }
 
         const handleConnectError = (err: Error) => {
             if(!isMounted.current) return;
-            setError(err.message);
             setIsLoading(false)
+            setError(err.message);
         }
 
         socket.on("connect", handleConnect);

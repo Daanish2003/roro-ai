@@ -58,7 +58,7 @@ export async function verifyRoomSession(roomSessionToken: string): Promise<Pick<
   }
 
   return {
-    roomId: room_session?.id as string,
+    roomId: room_session?.roomId as string,
     userId: room_session?.userId as string,
     expiresAt: room_session?.expiresAt as number
   }

@@ -48,7 +48,6 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
 
         await redis.set(`room_session:${sessionId}`, room_session, 20 * 60)
 
-        console.log(room_session)
 
         res.status(200).cookie('room_session', sessionId, {
           httpOnly: true,
@@ -97,6 +96,9 @@ export const verifyRoomAccessHandler = asyncHandler(async(req: Request, res:Resp
 
     const { userId, roomId: room_id , expiresAt} = await verifyRoomSession(roomSessionToken);
 
+    console.log()
+    console.log(expiresAt < Date.now())
+
     if(expiresAt <  Date.now()) {
        await redis.del(`room_session:${roomSessionId}`)
        return res.status(401).json({ isValid: false });
@@ -110,6 +112,8 @@ export const verifyRoomAccessHandler = asyncHandler(async(req: Request, res:Resp
       return res.status(401).json({ isValid: false })
     }
 
+    console.log(roomId)
+    console.log(room_id)
     if (roomId !== room_id) {
       return res.status(401).json({ isValid: false })
     }

@@ -12,13 +12,13 @@ export default function useShowToast() {
         type = "success" 
     } : { 
         title: string; 
-        description: string; 
+        description?: string; 
         type: "success" | "error"
     }) {
     toast({
       title,
       description,
-      variant: type === "error" ? "destructive" : "default",
+      variant: type === "error" ? "destructive" : "success",
     });
   }
 
