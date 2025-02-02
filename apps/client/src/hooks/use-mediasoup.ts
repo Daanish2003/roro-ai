@@ -16,6 +16,8 @@ export type TransportParams = {
 };
 
 export default function useMediasoup(roomId: string) {
+  const [media, setMedia] = useState<boolean>(false)
+
   const [localStream, setLocalStream ] = useState<MediaStream | null>(null)
   const [remoteStream, setRemoteStream ] = useState<MediaStream | null>(null)
 
@@ -28,8 +30,7 @@ export default function useMediasoup(roomId: string) {
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
-
-
+  
  
   const getUserMedia = useCallback(async () => {
     try {
@@ -43,7 +44,6 @@ export default function useMediasoup(roomId: string) {
             video: true,
         })
 
-        const [audioTrack] = stream.getAudioTracks()
         const [videoTrack] = stream.getVideoTracks()
         
         setLocalStream(stream)
@@ -53,7 +53,8 @@ export default function useMediasoup(roomId: string) {
             localVideoRef.current.play().catch(console.error);
         }
 
-        return { audioTrack, videoTrack };
+        setMedia(true)
+
 
     } catch (error) {
         throw new Error("[ Failed to get media stream ]:", error as Error)
@@ -70,7 +71,7 @@ export default function useMediasoup(roomId: string) {
         setDevice(newDevice)
 
     } catch (error) {
-        throw new Error ("[ Failed to load device ]:", error as Error )
+      throw new Error(`[ Failed to load device ]: ${error}`)
     }
   }, [])
 
@@ -248,6 +249,9 @@ export default function useMediasoup(roomId: string) {
     localStream,
     remoteStream,
     producers,
+
+    //booleans
+    media,
 
     // Methods
     getUserMedia,
