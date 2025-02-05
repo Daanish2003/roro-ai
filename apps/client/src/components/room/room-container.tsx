@@ -11,15 +11,32 @@ import { Mic, MicOff, Settings, Video, VideoOff } from 'lucide-react'
 
 export default function RoomContainer(
   {
-    roomId
+    roomId,
+    userId
   }: {
     roomId: string
+    userId: string
   }
 ) {
-  const { connect, disconnect, isConnected, error, loading } = useSocket()
+  const { 
+    connect, 
+    disconnect, 
+    isConnected, 
+    error, 
+    loading,
+   } = useSocket()
+
+   const { 
+    getUserMedia, 
+    localVideoRef,
+    isRoomJoinLoading,
+    initializeRoom,
+    isJoined
+  } = useMediasoup(roomId, userId)
+
+
   const [isMuted, setIsMuted] = useState(false)
   const [isVideoOff, setIsVideoOff] = useState(false)
-  const { getUserMedia, localVideoRef } = useMediasoup(roomId)
   const showToast = useShowToast()
 
   useEffect(() => {
@@ -40,9 +57,7 @@ export default function RoomContainer(
 
   }, [getUserMedia, isConnected])
 
-  //TODO: setup mediasoup connection
-  //TODO: getUserMedia
-  //TODO: display the local media
+
   if (loading) {
     return <Loader />
   }
@@ -60,7 +75,7 @@ export default function RoomContainer(
       {/* left section */}
       <div className="lg:w-3/4 flex flex-col gap-2">
         <div className="flex-grow">
-          <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-fill rounded-2xl lg:aspect-[16/2] sm:aspect-[16/10] aspect-[17/16]"/>
+          <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-fill rounded-2xl lg:aspect-[16/2] sm:aspect-[16/10] aspect-[17/16]" />
         </div>
         <div className="flex items-center justify-center p-4 border-2 rounded-2xl">
           <div className="flex gap-4">
@@ -97,7 +112,12 @@ export default function RoomContainer(
           <p className="text-muted-foreground text-sm">Room ID: {roomId}</p>
         </div>
         <div className="flex w-full gap-2 justify-center">
-          <Button variant={"default"} size={"lg"}>
+          <Button 
+            variant={"default"} 
+            size={"lg"}
+            onClick={initializeRoom}
+            disabled={isRoomJoinLoading || isJoined}
+            >
             Join
           </Button>
           <Button

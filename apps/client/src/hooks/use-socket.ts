@@ -20,9 +20,13 @@ export default function useSocket(){
     }, [])
 
     
+
+    
     const disconnect = useCallback(() => {
         socket.disconnect();
       }, []);
+
+    
     
     
     useEffect(() => {
@@ -59,9 +63,14 @@ export default function useSocket(){
     }, [])
 
     return {
+        //boolean state
         isConnected,
         loading,
+
+        // string
         error,
+
+        //functions
         connect,
         disconnect,
     }

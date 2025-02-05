@@ -17,7 +17,8 @@
     "REDIS_PASSWORD",
     "REDIS_USER",
     "REDIS_URL",
-    "REDIS_TLS"
+    "REDIS_TLS",
+    "DEEPGRAM_API_KEY"
 
   ],
   "tasks": {

@@ -1,95 +1,115 @@
-import { Consumer, Device, DtlsParameters, IceCandidate, IceParameters, Producer, RtpCapabilities, Transport } from 'mediasoup-client/lib/types'
-import { useCallback, useRef, useState } from 'react'
-import * as mediasoupClient from 'mediasoup-client'
-import { socket } from '@/lib/socket'
+import {
+  Consumer,
+  Device,
+  DtlsParameters,
+  IceCandidate,
+  IceParameters,
+  Producer,
+  RtpCapabilities,
+  Transport,
+} from 'mediasoup-client/lib/types';
+import { useCallback, useRef, useState } from 'react';
+import * as mediasoupClient from 'mediasoup-client';
+import { socket } from '@/lib/socket';
 
 type ProducerState = {
-    audio: Producer | null
-    video: Producer | null
-}
-
-export type TransportParams = {
-    id: string;
-    iceParameters: IceParameters;
-    iceCandidates: IceCandidate[];
-    dtlsParameters: DtlsParameters;
+  audio: Producer | null;
+  video: Producer | null;
 };
 
-export default function useMediasoup(roomId: string) {
-  const [media, setMedia] = useState<boolean>(false)
+export type TransportParams = {
+  id: string;
+  iceParameters: IceParameters;
+  iceCandidates: IceCandidate[];
+  dtlsParameters: DtlsParameters;
+};
 
-  const [localStream, setLocalStream ] = useState<MediaStream | null>(null)
-  const [remoteStream, setRemoteStream ] = useState<MediaStream | null>(null)
+export default function useMediasoup(roomId: string, userId: string) {
+  // Local state
+  const [isJoined, setIsJoined] = useState<boolean>(false);
+  const [isRoomJoinLoading, setIsRoomJoinLoading] = useState<boolean>(false);
+  const [roomError, setRoomError] = useState<string>('');
+  const [media, setMedia] = useState<boolean>(false);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
 
+  const [device, setDevice] = useState<Device | null>(null);
+  const [sendTransport, setSendTransport] = useState<Transport | undefined>(undefined);
+  const [recvTransport, setRecvTransport] = useState<Transport | undefined>(undefined);
+  const [producers, setProducers] = useState<ProducerState>({ audio: null, video: null });
 
-  const [device, setDevice] = useState<Device | null>(null)
-  const [sendTransport, setSendTransport] = useState<Transport | undefined>(undefined)
-  const [recvTransport, setRecvTransport] = useState<Transport | undefined>(undefined)
-  const [producers, setProducers] = useState<ProducerState>({ audio: null, video: null})
-
-
+  
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
-  
+
  
   const getUserMedia = useCallback(async () => {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-                noiseSuppression: true,
-                autoGainControl: true,
-                echoCancellation: true,
-                sampleRate: 16000
-            },
-            video: true,
-        })
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          noiseSuppression: true,
+          autoGainControl: true,
+          echoCancellation: true,
+          sampleRate: 16000,
+        },
+        video: true,
+      });
+      const [videoTrack] = stream.getVideoTracks();
 
-        const [videoTrack] = stream.getVideoTracks()
-        
-        setLocalStream(stream)
+      setLocalStream(stream);
 
-        if (localVideoRef.current) {
-            localVideoRef.current.srcObject = new MediaStream([videoTrack]);
-            localVideoRef.current.play().catch(console.error);
-        }
+      if (localVideoRef.current && videoTrack) {
+        localVideoRef.current.srcObject = new MediaStream([videoTrack]);
+        localVideoRef.current.play().catch(console.error);
+      }
 
-        setMedia(true)
-
-
+      setMedia(true);
     } catch (error) {
-        throw new Error("[ Failed to get media stream ]:", error as Error)
+      throw new Error(`[ Failed to get media stream ]: ${(error as Error).message}`);
     }
-  }, [])
-
-
-  const setupDevice = useCallback(async ( routerRtpCapabilities: RtpCapabilities) => {
-    try {
-        const newDevice = new mediasoupClient.Device()
-
-        await newDevice.load({ routerRtpCapabilities })
-
-        setDevice(newDevice)
-
-    } catch (error) {
-      throw new Error(`[ Failed to load device ]: ${error}`)
-    }
-  }, [])
+  }, []);
 
   
-  const createSendTransport = useCallback(async () => {
-    if (!device) throw new Error('Device not initialized');
-
+  const setupDevice = useCallback(async (routerRtpCapabilities: RtpCapabilities): Promise<Device> => {
+    if (!routerRtpCapabilities) {
+      throw new Error('Missing router RTP capabilities');
+    }
     try {
-      const { transportOptions } = await socket.emitWithAck('create-producer-transport', { roomId });
-      const transport = device.createSendTransport(transportOptions);
+      const newDevice = new mediasoupClient.Device();
+      await newDevice.load({ routerRtpCapabilities });
+      setDevice(newDevice);
+      return newDevice;
+    } catch (error) {
+      throw new Error(`[ Failed to load device ]: ${(error as Error).message}`);
+    }
+  }, []);
+
+
+  const createSendTransport = useCallback(async (device: Device): Promise<Transport> => {
+    try {
+      const data = await socket.emitWithAck('createProducerTransport', {
+        roomId,
+        userId,
+      });
+
+      console.log(data)
+
+      const { id, iceParameters, iceCandidates,dtlsParameters } = data
+
+      const transport = device.createSendTransport({ id, iceParameters, iceCandidates,dtlsParameters });
+
 
       transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
         try {
           await socket.emitWithAck('connect-producer-transport', {
             roomId,
-            dtlsParameters: JSON.parse(JSON.stringify(dtlsParameters))
+            userId,
+            dtlsParameters,
           });
-          callback();
+
+
+            callback();
+
         } catch (error) {
           errback(error as Error);
         }
@@ -97,12 +117,14 @@ export default function useMediasoup(roomId: string) {
 
       transport.on('produce', async ({ kind, rtpParameters }, callback, errback) => {
         try {
-          const { producerId } = await socket.emitWithAck('start-produce', {
+          console.log(kind)
+          const { id } = await socket.emitWithAck('start-produce', {
             roomId,
             kind,
-            rtpParameters: JSON.parse(JSON.stringify(rtpParameters))
+            userId,
+            rtpParameters,
           });
-          callback({ id: producerId });
+          callback({ id });
         } catch (error) {
           errback(error as Error);
         }
@@ -111,23 +133,37 @@ export default function useMediasoup(roomId: string) {
       setSendTransport(transport);
       return transport;
     } catch (error) {
-      throw new Error(`Failed to create send transport: ${error}`);
+      throw new Error(`Failed to create send transport: ${(error as Error).message}`);
     }
-  }, [device, roomId]);
+  }, [roomId, userId]);
 
 
-  const createRecvTransport = useCallback(async () => {
-    if (!device) throw new Error('Device not initialized');
-
+  const createRecvTransport = useCallback(async (device: Device): Promise<Transport> => {
     try {
-      const { transportOptions } = await socket.emitWithAck('create-consumer-transport', { roomId });
-      const transport = device.createRecvTransport(transportOptions);
+      const data = await socket.emitWithAck('createConsumerTransport', {
+        roomId,
+        userId,
+      });
+
+      const { id, iceParameters, iceCandidates,dtlsParameters } = data
+
+      const transport = device.createRecvTransport({ id, iceParameters, iceCandidates,dtlsParameters });
+
+      transport.on('connectionstatechange', (state) =>{
+        console.log("....connection state change....")
+        console.log(state)
+    })
+      transport.on('icegatheringstatechange', (state) =>{
+        console.log("....ice gathering change....")
+        console.log(state)
+    }) 
 
       transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
         try {
           await socket.emitWithAck('connect-consumer-transport', {
             roomId,
-            dtlsParameters: JSON.parse(JSON.stringify(dtlsParameters))
+            userId,
+            dtlsParameters,
           });
           callback();
         } catch (error) {
@@ -135,54 +171,75 @@ export default function useMediasoup(roomId: string) {
         }
       });
 
+      console.log(transport)
+
       setRecvTransport(transport);
       return transport;
     } catch (error) {
-      throw new Error(`Failed to create receive transport: ${error}`);
+      throw new Error(`Failed to create receive transport: ${(error as Error).message}`);
     }
-  }, [device, roomId]);
+  }, [roomId, userId]);
 
-  const startProducing = useCallback(async () => {
-    if (!sendTransport || !localStream) throw new Error('Transports or media not initialized');
-
+  const startProducing = useCallback(async (sendTransport: Transport) => {
+    if (!sendTransport || !localStream) {
+      throw new Error('Transports or media not initialized');
+    }
     try {
       const audioTrack = localStream.getAudioTracks()[0];
       const videoTrack = localStream.getVideoTracks()[0];
 
-      const audioProducer = audioTrack ? await sendTransport.produce({ track: audioTrack }) : null;
-      const videoProducer = videoTrack ? await sendTransport.produce({ track: videoTrack }) : null;
+      const audioProducer = audioTrack
+        ? await sendTransport.produce({ track: audioTrack })
+        : null;
+      const videoProducer = videoTrack
+        ? await sendTransport.produce({ track: videoTrack })
+        : null;
 
       setProducers({ audio: audioProducer, video: videoProducer });
     } catch (error) {
-      throw new Error(`Failed to start producing: ${error}`);
+      throw new Error(`Failed to start producing: ${(error as Error).message}`);
     }
-  }, [sendTransport, localStream]);
+  }, [localStream]);
 
-  const startConsuming = useCallback(async () => {
-    if (!recvTransport || !device) throw new Error('Receive transport not initialized');
-
+  
+  const startConsuming = useCallback(async (recvTransport: Transport, device: Device) => {
+    if (!recvTransport || !device) {
+      throw new Error('Receive transport not initialized');
+    }
     try {
-      const { producers } = await socket.emitWithAck('get-producers', { roomId });
-      
+      const { producers: remoteProducers } = await socket.emitWithAck('get-producers', { roomId });
       const consumers: Consumer[] = [];
       const remoteStream = new MediaStream();
 
-      for (const producerId of producers) {
+      for (const producerId of remoteProducers) {
         const { consumerParameters } = await socket.emitWithAck('consume-media', {
           roomId,
           producerId,
-          rtpCapabilities: device.rtpCapabilities
+          rtpCapabilities: device.rtpCapabilities,
         });
 
         const consumer = await recvTransport.consume({
           id: consumerParameters.id,
           producerId: consumerParameters.producerId,
           kind: consumerParameters.kind,
-          rtpParameters: consumerParameters.rtpParameters
+          rtpParameters: consumerParameters.rtpParameters,
         });
+
 
         consumers.push(consumer);
         remoteStream.addTrack(consumer.track);
+
+        consumer.track.addEventListener("ended", () => {
+          console.log("Track has ended")
+      });
+      
+        consumer.track.onmute = (event) => {
+          console.log("Track has muted", event)
+        };
+        
+        consumer.track.onunmute = (event) => {
+          console.log("Track has unmuted", event)
+        };
       }
 
       setRemoteStream(remoteStream);
@@ -192,67 +249,107 @@ export default function useMediasoup(roomId: string) {
         remoteVideoRef.current.play().catch(console.error);
       }
 
-      // Resume all consumers after 1 second
+
       setTimeout(async () => {
         for (const consumer of consumers) {
           await socket.emitWithAck('resume-consumer', {
             roomId,
-            consumerId: consumer.id
+            consumerId: consumer.id,
           });
         }
       }, 1000);
     } catch (error) {
-      throw new Error(`Failed to start consuming: ${error}`);
+      throw new Error(`Failed to start consuming: ${(error as Error).message}`);
     }
-  }, [recvTransport, device, roomId]);
+  }, [roomId]);
 
-  const cleanup = useCallback(async () => {
+  // Join room and set RTP capabilities for the router.
+  const joinRoom = useCallback(async () => {
     try {
-      if (producers.audio) {
-        producers.audio.close();
-        await socket.emitWithAck('stop-produce', { roomId, kind: 'audio' });
-      }
-      if (producers.video) {
-        producers.video.close();
-        await socket.emitWithAck('stop-produce', { roomId, kind: 'video' });
+      setIsRoomJoinLoading(true);
+      setRoomError('');
+
+      const response = await socket.emitWithAck('joinRoom', { roomId, userId });
+
+      if (!response.success) {
+        setRoomError('Failed to join Room');
+        setIsRoomJoinLoading(false);
+        return { success: false };
       }
 
-      if (sendTransport) {
-        sendTransport.close();
-        await socket.emitWithAck('close-producer-transport', { roomId });
-      }
-      if (recvTransport) {
-        recvTransport.close();
-        await socket.emitWithAck('close-consumer-transport', { roomId });
-      }
+      setIsJoined(true);
+      
+      return {
+        success: true,
+        routerRtpCapabilities: response.routerRtpCap
 
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-      }
+      };
 
-      setProducers({ audio: null, video: null });
-      setLocalStream(null);
-      setRemoteStream(null);
     } catch (error) {
-      console.error('Cleanup error:', error);
+      console.error('Failed to join room:', error);
+      setRoomError('Failed to join Room');
+      return { success: false };
+    } finally {
+      setIsRoomJoinLoading(false);
     }
-  }, [producers, sendTransport, recvTransport, localStream, roomId]);
+  }, [roomId, userId]);
 
+  
+  const cleanup = useCallback(() => {
+    producers.audio?.close();
+    producers.video?.close();
+    sendTransport?.close();
+    recvTransport?.close();
+    setLocalStream(null);
+    setRemoteStream(null);
+    setProducers({ audio: null, video: null });
+  }, [sendTransport, recvTransport, producers]);
 
+  
+    const initializeRoom = async () => {
+      try {
+        
+        const joinResponse = await joinRoom();
+        if (!joinResponse.success) return;
+
+        
+        if (!media) {
+          await getUserMedia();
+        }
+
+        
+        const loadedDevice = await setupDevice(joinResponse.routerRtpCapabilities);
+
+        
+        const sendT = await createSendTransport(loadedDevice);
+        const recvT = await createRecvTransport(loadedDevice);
+        if (!sendT || !recvT) {
+          throw new Error('Failed to create transports');
+        }
+
+       
+        await startProducing(sendT);
+        await startConsuming(recvT, loadedDevice);
+      } catch (error) {
+        console.error('Failed to initialize room:', error);
+        setRoomError('Failed to initialize room');
+      }
+    };
 
   return {
+    isJoined,
+    roomError,
+    isRoomJoinLoading,
     // Refs
     localVideoRef,
     remoteVideoRef,
-
     // State
     localStream,
     remoteStream,
     producers,
-
-    //booleans
+    device,
+    // booleans
     media,
-
     // Methods
     getUserMedia,
     setupDevice,
@@ -260,8 +357,8 @@ export default function useMediasoup(roomId: string) {
     createRecvTransport,
     startProducing,
     startConsuming,
-    cleanup
+    cleanup,
+    initializeRoom,
+    
   };
-
-
 }
