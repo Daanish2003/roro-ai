@@ -1,24 +1,29 @@
-import type { DtlsParameters, MediaKind, RtpCapabilities, RtpParameters } from 'mediasoup/node/lib/types.js';
+import type { DtlsParameters, MediaKind, PipeTransport, RtpCapabilities, RtpParameters } from 'mediasoup/node/lib/types.js';
 import { Room } from '../classes/room.js'
 import Client from '../classes/client.js';
+import { mediasoupWorkerManager } from './worker-manager.js';
 
 export class RoomManager {
-    private workers: Worker[] | []
     private rooms: Map<string, Room>;
+    private pipeTransport: PipeTransport | null;
 
     constructor() {
-        this.workers = []
+        
         this.rooms = new Map<string, Room>();
+        this.pipeTransport = null;
     }
 
     public async createRoom(roomId: string): Promise<string> {
         if (!this.rooms.has(roomId)) {
-            
             console.log(roomId)
             const newRoom = new Room(roomId);
 
+            const worker = await mediasoupWorkerManager.getWorker()
+
+            await newRoom.initialize(worker)
             
             this.rooms.set(roomId, newRoom);
+            
             console.log(`Room ${roomId} created`);
         }
         return roomId;
@@ -35,7 +40,9 @@ export class RoomManager {
 
             room.addClient(client);
 
-            client.room = room;
+            console.log(client)
+
+            client.room = room
 
             const routerRtpCap = await room.getRouterRtpCap()
 
@@ -123,6 +130,8 @@ export class RoomManager {
         }
 
         const id = await room.client.produce({rtpParameters, kind })
+
+        console.log(id)
 
         return id
     }

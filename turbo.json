@@ -18,7 +18,8 @@
     "REDIS_USER",
     "REDIS_URL",
     "REDIS_TLS",
-    "DEEPGRAM_API_KEY"
+    "DEEPGRAM_API_KEY",
+    "GEMINI_API_KEY"
 
   ],
   "tasks": {

@@ -1,7 +1,7 @@
 {
   "extends": ["@roro-ai/typescript-config/base.json"],
   "exclude": ["node_modules", "dist"],
-  "include": ["src/**/*.ts", "../ai/src/classes/deepgram.ts"],
+  "include": ["src/**/*.ts"],
   "compilerOptions": {
     "noEmit": true,
     "esModuleInterop": true,

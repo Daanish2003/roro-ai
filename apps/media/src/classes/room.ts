@@ -20,7 +20,8 @@ export class Room {
 	public async initialize(worker: Worker) {
 		try {
 			this.router = await worker.createRouter(config.mediasoup.router);
-
+           
+			console.log(this.router)
 
 			console.log(`Room ${this.roomId} initialized`);
 		} catch (error) {

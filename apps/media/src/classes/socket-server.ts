@@ -98,6 +98,7 @@ export class SocketServer {
 				) => {
 					const clientTransportParams  =  await this.roomManager.createClientWebRtcTransport({ roomId, type });
 
+
 					callback({ clientTransportParams });
 				},
 			);
@@ -146,6 +147,7 @@ export class SocketServer {
 						id: string;
 					}) => void,
 				) => {
+					console.log("Producing started")
 					const id = await this.roomManager.startClientWebRtcProduce({
 						rtpParameters,
 						roomId,
@@ -253,4 +255,3 @@ export class SocketServer {
 	}
 }
 
-export const socketServer = SocketServer.getInstance()

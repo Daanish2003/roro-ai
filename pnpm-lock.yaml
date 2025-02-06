@@ -25,6 +25,43 @@ importers:
         specifier: ^2.0.3
         version: 2.3.4
 
+  apps/ai:
+    dependencies:
+      '@deepgram/sdk':
+        specifier: ^3.9.0
+        version: 3.9.0
+      cors:
+        specifier: ^2.8.5
+        version: 2.8.5
+      express:
+        specifier: ^4.21.2
+        version: 4.21.2
+      mediasoup:
+        specifier: ^3.15.3
+        version: 3.15.3
+      socket.io:
+        specifier: ^4.8.1
+        version: 4.8.1
+    devDependencies:
+      '@roro-ai/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/config-eslint
+      '@roro-ai/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      '@types/cors':
+        specifier: ^2.8.17
+        version: 2.8.17
+      '@types/express':
+        specifier: ^5.0.0
+        version: 5.0.0
+      '@types/node':
+        specifier: ^22.13.1
+        version: 22.13.1
+      typescript:
+        specifier: ^5.7.3
+        version: 5.7.3
+
   apps/client:
     dependencies:
       '@better-fetch/fetch':
@@ -118,6 +155,9 @@ importers:
       '@deepgram/sdk':
         specifier: ^3.9.0
         version: 3.9.0
+      '@google/generative-ai':
+        specifier: ^0.21.0
+        version: 0.21.0
       '@roro-ai/eslint-config':
         specifier: workspace:*
         version: link:../../packages/config-eslint
@@ -374,28 +414,6 @@ importers:
       typescript:
         specifier: 5.5.4
         version: 5.5.4
-
-  packages/media:
-    dependencies:
-      mediasoup:
-        specifier: ^3.15.3
-        version: 3.15.3
-      socket.io:
-        specifier: ^4.8.1
-        version: 4.8.1
-    devDependencies:
-      '@roro-ai/eslint-config':
-        specifier: workspace:*
-        version: link:../config-eslint
-      '@roro-ai/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      '@types/node':
-        specifier: ^22.13.1
-        version: 22.13.1
-      typescript:
-        specifier: ^5.7.3
-        version: 5.7.3
 
   packages/typescript-config:
     devDependencies:
@@ -939,6 +957,10 @@ packages:
 
   '@floating-ui/utils@0.2.9':
     resolution: {integrity: sha512-MDWhGtE+eHw5JW7lq4qhc5yRLS11ERl1c7Z6Xd0a58DozHES6EnNNwUWbMiG4J9Cgj053Bhk8zvlhFYKVhULwg==}
+
+  '@google/generative-ai@0.21.0':
+    resolution: {integrity: sha512-7XhUbtnlkSEZK15kN3t+tzIMxsbKm/dSkKBFalj+20NvPKe1kBY7mR2P7vuijEn+f06z5+A8bVGKO0v39cr6Wg==}
+    engines: {node: '>=18.0.0'}
 
   '@hexagon/base64@1.1.28':
     resolution: {integrity: sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==}
@@ -5644,6 +5666,8 @@ snapshots:
 
   '@floating-ui/utils@0.2.9': {}
 
+  '@google/generative-ai@0.21.0': {}
+
   '@hexagon/base64@1.1.28': {}
 
   '@hookform/resolvers@3.10.0(react-hook-form@7.54.2(react@19.0.0))':
@@ -7033,11 +7057,11 @@ snapshots:
   '@types/body-parser@1.19.5':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 22.12.0
+      '@types/node': 22.13.1
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 22.12.0
+      '@types/node': 22.13.1
 
   '@types/cookie-parser@1.4.8(@types/express@5.0.0)':
     dependencies:
@@ -7048,11 +7072,11 @@ snapshots:
       '@types/connect': 3.4.38
       '@types/express': 5.0.0
       '@types/keygrip': 1.0.6
-      '@types/node': 22.12.0
+      '@types/node': 22.13.1
 
   '@types/cors@2.8.17':
     dependencies:
-      '@types/node': 22.12.0
+      '@types/node': 22.13.1
 
   '@types/d3-array@3.2.1': {}
 
@@ -7098,7 +7122,7 @@ snapshots:
 
   '@types/express-serve-static-core@5.0.6':
     dependencies:
-      '@types/node': 22.12.0
+      '@types/node': 22.13.1
       '@types/qs': 6.9.18
       '@types/range-parser': 1.2.7
       '@types/send': 0.17.4
@@ -7159,12 +7183,12 @@ snapshots:
   '@types/send@0.17.4':
     dependencies:
       '@types/mime': 1.3.5
-      '@types/node': 22.12.0
+      '@types/node': 22.13.1
 
   '@types/serve-static@1.15.7':
     dependencies:
       '@types/http-errors': 2.0.4
-      '@types/node': 22.12.0
+      '@types/node': 22.13.1
       '@types/send': 0.17.4
 
   '@typescript-eslint/eslint-plugin@8.22.0(@typescript-eslint/parser@8.22.0(eslint@9.19.0(jiti@2.4.2))(typescript@5.7.3))(eslint@9.19.0(jiti@2.4.2))(typescript@5.7.3)':
@@ -7970,7 +7994,7 @@ snapshots:
   engine.io@6.6.4:
     dependencies:
       '@types/cors': 2.8.17
-      '@types/node': 22.12.0
+      '@types/node': 22.13.1
       accepts: 1.3.8
       base64id: 2.0.0
       cookie: 0.7.2

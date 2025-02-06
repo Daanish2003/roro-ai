@@ -5,14 +5,13 @@ import { DtlsParameters, WebRtcTransport } from "mediasoup/node/lib/WebRtcTransp
 import { Room } from "./room.js";
 import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes.js";
 
-
 class Client {
-    userId: string
-    username: string
-    sendTransport: WebRtcTransport | null
-    recieveTransport: WebRtcTransport | null
-    producer: Producer | null
-    consumer: Consumer | null
+    private userId: string
+    private username: string
+    private sendTransport: WebRtcTransport | null
+    private recieveTransport: WebRtcTransport | null
+    private producer: Producer | null
+    private consumer: Consumer | null
     room: Room | null
 
     constructor(username: string, userId: string) {
@@ -22,7 +21,7 @@ class Client {
         this.sendTransport = null;
         this.producer = null;
         this.consumer = null;
-        this.room = null
+        this.room = null;
     }
 
     public async createClientTransport(
@@ -110,7 +109,6 @@ class Client {
                 }
     
                 this.producer = await this.sendTransport.produce({ kind, rtpParameters })
-
     
                 this.producer.on('transportclose',()=>{
                     if (!this.producer) {
@@ -118,7 +116,7 @@ class Client {
                     }
                     console.log("Producer transport closed. Just fyi")
                     this.producer.close()
-                })  
+                })
     
                 return this.producer.id
     

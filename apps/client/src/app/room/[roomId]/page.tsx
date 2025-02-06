@@ -19,6 +19,7 @@ export default function RoomPage() {
     <RoomContainer 
     roomId={roomId}
     userId={session.user.id}
+    username={session.user.name}
     />
   )
 }

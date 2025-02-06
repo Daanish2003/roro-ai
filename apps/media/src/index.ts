@@ -1,17 +1,18 @@
 import { createServer } from "node:http";
 import { app } from "./module/app.js";
 import 'dotenv/config'
-import { socketServer } from "./classes/socket-server.js";
 import { mediasoupWorkerManager } from "./managers/worker-manager.js";
+import { SocketServer } from "./classes/socket-server.js";
 
 
 const port = process.env.PORT || 3333;
 export const server = createServer(app);
 
-(async() => {
+(() => {
   try {
+    const socketServer = SocketServer.getInstance()
     socketServer.initialize();
-    await mediasoupWorkerManager.createWorkers();
+    mediasoupWorkerManager.createWorkers();
   } catch (error) {
     console.error("Error during initialization:", error);
   }

@@ -45,12 +45,10 @@ export const config: Config = {
                 {
                     protocol: 'udp',
                     ip: '127.0.0.1',
-                    port: 10000
                 },
                 {
                     protocol: 'tcp',
                     ip: '127.0.0.1',
-                    port: 10001
                 }
             ],
             enableUdp: true,
@@ -62,15 +60,12 @@ export const config: Config = {
                 {
                     protocol: 'udp',
                     ip: '127.0.0.1',
-                    port: 10500
-
                 },
             rtcpListenInfo: 
                 {
                       protocol: "udp",
                       ip: "0.0.0.0",
                       announcedIp: "127.0.0.1",
-                      port: 10501,
                 },
             comedia: false,
         }

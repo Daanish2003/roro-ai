@@ -12,10 +12,12 @@ import { Mic, MicOff, Settings, Video, VideoOff } from 'lucide-react'
 export default function RoomContainer(
   {
     roomId,
-    userId
+    userId,
+    username
   }: {
     roomId: string
     userId: string
+    username: string
   }
 ) {
   const { 
@@ -32,7 +34,7 @@ export default function RoomContainer(
     isRoomJoinLoading,
     initializeRoom,
     isJoined
-  } = useMediasoup(roomId, userId)
+  } = useMediasoup(roomId, userId, username)
 
 
   const [isMuted, setIsMuted] = useState(false)
