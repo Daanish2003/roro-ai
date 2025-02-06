@@ -17,9 +17,9 @@
   },
   "license": "MIT",
   "scripts": {
-    "build": "tailwindcss -i ./src/global.css -o ./dist/global.css",
+    "build": "tailwindcss -i ./src/styles/global.css -o ./dist/global.css",
     "check-types": "tsc --noEmit",
-    "dev": "tailwindcss -i ./src/global.css -o ./dist/global.css --watch",
+    "dev": "tailwindcss -i ./src/styles/global.css -o ./dist/global.css --watch",
     "lint": "eslint src --max-warnings 0"
   },
   "dependencies": {
@@ -53,6 +53,8 @@
     "@radix-ui/react-tooltip": "^1.1.7",
     "@roro-ai/eslint-config": "workspace:*",
     "@roro-ai/typescript-config": "workspace:*",
+    "@tailwindcss/cli": "^4.0.1",
+    "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.0",
@@ -60,6 +62,7 @@
     "embla-carousel-react": "^8.5.2",
     "input-otp": "^1.4.2",
     "next-themes": "^0.4.4",
+    "postcss": "^8",
     "react": "^19.0.0",
     "react-day-picker": "8.10.1",
     "react-hook-form": "^7.54.2",
@@ -67,13 +70,13 @@
     "recharts": "^2.15.1",
     "sonner": "^1.7.3",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss": "^4.0.1",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/react": "^19.0.8",
-    "lucide-react": "^0.474.0"
+    "lucide-react": "^0.474.0",
+    "tailwindcss": "^3.4.17"
   }
 }

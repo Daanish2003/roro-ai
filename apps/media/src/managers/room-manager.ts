@@ -1,57 +1,71 @@
-import type { DtlsParameters, MediaKind, RtpCapabilities, RtpParameters } from 'mediasoup/node/lib/types.js';
+import type { DtlsParameters, MediaKind, PipeTransport, RtpCapabilities, RtpParameters } from 'mediasoup/node/lib/types.js';
 import { Room } from '../classes/room.js'
+import Client from '../classes/client.js';
+import { mediasoupWorkerManager } from './worker-manager.js';
 
 export class RoomManager {
     private rooms: Map<string, Room>;
+    private pipeTransport: PipeTransport | null;
 
     constructor() {
+        
         this.rooms = new Map<string, Room>();
+        this.pipeTransport = null;
     }
 
     public async createRoom(roomId: string): Promise<string> {
         if (!this.rooms.has(roomId)) {
-            
             console.log(roomId)
             const newRoom = new Room(roomId);
 
-            await newRoom.initialize(); 
+            const worker = await mediasoupWorkerManager.getWorker()
+
+            await newRoom.initialize(worker)
+            
             this.rooms.set(roomId, newRoom);
+            
             console.log(`Room ${roomId} created`);
         }
         return roomId;
     }
 
-    public async joinRoom(roomId: string, peerId: string) {
+    public async joinRoom(roomId: string, userId: string, username: string) {
         if (!this.rooms.has(roomId)) {
            await this.createRoom(roomId);
         }
         const room = this.rooms.get(roomId);
         
         if (room) {
-            room.addPeer(peerId);
+            const client = new Client(username, userId);
+
+            room.addClient(client);
+
+            console.log(client)
+
+            client.room = room
+
             const routerRtpCap = await room.getRouterRtpCap()
-            console.log(`Peer ${peerId} joined room ${roomId}`);
+
+            console.log(`User ${userId} joined room ${roomId}`);
             
-            console.log(routerRtpCap)
             return {
                 success: true,
                 routerRtpCap,
             };
         }
+
         return {
             success: false
         }
     }
 
-    public async createWebRtcTransportForRoom(
+    public async createClientWebRtcTransport(
         { 
             roomId, 
-            direction, 
-            peerId
+            type, 
         }: {
             roomId: string, 
-            direction: 'send' | 'recieve', 
-            peerId: string
+            type: 'producer' | 'consumer', 
         }) {
         const room = this.getRoomById(roomId)
 
@@ -59,22 +73,24 @@ export class RoomManager {
             throw new Error("Room not found webRtc transport")
         }
 
-        const { clientTransportParams } = await room.handleCreateWebRtcTransport({peerId, direction})
+        if(!room.client) {
+            throw new Error("Client is not present in the room")
+        }
 
-        return { clientTransportParams }
+        const clientTransportParams = await room.client.createClientTransport(type)
+
+        return clientTransportParams
 
     }
 
-    public async connectTransport(
+    public async connectClientWebRtcTransport(
         {
             dtlsParameters,
             roomId,
-            peerId,
             type
         }: {
             dtlsParameters: DtlsParameters,
             roomId: string,
-            peerId: string,
             type: 'producer' | 'consumer'
         }
     ) {
@@ -84,20 +100,21 @@ export class RoomManager {
             throw new Error("Room not found connect transport")
         }
 
-        await room.handleConnectTransport({dtlsParameters, peerId, type})
+        if(!room.client) {
+            throw new Error("Client is not present in the room")
+        }
 
+        await room.client.connectClientTransport({dtlsParameters, type})
     }
 
-    public async startProduce(
+    public async startClientWebRtcProduce(
         {
             rtpParameters,
             kind,
-            peerId,
             roomId,
         }: {
             rtpParameters: RtpParameters,
             kind: MediaKind,
-            peerId: string,
             roomId: string
 
         }
@@ -108,7 +125,13 @@ export class RoomManager {
             throw new Error("Room not found produce")
         }
 
-        const id = await room.handleStartProduce({rtpParameters, kind, peerId})
+        if(!room.client) {
+            throw new Error("Client is not present in the room")
+        }
+
+        const id = await room.client.produce({rtpParameters, kind })
+
+        console.log(id)
 
         return id
     }
@@ -116,11 +139,9 @@ export class RoomManager {
     public async startConsume(
         {
             rtpCapabilities,
-            peerId,
             roomId,
         }: {
             rtpCapabilities : RtpCapabilities,
-            peerId: string,
             roomId: string,
         }
     ) {
@@ -130,30 +151,13 @@ export class RoomManager {
             throw new Error("Room not found consume")
         }
 
-        const consumerParams = await room.handleStartConsume({rtpCapabilities, peerId})
+        if(!room.client) {
+            throw new Error("Client is not present in the room")
+        }
+
+        const consumerParams = await room.client.consume({rtpCapabilities })
 
         return consumerParams
-    }
-
-    public removePeerFromRoom(roomId: string, peerId: string): boolean {
-        const room = this.rooms.get(roomId);
-        if (room) {
-            room.removePeer(peerId);
-            return true;
-        }
-            console.warn(`Room ${roomId} not found`);
-            return false;
-    }
-
-    public closeRoom(roomId: string): void {
-        const room = this.rooms.get(roomId);
-        if (room) {
-            room.close();
-            this.rooms.delete(roomId);
-            console.log(`Room ${roomId} closed and removed`);
-        } else {
-            console.warn(`Room ${roomId} not found`);
-        }
     }
 
     public getRoomById(roomId: string): Room | undefined {

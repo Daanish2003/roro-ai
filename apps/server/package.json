@@ -4,12 +4,13 @@
   "private": true,
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
+  "type": "module",
   "scripts": {
-    "dev": "tsx --watch src/index.ts",
+    "dev": "tsx --watch ./src/index.ts",
     "start": "node dist/index.js",
     "build": "tsc",
     "type-check": "tsc --noEmit",
-    "lint": "eslint .",
+    "lint": "eslint src --max-warnings 0",
     "lint:fix": "eslint --fix .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
@@ -27,6 +28,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "jose": "^5.9.6",
     "multer": "1.4.5-lts.1",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",

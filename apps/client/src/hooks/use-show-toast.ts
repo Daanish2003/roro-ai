@@ -1,6 +1,6 @@
 "use client";
 
-import { useToast } from "@roro-ai/ui/hooks";
+import { useToast } from "@roro-ai/ui/hooks/use-toast";
 
 export default function useShowToast() {
   const { toast } = useToast();
@@ -12,13 +12,13 @@ export default function useShowToast() {
         type = "success" 
     } : { 
         title: string; 
-        description: string; 
+        description?: string; 
         type: "success" | "error"
     }) {
     toast({
       title,
       description,
-      variant: type === "error" ? "destructive" : "default",
+      variant: type === "error" ? "destructive" : "success",
     });
   }
 

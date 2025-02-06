@@ -1,50 +1,60 @@
 "use client"
-
+import { useSession } from '@/lib/auth-client'
+import { Button } from '@roro-ai/ui/components/ui/button'
+import { ArrowUpRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import React from 'react'
-import { SidebarTrigger } from '@roro-ai/ui/components/ui/sidebar'
-import { Separator } from '@roro-ai/ui/components/ui/separator'
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@roro-ai/ui/components/ui/breadcrumb'
-import { usePathname } from 'next/navigation'
+import useShowToast from "@/hooks/use-show-toast"
 
-export default function DashboardHeader() {
-  const pathname = usePathname()
+export default function PracticeButton() {
+  const showTaost = useShowToast()
+  const { data:session } = useSession()
+  const router = useRouter()
 
+  const startPracticeHandler = async () => {
   
-  const pathSegments = pathname
-    .split('/')
-    .filter(segment => segment)
-    .map((segment, index, array) => {
-      const href = `/${array.slice(0, index + 1).join('/')}`
-      return {
-        name: segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' '), // Capitalize first letter and replace hyphens with spaces
-        href
+    try {
+      const response  = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/rooms/create-room`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+          roomName: `${session?.user.name}'s Room`,
+          }),
+          credentials: 'include'
+        })
+
+      const data = await response.json()
+
+      if(!response.ok) {
+          showTaost({
+            title: "Something went wrong",
+            description: data.message || "Failed to start session",
+            type: "error"
+          }) 
       }
-    })
+
+      router.replace(`/room/${data.roomId}`)
+
+    } catch (error) {
+      showTaost({
+        title: "Error",
+        description: "Failed to start practice. Please try again.",
+        type: "error"
+      })
+      console.error("Error starting practice:", error)
+    }
+  }
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-      <div className="flex items-center gap-2 px-4">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            {pathSegments.length > 0 && <BreadcrumbSeparator className="hidden md:block" />}
-
-            {pathSegments.map((segment, index) => (
-              <React.Fragment key={segment.href}>
-                <BreadcrumbItem>
-                  {index === pathSegments.length - 1 ? (
-                    <BreadcrumbPage>{segment.name}</BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink href={segment.href}>{segment.name}</BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
-                {index < pathSegments.length - 1 && <BreadcrumbSeparator />}
-              </React.Fragment>
-            ))}
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-    </header>
+    <Button
+    onClick={() => startPracticeHandler()}
+    >
+      Start Practice
+      <ArrowUpRight />
+    </Button>
   )
 }

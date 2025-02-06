@@ -1,5 +1,27 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "NODE_ENV",
+    "PORT",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "BETTER_AUTH_URL",
+    "GITHUB_CLIENT_ID",
+    "GITHUB_CLIENT_SECRET",
+    "BETTER_AUTH_SECRET",
+    "NEXT_PUBLIC_BACKEND_URL",
+    "NEXT_PUBLIC_MEDIA_URL",
+    "ROOM_SECRET",
+    "REDIS_HOST",
+    "REDIS_PORT",
+    "REDIS_PASSWORD",
+    "REDIS_USER",
+    "REDIS_URL",
+    "REDIS_TLS",
+    "DEEPGRAM_API_KEY",
+    "GEMINI_API_KEY"
+
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

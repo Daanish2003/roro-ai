@@ -11,12 +11,14 @@ import type {
 	IceCandidate,
 	IceParameters,
 } from "mediasoup/node/lib/types.js";
+import { server } from "../index.js";
 
 export class SocketServer {
+	private static instance: SocketServer
 	private io: Server;
 	private roomManager: RoomManager;
 
-	constructor(httpServer: HttpServer) {
+	private constructor(httpServer: HttpServer) {
 		this.io = new Server(httpServer, {
 			cors: {
 				origin: "http://localhost:3000",
@@ -29,6 +31,16 @@ export class SocketServer {
 		this.roomManager = new RoomManager();
 	}
 
+	public static getInstance() {
+		if(!SocketServer.instance) {
+			SocketServer.instance = new SocketServer(server)
+		}
+
+		return SocketServer.instance
+	}
+
+
+
 	public initialize(): Server {
 		this.io.on("connection", (socket: Socket) => {
 			console.log("Client connected:", socket.id);
@@ -36,16 +48,25 @@ export class SocketServer {
 			socket.on(
 				"joinRoom",
 				async (
-					{ roomId }: { roomId: string },
+					{ 
+						roomId,
+						userId,
+						username,
+					 }: { 
+						roomId: string ,
+						userId: string,
+						username: string
+					},
 					callback: (
 						response:
 							| { success: boolean; routerRtpCap: RtpCapabilities }
 							| { success: boolean },
 					) => void,
 				) => {
-					console.log("Received the Join Room Event");
+					
 					try {
-						const response = await this.roomManager.joinRoom(roomId, socket.id);
+						const response = await this.roomManager.joinRoom(roomId, userId, username);
+
 						callback(response);
 					} catch (error) {
 						console.error("Error in joining room:", error);
@@ -59,10 +80,10 @@ export class SocketServer {
 				async (
 					{
 						roomId,
-						direction,
+						type,
 					}: {
 						roomId: string;
-						direction: "send";
+						type: "producer";
 					},
 					callback: ({
 						clientTransportParams,
@@ -75,14 +96,8 @@ export class SocketServer {
 						};
 					}) => void,
 				) => {
-					const { clientTransportParams } =
-						await this.roomManager.createWebRtcTransportForRoom({
-							roomId,
-							direction,
-							peerId: socket.id,
-						});
+					const clientTransportParams  =  await this.roomManager.createClientWebRtcTransport({ roomId, type });
 
-					console.log(clientTransportParams);
 
 					callback({ clientTransportParams });
 				},
@@ -102,10 +117,9 @@ export class SocketServer {
 					},
 					callback: ({ success }: { success: boolean }) => void,
 				) => {
-					await this.roomManager.connectTransport({
+					await this.roomManager.connectClientWebRtcTransport({
 						dtlsParameters,
 						roomId,
-						peerId: socket.id,
 						type,
 					});
 
@@ -133,10 +147,10 @@ export class SocketServer {
 						id: string;
 					}) => void,
 				) => {
-					const id = await this.roomManager.startProduce({
+					console.log("Producing started")
+					const id = await this.roomManager.startClientWebRtcProduce({
 						rtpParameters,
 						roomId,
-						peerId: socket.id,
 						kind,
 					});
 
@@ -149,10 +163,10 @@ export class SocketServer {
 				async (
 					{
 						roomId,
-						direction,
+						type,
 					}: {
 						roomId: string;
-						direction: "recieve";
+						type: "consumer";
 					},
 					callback: ({
 						clientTransportParams,
@@ -165,14 +179,8 @@ export class SocketServer {
 						};
 					}) => void,
 				) => {
-					const { clientTransportParams } =
-						await this.roomManager.createWebRtcTransportForRoom({
-							roomId,
-							direction,
-							peerId: socket.id,
-						});
-
-					console.log(clientTransportParams);
+					const clientTransportParams =
+						await this.roomManager.createClientWebRtcTransport({ roomId, type });
 
 					callback({ clientTransportParams });
 				},
@@ -192,10 +200,9 @@ export class SocketServer {
 					},
 					callback: ({ success }: { success: boolean }) => void,
 				) => {
-					await this.roomManager.connectTransport({
+					await this.roomManager.connectClientWebRtcTransport({
 						dtlsParameters,
 						roomId,
-						peerId: socket.id,
 						type,
 					});
 
@@ -233,60 +240,18 @@ export class SocketServer {
 					const consumerParams = await this.roomManager.startConsume({
 						rtpCapabilities,
 						roomId,
-						peerId: socket.id,
 					});
 
 					callback({ consumerParams });
 				},
-			);
-
-			socket.on(
-				"audioStream",
-				({
-					roomId,
-					audio,
-				}: {
-					roomId: string;
-					audio: Buffer;
-				}) => {
-					console.log(`Received audio from ${socket.id} in room ${roomId}`);
-
-					const room = this.roomManager.getRoomById(roomId);
-
-					if (room) {
-						room.handleAudioStream(socket.id, audio);
-					}
-				},
-			);
+			);;
 
 			socket.on("disconnect", async () => {
-				await this.handleDisconnect(socket.id);
+				console.log("Client Disconnected")
 			});
 		});
 
 		return this.io;
 	}
-
-	private async handleDisconnect(peerId: string): Promise<void> {
-		console.log(`Peer ${peerId} disconnected`);
-
-		const allRoomIds = this.roomManager.getAllRoomIds();
-		for (const roomId of allRoomIds) {
-			const room = this.roomManager.getRoomById(roomId);
-			if (room) {
-				room.removePeer(peerId);
-			}
-		}
-
-		console.log(`Cleaned up peer ${peerId} from all rooms`);
-	}
-
-	// Close all rooms and the Socket.IO server
-	public close(): void {
-		this.io.close();
-		const allRoomIds = this.roomManager.getAllRoomIds();
-		for (const roomId of allRoomIds) {
-			this.roomManager.closeRoom(roomId);
-		}
-	}
 }
+

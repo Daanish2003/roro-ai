@@ -1,27 +1,44 @@
-import { betterFetch } from "@better-fetch/fetch";
-
 import { NextResponse, type NextRequest } from "next/server";
-import { $Infer } from "./lib/auth-client";
- 
-type Session = typeof $Infer.Session;
- 
-export default async function authMiddleware(request: NextRequest) {
-	const { data: session } = await betterFetch<Session>(
-		"/api/auth/get-session",
-		{
-			baseURL: request.nextUrl.origin,
-			headers: {
-				cookie: request.headers.get("cookie") || "",
-			},
-		},
-	);
- 
-	if (!session) {
-		return NextResponse.redirect(new URL("/sign-in", request.url));
+import { redirectToLogin, verifySession } from "./middleware/authMiddleware";
+import { extractRoomId, redirectToDashboard, verifyRoomAccess } from "./middleware/roomMiddleware";
+import { AuthRoutes, matchesProtectedRoute, PublicRoutes } from "./middleware/routes";
+
+
+async function middleware(request: NextRequest) {
+  const isPublicRoute = PublicRoutes.includes(request.nextUrl.pathname);
+  const isProtectedRoute = matchesProtectedRoute(request.nextUrl.pathname);
+  const isAuthRoute = AuthRoutes.includes(request.nextUrl.pathname)
+  const isRoomRoute = request.nextUrl.pathname.startsWith("/room/");
+
+  const session = await verifySession(request);
+
+  if (isProtectedRoute && !session) return redirectToLogin(request);
+
+  if ((isPublicRoute || isAuthRoute) && session) return redirectToDashboard(request)
+
+  if (isAuthRoute && session) return redirectToDashboard(request)
+
+  
+  if (isRoomRoute && session) {
+	
+	const roomId = extractRoomId(request.nextUrl);
+    if(!roomId) {
+		return redirectToDashboard(request, "Room ID is missing");
 	}
-	return NextResponse.next();
+
+	const hasRoomAccess = await verifyRoomAccess(roomId, request);
+     if (!hasRoomAccess) {
+       return redirectToDashboard(request, "No access to this room");
+     }
+  }
+
+  return NextResponse.next();
 }
- 
+
 export const config = {
-	matcher: ["/dashboard"],
+  matcher: [
+    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)'
+  ],
 };
+
+export default middleware

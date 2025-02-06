@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@deepgram/sdk": "^3.9.0",
+    "@google/generative-ai": "^0.21.0",
     "@roro-ai/eslint-config": "workspace:*",
     "@roro-ai/typescript-config": "workspace:*",
     "cors": "^2.8.5",
