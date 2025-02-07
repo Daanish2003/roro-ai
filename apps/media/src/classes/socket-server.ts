@@ -147,7 +147,6 @@ export class SocketServer {
 						id: string;
 					}) => void,
 				) => {
-					console.log("Producing started")
 					const id = await this.roomManager.startClientWebRtcProduce({
 						rtpParameters,
 						roomId,
@@ -157,6 +156,7 @@ export class SocketServer {
 					callback({ id });
 				},
 			);
+
 
 			socket.on(
 				"createConsumerTransport",
@@ -176,11 +176,10 @@ export class SocketServer {
 							iceParameters: IceParameters;
 							iceCandidates: IceCandidate[];
 							dtlsParameters: DtlsParameters;
-						};
+						}
 					}) => void,
 				) => {
-					const clientTransportParams =
-						await this.roomManager.createClientWebRtcTransport({ roomId, type });
+					const  clientTransportParams = await this.roomManager.createClientWebRtcTransport({ roomId, type });
 
 					callback({ clientTransportParams });
 				},
@@ -216,9 +215,11 @@ export class SocketServer {
 				"consume-media",
 				async (
 					{
+						producerId,
 						roomId,
 						rtpCapabilities,
 					}: {
+						producerId: string
 						roomId: string;
 						rtpCapabilities: RtpCapabilities;
 					},
