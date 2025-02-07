@@ -1,16 +1,13 @@
-import type { DtlsParameters, MediaKind, PipeTransport, RtpCapabilities, RtpParameters } from 'mediasoup/node/lib/types.js';
-import { Room } from '../classes/room.js'
-import Client from '../classes/client.js';
+import type { RtpCapabilities} from 'mediasoup/node/lib/types.js';
 import { mediasoupWorkerManager } from './worker-manager.js';
+import { Room } from '../classes/room.js';
+import Ai from '../classes/ai.js';
 
 export class RoomManager {
     private rooms: Map<string, Room>;
-    private pipeTransport: PipeTransport | null;
 
     constructor() {
-        
         this.rooms = new Map<string, Room>();
-        this.pipeTransport = null;
     }
 
     public async createRoom(roomId: string): Promise<string> {
@@ -29,24 +26,24 @@ export class RoomManager {
         return roomId;
     }
 
-    public async joinRoom(roomId: string, userId: string, username: string) {
+    public async joinRoom(roomId: string) {
         if (!this.rooms.has(roomId)) {
            await this.createRoom(roomId);
         }
         const room = this.rooms.get(roomId);
         
         if (room) {
-            const client = new Client(username, userId);
+            const ai = new Ai();
 
-            room.addClient(client);
+            room.addAi(ai);
 
-            console.log(client)
+            console.log(ai)
 
-            client.room = room
+            ai.room = room
 
             const routerRtpCap = await room.getRouterRtpCap()
 
-            console.log(`User ${userId} joined room ${roomId}`);
+            console.log(`Ai joined room ${roomId}`);
             
             return {
                 success: true,
@@ -59,88 +56,65 @@ export class RoomManager {
         }
     }
 
-    public async createClientWebRtcTransport(
-        { 
-            roomId, 
-            type, 
+    public async createPlainTransport(
+        {
+            roomId
         }: {
-            roomId: string, 
-            type: 'producer' | 'consumer', 
+            roomId: string
+        }
+    ) {
+        const room = this.getRoomById(roomId)
+
+        if(!room) {
+            throw new Error("Room not found consume")
+        }
+
+        if(!room.ai) {
+            throw new Error("Client is not present in the room")
+        }
+
+        const plainParams = await room.ai.createAiPlainTransport()
+
+        return plainParams
+    }
+
+    public async connectPlainTransport(
+        {
+            roomId,
+            ip,
+            port,
+            rtcpPort,
+        } : {
+            roomId: string,
+            ip: string,
+            port: number,
+            rtcpPort: number | undefined
         }) {
         const room = this.getRoomById(roomId)
 
         if(!room) {
-            throw new Error("Room not found webRtc transport")
+            throw new Error("Room not found consume")
         }
 
-        if(!room.client) {
+        if(!room.ai) {
             throw new Error("Client is not present in the room")
         }
 
-        const clientTransportParams  = await room.client.createWebRtcTransport(type)
+        const plainParams = { ip, port, rtcpPort }
 
-        return clientTransportParams
+        const response = await room.ai.connectClientPlainTransport(plainParams)
 
-    }
+        return response
 
-    public async connectClientWebRtcTransport(
-        {
-            dtlsParameters,
-            roomId,
-            type
-        }: {
-            dtlsParameters: DtlsParameters,
-            roomId: string,
-            type: 'producer' | 'consumer'
-        }
-    ) {
-        const room = this.getRoomById(roomId)
-
-        if(!room) {
-            throw new Error("Room not found connect transport")
-        }
-
-        if(!room.client) {
-            throw new Error("Client is not present in the room")
-        }
-
-        await room.client.connectWebRtcTransport({dtlsParameters, type})
-    }
-
-    public async startClientWebRtcProduce(
-        {
-            rtpParameters,
-            kind,
-            roomId,
-        }: {
-            rtpParameters: RtpParameters,
-            kind: MediaKind,
-            roomId: string
-
-        }
-    ) {
-        const room = this.getRoomById(roomId)
-
-        if(!room) {
-            throw new Error("Room not found produce")
-        }
-
-        if(!room.client) {
-            throw new Error("Client is not present in the room")
-        }
-
-        const id = await room.client.produceMedia({rtpParameters, kind })
-
-        console.log(id)
-
-        return id
     }
 
     public async startConsume(
         {
+            producerId,
             rtpCapabilities,
             roomId,
         }: {
+            producerId: string
             rtpCapabilities : RtpCapabilities,
             roomId: string,
         }
@@ -151,13 +125,29 @@ export class RoomManager {
             throw new Error("Room not found consume")
         }
 
-        if(!room.client) {
+        if(!room.ai) {
             throw new Error("Client is not present in the room")
         }
 
-        const consumerParams = await room.client.consumeMedia({rtpCapabilities})
+        const consumerParams = await room.ai.AiConsume({ rtpCapabilities, producerId })
 
         return consumerParams
+    }
+
+    public async startProduce(roomId: string) {
+        const room = this.getRoomById(roomId)
+
+        if(!room) {
+            throw new Error("Room not found consume")
+        }
+
+        if(!room.ai) {
+            throw new Error("Client is not present in the room")
+        }
+
+        const producer = await room.ai.AiAudioproduce()
+
+        return producer
     }
 
     public getRoomById(roomId: string): Room | undefined {
