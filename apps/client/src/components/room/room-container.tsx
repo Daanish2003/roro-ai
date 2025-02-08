@@ -33,6 +33,7 @@ export default function RoomContainer(
     localVideoRef,
     isRoomJoinLoading,
     initializeRoom,
+    localStream,
   } = useMediasoup(roomId, userId, username)
 
 
@@ -57,6 +58,29 @@ export default function RoomContainer(
     initializeMedia()
 
   }, [getUserMedia, isConnected])
+
+  useEffect(() => {
+    if (localStream) {
+     
+      const audioTracks = localStream.getAudioTracks();
+      audioTracks.forEach(track => {
+
+        track.enabled = !isMuted;
+      });
+    }
+  }, [isMuted, localStream]);
+
+  useEffect(() => {
+    if (localStream) {
+     
+      const videoTracks = localStream.getVideoTracks();
+      videoTracks.forEach(track => {
+        
+        track.enabled = !isVideoOff;
+      });
+    }
+  }, [isVideoOff, localStream]);
+  
 
 
   if (loading) {

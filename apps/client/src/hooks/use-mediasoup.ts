@@ -23,6 +23,7 @@ type ProducerState = {
 };
 
 export default function useMediasoup(roomId: string, userId: string, username: string) {
+
   /*** Local State ***/
   const [isJoined, setIsJoined] = useState<boolean>(false);
   const [isRoomJoinLoading, setIsRoomJoinLoading] = useState<boolean>(false);
@@ -38,6 +39,9 @@ export default function useMediasoup(roomId: string, userId: string, username: s
   // Refs to local and remote video elements.
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+
+
+
 
   /*** 1. Media Acquisition & Device Setup ***/
   const getUserMedia = useCallback(async () => {
@@ -63,6 +67,11 @@ export default function useMediasoup(roomId: string, userId: string, username: s
     }
   }, []);
 
+
+
+
+
+
   const setupDevice = useCallback(
     async (routerRtpCapabilities: RtpCapabilities): Promise<Device> => {
       if (!routerRtpCapabilities) {
@@ -79,6 +88,11 @@ export default function useMediasoup(roomId: string, userId: string, username: s
     },
     []
   );
+
+
+
+
+
 
   /*** 2. Transport Creation & Connection ***/
   const createSendTransport = useCallback(
@@ -132,6 +146,12 @@ export default function useMediasoup(roomId: string, userId: string, username: s
     [roomId]
   );
 
+
+
+
+
+
+
   const createPlainTransport = useCallback(async() => {
     try {
       const plainTransportParams = await socket.emitWithAck("create-plain-transport", {
@@ -156,6 +176,12 @@ export default function useMediasoup(roomId: string, userId: string, username: s
     }
   }, [roomId])
 
+
+
+
+
+
+
   const connectPlainTransport = useCallback(async(plainParams : { ip: string, port: number, rtcpPort: number | undefined}) => {
     try {
       const response = await AiSocket.emitWithAck("connect-plain-transport", {
@@ -173,6 +199,11 @@ export default function useMediasoup(roomId: string, userId: string, username: s
       throw new Error("Failed to connect plain transport", error as Error)
     }
   }, [roomId])
+
+
+
+
+
 
   const createRecvTransport = useCallback(
     async (device: Device): Promise<Transport> => {
@@ -216,6 +247,12 @@ export default function useMediasoup(roomId: string, userId: string, username: s
     [roomId]
   );
 
+
+
+
+
+
+
   /*** 3. Production & Consumption ***/
   const startProducing = useCallback(
     async (transport: Transport) => {
@@ -238,6 +275,13 @@ export default function useMediasoup(roomId: string, userId: string, username: s
     [localStream]
   );
 
+
+
+
+
+
+
+
   const startAiProducing = useCallback(async () => {
       try {
          await AiSocket.emitWithAck("start-ai-produce", {roomId})
@@ -246,6 +290,11 @@ export default function useMediasoup(roomId: string, userId: string, username: s
       }
 
   },[roomId]);
+
+
+
+
+
 
   const startConsuming = useCallback(
     async (transport: Transport, device: Device) => {
@@ -292,6 +341,11 @@ export default function useMediasoup(roomId: string, userId: string, username: s
     [roomId]
   );
 
+
+
+
+
+
   /*** 4. Room Joining & Cleanup ***/
   const joinRoom = useCallback(async () => {
     try {
@@ -322,6 +376,12 @@ export default function useMediasoup(roomId: string, userId: string, username: s
     }
   }, [roomId, userId, username]);
 
+
+
+
+
+
+
   const cleanup = useCallback(() => {
     producers.audio?.close();
     sendTransport?.close();
@@ -330,6 +390,12 @@ export default function useMediasoup(roomId: string, userId: string, username: s
     setRemoteStream(null);
     setProducers({ audio: null });
   }, [sendTransport, recvTransport, producers]);
+
+
+
+
+
+  
 
   const initializeRoom = async () => {
     try {
