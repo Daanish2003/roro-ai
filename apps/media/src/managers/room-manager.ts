@@ -1,16 +1,13 @@
-import type { DtlsParameters, MediaKind, PipeTransport, RtpCapabilities, RtpParameters } from 'mediasoup/node/lib/types.js';
+import type { DtlsParameters, MediaKind, RtpParameters } from 'mediasoup/node/lib/types.js';
 import { Room } from '../classes/room.js'
 import Client from '../classes/client.js';
 import { mediasoupWorkerManager } from './worker-manager.js';
 
 export class RoomManager {
     private rooms: Map<string, Room>;
-    private pipeTransport: PipeTransport | null;
 
-    constructor() {
-        
+    constructor() {     
         this.rooms = new Map<string, Room>();
-        this.pipeTransport = null;
     }
 
     public async createRoom(roomId: string): Promise<string> {
@@ -62,10 +59,8 @@ export class RoomManager {
     public async createClientWebRtcTransport(
         { 
             roomId, 
-            type, 
         }: {
-            roomId: string, 
-            type: 'producer' | 'consumer', 
+            roomId: string,
         }) {
         const room = this.getRoomById(roomId)
 
@@ -77,23 +72,44 @@ export class RoomManager {
             throw new Error("Client is not present in the room")
         }
 
-        const clientTransportParams  = await room.client.createWebRtcTransport(type)
+        const clientTransportParams  = await room.client.createWebRtcTransport()
 
         return clientTransportParams
 
+    }
+
+    public async createPlainTransport(
+        {
+            roomId
+        }: {
+            roomId: string
+        }
+    ) {
+        const room = this.getRoomById(roomId)
+
+        if(!room) {
+            throw new Error("Room not found consume")
+        }
+
+        if(!room.client) {
+            throw new Error("Client is not present in the room")
+        }
+
+        const plainParams = await room.client.createPlainTransport()
+
+        return plainParams
     }
 
     public async connectClientWebRtcTransport(
         {
             dtlsParameters,
             roomId,
-            type
         }: {
             dtlsParameters: DtlsParameters,
-            roomId: string,
-            type: 'producer' | 'consumer'
+            roomId: string
         }
     ) {
+        console.log("Room-manager-connect")
         const room = this.getRoomById(roomId)
 
         if(!room) {
@@ -104,7 +120,7 @@ export class RoomManager {
             throw new Error("Client is not present in the room")
         }
 
-        await room.client.connectWebRtcTransport({dtlsParameters, type})
+        await room.client.connectWebRtcTransport({dtlsParameters})
     }
 
     public async startClientWebRtcProduce(
@@ -134,30 +150,6 @@ export class RoomManager {
         console.log(id)
 
         return id
-    }
-
-    public async startConsume(
-        {
-            rtpCapabilities,
-            roomId,
-        }: {
-            rtpCapabilities : RtpCapabilities,
-            roomId: string,
-        }
-    ) {
-        const room = this.getRoomById(roomId)
-
-        if(!room) {
-            throw new Error("Room not found consume")
-        }
-
-        if(!room.client) {
-            throw new Error("Client is not present in the room")
-        }
-
-        const consumerParams = await room.client.consumeMedia({rtpCapabilities})
-
-        return consumerParams
     }
 
     public getRoomById(roomId: string): Room | undefined {

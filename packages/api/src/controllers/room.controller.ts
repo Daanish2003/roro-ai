@@ -5,8 +5,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { auth } from "../config/auth-config.js";
 import { fromNodeHeaders } from "better-auth/node";
 import { createRoomSession, verifyRoomSession } from "../utils/jwt.js";
-import { redis } from "@roro-ai/database/client";
 import { v4 as uuidv4} from "uuid"
+import { redis } from "../utils/redis.js";
 
 
 export const createRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {

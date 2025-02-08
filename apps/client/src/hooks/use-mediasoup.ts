@@ -3,14 +3,13 @@ import {
   DtlsParameters,
   IceCandidate,
   IceParameters,
-  PlainRtpParameters,
   Producer,
   RtpCapabilities,
   Transport,
 } from 'mediasoup-client/lib/types';
 import { useCallback, useRef, useState } from 'react';
 import * as mediasoupClient from 'mediasoup-client';
-import { socket } from '@/lib/socket';
+import { AiSocket, socket } from '@/lib/socket';
 
 export type TransportParams = {
   id: string;
@@ -21,7 +20,6 @@ export type TransportParams = {
 
 type ProducerState = {
   audio: Producer | null;
-  video: Producer | null;
 };
 
 export default function useMediasoup(roomId: string, userId: string, username: string) {
@@ -35,7 +33,7 @@ export default function useMediasoup(roomId: string, userId: string, username: s
   const [device, setDevice] = useState<Device | null>(null);
   const [sendTransport, setSendTransport] = useState<Transport | undefined>(undefined);
   const [recvTransport, setRecvTransport] = useState<Transport | undefined>(undefined);
-  const [producers, setProducers] = useState<ProducerState>({ audio: null, video: null });
+  const [producers, setProducers] = useState<ProducerState>({ audio: null });
 
   // Refs to local and remote video elements.
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -134,26 +132,69 @@ export default function useMediasoup(roomId: string, userId: string, username: s
     [roomId]
   );
 
+  const createPlainTransport = useCallback(async() => {
+    try {
+      const plainTransportParams = await socket.emitWithAck("create-plain-transport", {
+         roomId
+      })
+
+      return plainTransportParams
+    } catch (error) {
+      throw new Error("Failed to create Plain Transport", error as Error)
+    }
+  }, [roomId])
+
+  const createAiPlainTransport = useCallback(async() => {
+    try {
+      const plainTransportParams = await AiSocket.emitWithAck("create-plain-transport", {
+         roomId
+      })
+
+      return plainTransportParams
+    } catch (error) {
+      throw new Error("Failed to create Plain Transport", error as Error)
+    }
+  }, [roomId])
+
+  const connectPlainTransport = useCallback(async(plainParams : { ip: string, port: number, rtcpPort: number | undefined}) => {
+    try {
+      const response = await AiSocket.emitWithAck("connect-plain-transport", {
+        ip: plainParams.ip,
+        port: plainParams.port,
+        rtcpPort: plainParams.rtcpPort,
+        roomId
+      })
+
+      if(response.success !== true) {
+        console.log("Failed to connect transport")
+      }
+
+    } catch (error) {
+      throw new Error("Failed to connect plain transport", error as Error)
+    }
+  }, [roomId])
+
   const createRecvTransport = useCallback(
     async (device: Device): Promise<Transport> => {
       try {
-        const { clientTransportParams } = await socket.emitWithAck('createConsumerTransport', {
+        const { clientTransportParams } = await AiSocket.emitWithAck('createConsumerTransport', {
           roomId,
-          type: 'consumer',
         });
         const transport = device.createRecvTransport(clientTransportParams);
-        // Optional logging for ICE gathering and connection state.
+        
+
         transport.on('connectionstatechange', (state) => {
           console.log('Consumer transport connection state change:', state);
         });
+
         transport.on('icegatheringstatechange', (state) => {
           console.log('Consumer transport ICE gathering state change:', state);
         });
+
         transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
           try {
-            const response = await socket.emitWithAck('connect-consumer-transport', {
+            const response = await AiSocket.emitWithAck('connect-consumer-transport', {
               roomId,
-              type: 'consumer',
               dtlsParameters,
             });
             if (response.success) {
@@ -183,16 +224,13 @@ export default function useMediasoup(roomId: string, userId: string, username: s
       }
       try {
         const audioTrack = localStream.getAudioTracks()[0];
-        const videoTrack = localStream.getVideoTracks()[0];
 
         const audioProducer = audioTrack
           ? await transport.produce({ track: audioTrack })
           : null;
-        const videoProducer = videoTrack
-          ? await transport.produce({ track: videoTrack })
-          : null;
 
-        setProducers({ audio: audioProducer, video: videoProducer });
+
+        setProducers({ audio: audioProducer });
       } catch (error) {
         throw new Error(`Failed to start producing: ${(error as Error).message}`);
       }
@@ -200,28 +238,38 @@ export default function useMediasoup(roomId: string, userId: string, username: s
     [localStream]
   );
 
+  const startAiProducing = useCallback(async () => {
+      try {
+         await AiSocket.emitWithAck("start-ai-produce", {roomId})
+      } catch (error) {
+        throw new Error(`Failed to start Ai producing: ${(error as Error).message}`);
+      }
+
+  },[roomId]);
+
   const startConsuming = useCallback(
     async (transport: Transport, device: Device) => {
       if (!transport) {
         throw new Error('Receive transport not initialized');
       }
       try {
-        // Request consumer parameters from the server using our device's RTP capabilities.
-        const { consumerParameters } = await socket.emitWithAck('consume-media', {
+        const { consumerParams } = await AiSocket.emitWithAck('consume-media', {
           roomId,
           rtpCapabilities: device.rtpCapabilities,
         });
-        // Create a consumer on the receive transport.
+
+        console.log(consumerParams)
+
         const consumer = await transport.consume({
-          id: consumerParameters.id,
-          producerId: consumerParameters.producerId,
-          kind: consumerParameters.kind,
-          rtpParameters: consumerParameters.rtpParameters,
+          id: consumerParams.id,
+          producerId: consumerParams.producerId,
+          kind: consumerParams.kind,
+          rtpParameters: consumerParams.rtpParameters,
         });
-        // Build a remote MediaStream from the consumer's track.
+        
         const newRemoteStream = new MediaStream();
         newRemoteStream.addTrack(consumer.track);
-        // Add event listeners for track events.
+      
         consumer.track.addEventListener('ended', () => {
           console.log('Remote track has ended');
         });
@@ -250,17 +298,25 @@ export default function useMediasoup(roomId: string, userId: string, username: s
       setIsRoomJoinLoading(true);
       setRoomError('');
       const response = await socket.emitWithAck('joinRoom', { roomId, userId, username });
+      const AiResponse = await AiSocket.emitWithAck('joinRoom', { roomId })
+
       if (!response.success) {
         setRoomError('Failed to join room');
         setIsRoomJoinLoading(false);
         return { success: false };
       }
+
+      if(!AiResponse.success) {
+         console.log("Failed to join room")
+      }
       setIsJoined(true);
       return { success: true, routerRtpCapabilities: response.routerRtpCap };
     } catch (error) {
+
       console.error('Failed to join room:', error);
       setRoomError('Failed to join room');
       return { success: false };
+
     } finally {
       setIsRoomJoinLoading(false);
     }
@@ -268,15 +324,13 @@ export default function useMediasoup(roomId: string, userId: string, username: s
 
   const cleanup = useCallback(() => {
     producers.audio?.close();
-    producers.video?.close();
     sendTransport?.close();
     recvTransport?.close();
     setLocalStream(null);
     setRemoteStream(null);
-    setProducers({ audio: null, video: null });
+    setProducers({ audio: null });
   }, [sendTransport, recvTransport, producers]);
 
-  /*** 5. Room Initialization ***/
   const initializeRoom = async () => {
     try {
       const joinResponse = await joinRoom();
@@ -289,12 +343,21 @@ export default function useMediasoup(roomId: string, userId: string, username: s
       }
       const loadedDevice = await setupDevice(joinResponse.routerRtpCapabilities);
       const sendT = await createSendTransport(loadedDevice);
+
+      const plainParams = await createPlainTransport()
+      await createAiPlainTransport()
+
+      await connectPlainTransport(plainParams)
+
       const recvT = await createRecvTransport(loadedDevice);
+      
       if (!sendT || !recvT) {
         setRoomError('Failed to create transports.');
         return;
       }
+
       await startProducing(sendT);
+      await startAiProducing()
       await startConsuming(recvT, loadedDevice);
     } catch (error) {
       console.error('Failed to initialize room:', error);

@@ -7,6 +7,7 @@ import type {
 	RtpParameters,
 } from "mediasoup/node/lib/rtpParametersTypes.js";
 import { server } from "../index.js";
+import { DtlsParameters, IceCandidate, IceParameters } from "mediasoup/node/lib/WebRtcTransportTypes.js";
 import { Producer } from "mediasoup/node/lib/types.js";
 
 export class AiSocketServer {
@@ -69,6 +70,55 @@ export class AiSocketServer {
 				},
 			);
 
+			socket.on(
+				"createConsumerTransport",
+				async (
+					{
+						roomId,
+					}: {
+						roomId: string;
+					},
+					callback: ({
+						clientTransportParams,
+					}: {
+						clientTransportParams: {
+							id: string;
+							iceParameters: IceParameters;
+							iceCandidates: IceCandidate[];
+							dtlsParameters: DtlsParameters;
+						};
+					}) => void,
+				) => {
+					const clientTransportParams  =  await this.roomManager.createClientWebRtcTransport({ roomId });
+
+
+					callback({ clientTransportParams });
+				},
+			);
+
+			socket.on(
+				"connect-consumer-transport",
+				async (
+					{
+						roomId,
+						dtlsParameters,
+					}: {
+						roomId: string;
+						dtlsParameters: DtlsParameters;
+					},
+					callback: ({ success }: { success: boolean }) => void,
+				) => {
+					await this.roomManager.connectClientWebRtcTransport({
+						dtlsParameters,
+						roomId,
+					});
+
+					callback({
+						success: true,
+					});
+				},
+			);
+
 
 			socket.on(
 				"create-plain-transport",
@@ -128,11 +178,9 @@ export class AiSocketServer {
 					{
 						roomId,
 						rtpCapabilities,
-						producerId
 					}: {
 						roomId: string;
 						rtpCapabilities: RtpCapabilities;
-						producerId: string
 					},
 					callback: ({
 						consumerParams,
@@ -152,7 +200,6 @@ export class AiSocketServer {
 					const consumerParams = await this.roomManager.startConsume({
 						rtpCapabilities,
 						roomId,
-						producerId
 					});
 
 					callback({ consumerParams });
@@ -160,20 +207,22 @@ export class AiSocketServer {
 			);
 
 			socket.on(
-				"produce-ai-audio",
-				async (
+				"start-ai-produce",
+				async(
 					{
-						roomId,
-					}: {
-						roomId: string;
+						roomId
+					} : {
+						roomId: string
 					},
-					callback: (producer: Producer) => void,
+					callback: (
+						producer : Producer
+					) => void  
 				) => {
-					const producer = await this.roomManager.startProduce(roomId);
+					const response = await this.roomManager.startProduce(roomId)
 
-					callback(producer);
-				},
-			);
+					callback(response)
+				}
+			)
 
 			socket.on("disconnect", async () => {
 				console.log("Client Disconnected")

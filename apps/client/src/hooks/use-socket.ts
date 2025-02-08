@@ -1,4 +1,4 @@
-import { socket, AiSocket } from "@/lib/socket";
+import { AiSocket, socket } from "@/lib/socket";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function useSocket() {
@@ -16,10 +16,12 @@ export default function useSocket() {
         setLoading(true);
         setError("");
         socket.connect();
+        AiSocket.connect();
     }, []);
 
     const disconnect = useCallback(() => {
         socket.disconnect();
+        AiSocket.disconnect();
     }, []);
 
     useEffect(() => {
@@ -47,13 +49,19 @@ export default function useSocket() {
         socket.on("disconnect", handleDisconnect);
         socket.on("connect_error", handleConnectError);
 
+        AiSocket.on("connect", handleConnect);
+        AiSocket.on("disconnect", handleDisconnect);
+        AiSocket.on("connect_error", handleConnectError);
+
 
         return () => {
             isMounted.current = false;
-            socket.off("connect", handleConnect);
+            socket.off("connect", handleConnect); 
             socket.off("disconnect", handleDisconnect);
             socket.off("connect_error", handleConnectError);
-
+            AiSocket.off("connect", handleConnect);
+            AiSocket.off("disconnect", handleDisconnect);
+            AiSocket.off("connect_error", handleConnectError);
         };
     }, []);
 

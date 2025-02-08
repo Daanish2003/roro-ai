@@ -13,10 +13,12 @@ import type {
 } from "mediasoup/node/lib/types.js";
 import { server } from "../index.js";
 
+
 export class SocketServer {
 	private static instance: SocketServer
 	private io: Server;
 	private roomManager: RoomManager;
+	
 
 	private constructor(httpServer: HttpServer) {
 		this.io = new Server(httpServer, {
@@ -80,10 +82,8 @@ export class SocketServer {
 				async (
 					{
 						roomId,
-						type,
 					}: {
 						roomId: string;
-						type: "producer";
 					},
 					callback: ({
 						clientTransportParams,
@@ -96,7 +96,7 @@ export class SocketServer {
 						};
 					}) => void,
 				) => {
-					const clientTransportParams  =  await this.roomManager.createClientWebRtcTransport({ roomId, type });
+					const clientTransportParams  =  await this.roomManager.createClientWebRtcTransport({ roomId });
 
 
 					callback({ clientTransportParams });
@@ -109,18 +109,15 @@ export class SocketServer {
 					{
 						roomId,
 						dtlsParameters,
-						type,
 					}: {
 						roomId: string;
 						dtlsParameters: DtlsParameters;
-						type: "producer";
 					},
 					callback: ({ success }: { success: boolean }) => void,
 				) => {
 					await this.roomManager.connectClientWebRtcTransport({
 						dtlsParameters,
 						roomId,
-						type,
 					});
 
 					callback({
@@ -128,6 +125,31 @@ export class SocketServer {
 					});
 				},
 			);
+
+			socket.on(
+				"create-plain-transport",
+				async(
+					{
+					   roomId
+					}: {
+				      roomId: string
+					}, 
+					callback: ({
+						ip,
+						port,
+						rtcpPort,
+					}: {
+						ip: string,
+						port: number,
+						rtcpPort: number | undefined
+					}) => void
+				) => {
+					const plainParams = await this.roomManager.createPlainTransport({roomId})
+
+
+                    callback(plainParams)
+				}
+			)
 
 			socket.on(
 				"start-produce",
@@ -156,96 +178,6 @@ export class SocketServer {
 					callback({ id });
 				},
 			);
-
-
-			socket.on(
-				"createConsumerTransport",
-				async (
-					{
-						roomId,
-						type,
-					}: {
-						roomId: string;
-						type: "consumer";
-					},
-					callback: ({
-						clientTransportParams,
-					}: {
-						clientTransportParams: {
-							id: string;
-							iceParameters: IceParameters;
-							iceCandidates: IceCandidate[];
-							dtlsParameters: DtlsParameters;
-						}
-					}) => void,
-				) => {
-					const  clientTransportParams = await this.roomManager.createClientWebRtcTransport({ roomId, type });
-
-					callback({ clientTransportParams });
-				},
-			);
-
-			socket.on(
-				"connect-consumer-transport",
-				async (
-					{
-						roomId,
-						dtlsParameters,
-						type,
-					}: {
-						roomId: string;
-						dtlsParameters: DtlsParameters;
-						type: "consumer";
-					},
-					callback: ({ success }: { success: boolean }) => void,
-				) => {
-					await this.roomManager.connectClientWebRtcTransport({
-						dtlsParameters,
-						roomId,
-						type,
-					});
-
-					callback({
-						success: true,
-					});
-				},
-			);
-
-			socket.on(
-				"consume-media",
-				async (
-					{
-						producerId,
-						roomId,
-						rtpCapabilities,
-					}: {
-						producerId: string
-						roomId: string;
-						rtpCapabilities: RtpCapabilities;
-					},
-					callback: ({
-						consumerParams,
-					}: {
-						consumerParams:
-							| {
-									producerId: string;
-									id: string;
-									kind: MediaKind;
-									rtpParameters: RtpParameters;
-							  }
-							| {
-									message: string;
-							  };
-					}) => void,
-				) => {
-					const consumerParams = await this.roomManager.startConsume({
-						rtpCapabilities,
-						roomId,
-					});
-
-					callback({ consumerParams });
-				},
-			);;
 
 			socket.on("disconnect", async () => {
 				console.log("Client Disconnected")

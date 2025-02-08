@@ -4,13 +4,12 @@ import { auth } from './config/auth-config.js';
 import cors from "cors"
 import "dotenv/config.js"
 import room_router from './routes/room.routes.js';
-import { redis } from "@roro-ai/database/client"
+import { redis } from './utils/redis.js';
 
 const app = express();
 
 const initRedis = async () => {
     try {
-        
         await redis.connect();
     } catch (error) {
         console.error('Failed to initialize Redis:', error);

@@ -7,7 +7,7 @@ import Loader from '../global/loader'
 import useShowToast from '@/hooks/use-show-toast'
 
 import { Button } from '@roro-ai/ui/components/ui/button'
-import { Mic, MicOff, Settings, Video, VideoOff } from 'lucide-react'
+import { Mic, MicOff, PhoneOff, Settings, Video, VideoOff } from 'lucide-react'
 
 export default function RoomContainer(
   {
@@ -20,20 +20,19 @@ export default function RoomContainer(
     username: string
   }
 ) {
-  const { 
-    connect, 
-    disconnect, 
-    isConnected, 
-    error, 
+  const {
+    connect,
+    disconnect,
+    isConnected,
+    error,
     loading,
-   } = useSocket()
+  } = useSocket()
 
-   const { 
-    getUserMedia, 
+  const {
+    getUserMedia,
     localVideoRef,
     isRoomJoinLoading,
     initializeRoom,
-    isJoined
   } = useMediasoup(roomId, userId, username)
 
 
@@ -82,17 +81,17 @@ export default function RoomContainer(
         <div className="flex items-center justify-center p-4 border-2 rounded-2xl">
           <div className="flex gap-4">
             <Button
-              variant="destructive"
+              variant="outline"
               size="icon"
-              className="h-12 w-12 rounded-full"
+              className="h-12 w-12 rounded-full border-zinc-700 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100"
               onClick={() => setIsMuted(!isMuted)}
             >
               {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
             </Button>
             <Button
-              variant="destructive"
+              variant="outline"
               size="icon"
-              className="h-12 w-12 rounded-full"
+              className="h-12 w-12 rounded-full border-zinc-700 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100"
               onClick={() => setIsVideoOff(!isVideoOff)}
             >
               {isVideoOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
@@ -104,6 +103,9 @@ export default function RoomContainer(
             >
               <Settings className="h-5 w-5" />
             </Button>
+            <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full">
+              <PhoneOff className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
@@ -114,19 +116,19 @@ export default function RoomContainer(
           <p className="text-muted-foreground text-sm">Room ID: {roomId}</p>
         </div>
         <div className="flex w-full gap-2 justify-center">
-          <Button 
-            variant={"default"} 
-            size={"lg"}
-            onClick={initializeRoom}
-            disabled={isRoomJoinLoading || isJoined}
+            <Button
+              variant={"default"}
+              size={"lg"}
+              onClick={initializeRoom}
+              disabled={isRoomJoinLoading}
             >
-            Join
-          </Button>
-          <Button
-            variant={"outline"}
-            size={"lg"}
-            className="border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
-          >
+                Join
+            </Button>
+            <Button
+              variant={"outline"}
+              size={"lg"}
+              className="border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
+            >
             Exit
           </Button>
         </div>

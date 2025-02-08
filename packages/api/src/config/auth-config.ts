@@ -1,4 +1,5 @@
-import { prisma, redis } from "@roro-ai/database/client";
+import { redis } from "../utils/redis.js";
+import { prisma } from "@roro-ai/database/client";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin, anonymous, oAuthProxy } from "better-auth/plugins";
