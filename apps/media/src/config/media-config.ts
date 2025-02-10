@@ -31,22 +31,19 @@ export const config: Config = {
                 {
                     protocol: 'tcp',
                     ip: '127.0.0.1',
-                }
+                },
+
             ],
             enableUdp: true,
             enableTcp: true,
             preferUdp: true,
+            
         },
         plainTransport: {
             listenInfo: 
                 {
                     protocol: 'udp',
                     ip: '127.0.0.1',
-                },
-            rtcpListenInfo: 
-                {
-                      protocol: "udp",
-                      ip: "0.0.0.0",
                 },
             rtcpMux: false,
             comedia: false,

@@ -123,6 +123,53 @@ export class RoomManager {
         await room.client.connectWebRtcTransport({dtlsParameters})
     }
 
+    public async forwardMedia(
+        {
+            roomId
+        }: {
+            roomId: string
+        }
+    ) {
+        const room = this.getRoomById(roomId)
+
+        if(!room) {
+            throw new Error("Room not found forward media")
+        }
+
+        if(!room.client) {
+            throw new Error("Client is not present in the room")
+        }
+
+        const rtpParameters = await room.client.forwardProducerToPlainTransport()
+
+        return rtpParameters
+    }
+
+    public async connectPlainTransport(
+        {
+            roomId,
+            ip,
+            port,
+            rtcpPort
+        } : {
+            roomId: string,
+            ip: string,
+            port: number,
+            rtcpPort: number | undefined
+        }) {
+        const room = this.getRoomById(roomId);
+        if (!room) {
+          throw new Error("Room not found for plain transport");
+        }
+        if (!room.client) {
+          throw new Error("Client is not present in the room");
+        }
+    
+        const success = await room.client.connectPlainTransport({ip, port, rtcpPort}); 
+    
+        return { success };
+      }
+
     public async startClientWebRtcProduce(
         {
             rtpParameters,
@@ -135,6 +182,7 @@ export class RoomManager {
 
         }
     ) {
+        console.log("Room-manager-produce")
         const room = this.getRoomById(roomId)
 
         if(!room) {
@@ -145,11 +193,9 @@ export class RoomManager {
             throw new Error("Client is not present in the room")
         }
 
-        const id = await room.client.produceMedia({rtpParameters, kind })
+        const params = await room.client.produceMedia({rtpParameters, kind })
 
-        console.log(id)
-
-        return id
+        return params
     }
 
     public getRoomById(roomId: string): Room | undefined {

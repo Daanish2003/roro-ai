@@ -62,9 +62,6 @@ class Client {
           throw new Error("Producer transport not initialized");
         await this.producerTransport.connect({ dtlsParameters });
         
-        if (!this.plainTransportParams) {
-          throw new Error("Plain Transport not found")
-        }
     } catch (error) {
       console.error("Error connecting WebRTC transport:", error);
       throw error;
@@ -99,13 +96,26 @@ class Client {
     }
   }
 
+  public async connectPlainTransport({ip, port, rtcpPort}:{ ip: string, port: number, rtcpPort: number | undefined}) {
+    if (!this.plainTransport) {
+      throw new Error("Plain transport not defined");
+    }
+    console.log("Ai: Connecting plain transport");
+    try {
+      await this.plainTransport.connect({
+        ip,
+        port,
+        rtcpPort,
+      });
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to connect plain transport:", error);
+      throw error;
+    }
+  }
 
-  public async forwardProducerToPlainTransport(producer: Producer): Promise<{
-    producerId: string;
-    consumerId: string;
-    kind: MediaKind;
-    rtpParameters: RtpParameters;
-  }> {
+
+  public async forwardProducerToPlainTransport(): Promise<RtpParameters> {
     console.log("client - forward")
     if (!this.plainTransport) {
       throw new Error("Plain transport not available");
@@ -113,17 +123,27 @@ class Client {
     if (!this.room?.router) {
       throw new Error("Room or router not available");
     }
+
+    if(!this.clientProducer) {
+      throw new Error("Client producer not found")
+    }
+
+
+
     try {
       const plainConsumer = await this.plainTransport.consume({
-        producerId: producer.id,
+        producerId: this.clientProducer.id,
         rtpCapabilities: this.room.router.rtpCapabilities,
       });
-      return {
-        producerId: producer.id,
-        consumerId: plainConsumer.id,
-        kind: producer.kind,
-        rtpParameters: plainConsumer.rtpParameters,
-      };
+
+      console.log("Producer closed:", plainConsumer.closed);
+      console.log("Producer paused:", plainConsumer.paused);
+      console.log("Producer RTP parameters:", plainConsumer.rtpParameters);
+      
+
+      
+      return plainConsumer.rtpParameters;
+
     } catch (error) {
       console.error("Failed to forward producer to plain transport", error);
       throw error;
@@ -136,7 +156,7 @@ class Client {
   }: {
     kind: MediaKind;
     rtpParameters: RtpParameters;
-  }): Promise<string> {
+  }) {
     if (!this.producerTransport) {
       throw new Error("Producer transport not initialized");
     }
@@ -146,13 +166,15 @@ class Client {
     try {
       console.log("client produce")
       this.clientProducer = await this.producerTransport.produce({ kind, rtpParameters });
+
+      
       this.clientProducer.on("transportclose", () => {
         console.log("Producer transport closed");
         this.clientProducer?.close();
       });
+
       
-      await this.forwardProducerToPlainTransport(this.clientProducer);
-      return this.clientProducer.id;
+      return this.clientProducer.id
     } catch (error) {
       console.error("Error producing media", error);
       throw error;

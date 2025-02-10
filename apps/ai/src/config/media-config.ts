@@ -7,8 +7,8 @@ import type { WorkerSettings } from "mediasoup/node/lib/WorkerTypes.js"
 export const config: Config = {
     mediasoup: {
         worker: {
-            rtcMinPort: 10000,
-            rtcMaxPort: 11000,
+            rtcMinPort: 20000,
+            rtcMaxPort: 21000,
             logLevel: 'warn',
             logTags: ['info', 'ice', 'dtls', 'rtp', 'srtp', 'rtcp']
         },
@@ -49,7 +49,7 @@ export const config: Config = {
                       ip: "0.0.0.0",
                 },
             rtcpMux: false,
-            comedia: false,
+            comedia: true,
         }
     }
 }

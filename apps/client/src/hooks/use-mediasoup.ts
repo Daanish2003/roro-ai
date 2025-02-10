@@ -61,6 +61,7 @@ export default function useMediasoup(roomId: string, userId: string, username: s
         localVideoRef.current.srcObject = new MediaStream([videoTrack]);
         localVideoRef.current.play().catch(console.error);
       }
+      
       setMedia(true);
     } catch (error) {
       throw new Error(`[Failed to get media stream]: ${(error as Error).message}`);
@@ -108,7 +109,6 @@ export default function useMediasoup(roomId: string, userId: string, username: s
           try {
             const response = await socket.emitWithAck('connect-producer-transport', {
               roomId,
-              type: 'producer',
               dtlsParameters,
             });
             if (response.success) {

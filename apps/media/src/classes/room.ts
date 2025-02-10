@@ -2,7 +2,6 @@ import { Router } from "mediasoup/node/lib/RouterTypes.js";
 import { Worker } from "mediasoup/node/lib/WorkerTypes.js";
 import { config } from "../config/media-config.js";
 import Client from "./client.js";
-import Ai from "./ai.js";
 
 export class Room {
 	public roomId: string;

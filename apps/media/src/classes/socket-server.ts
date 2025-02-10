@@ -152,6 +152,55 @@ export class SocketServer {
 			)
 
 			socket.on(
+				"connect-plain-transport",
+				async(
+					{
+						roomId,
+						ip,
+						port,
+						rtcpPort
+					}: {
+						roomId: string,
+						ip: string,
+						port: number,
+						rtcpPort: number | undefined
+					},
+					callback: (
+						{
+							success
+						}: {
+							success: boolean
+						}
+					) => void
+				) => {
+					console.log("Connect plain transport:", ip, port, rtcpPort)
+					const { success } = await this.roomManager.connectPlainTransport({roomId, ip, port, rtcpPort})
+		
+					callback(success)
+				}
+			)
+
+
+			socket.on(
+				"forward-media", 
+				async (
+					{
+						roomId
+					}: {
+						roomId: string
+					},
+					callback: (
+						rtpParameters: RtpParameters
+					) => void
+				) => {
+					
+					const rtpParameters = await this.roomManager.forwardMedia({roomId})
+
+					callback(rtpParameters)
+				}
+			)
+
+			socket.on(
 				"start-produce",
 				async (
 					{
@@ -164,11 +213,12 @@ export class SocketServer {
 						rtpParameters: RtpParameters;
 					},
 					callback: ({
-						id,
+						id
 					}: {
-						id: string;
+						id: string
 					}) => void,
 				) => {
+					console.log("Start produce")
 					const id = await this.roomManager.startClientWebRtcProduce({
 						rtpParameters,
 						roomId,
