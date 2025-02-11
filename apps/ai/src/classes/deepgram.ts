@@ -23,14 +23,14 @@ export class DeepgramSTT {
             punctuate: true,
             smart_format: true,
             interim_results: true,
-            channels: 1,
+            channels: 2,
             encoding: 'opus',
-            sample_rate: 16000,
+            sample_rate: 48000,
             filler_words: false,
             language: 'en-US',
             vad_events: true,
             utterance_end_ms: 1000,
-            endpointing: 25,
+            endpointing: 1000,
             no_delay: true,
             profanity_filter: false,
         })
@@ -43,7 +43,10 @@ export class DeepgramSTT {
         })
 
         connection.on(LiveTranscriptionEvents.Transcript, (data) => {
-            console.log(`Room ${roomId} Transcription:`, data.channel.alternatives[0].transcript)
+            if(data.channel && data.channel.alternatives.length > 0) {
+                console.log(`Room ${roomId} Transcription Alternatives[0]:`, data.channel.alternatives[0])
+                console.log(`Room ${roomId} Transcription:`, data.channel.alternatives[0].transcript)
+            }
         })
 
         

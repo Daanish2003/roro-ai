@@ -15,8 +15,9 @@ export default function RoomContainer() {
   const disconnect = useSocketStore((state) => state.disconnect)
   const isConnected = useSocketStore((state) => state.isConnected)
   const getUserMedia = useMediaStore((state) => state.getUserMedia)
+  const remoteStream = useMediasoupConsumerStore((state) => state.remoteStream)
   const localVideoRef = React.useRef<HTMLVideoElement | null>(null)
-  const localAudioRef = React.useRef<HTMLAudioElement | null>(null)
+  const remoteAudioRef = React.useRef<HTMLAudioElement | null>(null)
   
 
   useEffect(() => {
@@ -56,28 +57,39 @@ export default function RoomContainer() {
   }, [isConnected, getUserMedia])
 
   useEffect(() => {
-    const audioTrack = useMediasoupConsumerStore.getState().remoteStream?.getAudioTracks()[0];
-    if (localAudioRef.current && audioTrack) {
-      localAudioRef.current.srcObject = new MediaStream([audioTrack]);
-      localAudioRef.current.play().catch((err) => {
-        console.error("Error playing audio:", err);
+    if (!remoteStream) return;
+    console.log('Remote stream updated:', remoteStream);
+    const audioTrack = remoteStream.getAudioTracks()[0];
+    if (remoteAudioRef.current && audioTrack) {
+      console.log('Setting up audio track:', audioTrack.label);
+      const audioStream = new MediaStream([audioTrack]);
+      remoteAudioRef.current.srcObject = audioStream;
+      remoteAudioRef.current.volume = 1.0;
+      remoteAudioRef.current.muted = false;
+      remoteAudioRef.current.play().catch((error) => {
+        console.error("Audio playback failed:", error);
+        document.addEventListener('click', () => {
+          remoteAudioRef.current?.play();
+        }, { once: true });
       });
     }
-  })
-
-
+  }, [remoteStream]);
 
   return (
-    <div className="bg-card w-full min-h-screen flex flex-col lg:flex-row p-2 gap-2">
+    <div className="bg-card flex flex-col lg:flex-row gap-4 p-4 max-h-screen">
       {/* left section */}
-      <div className="lg:w-3/4 flex flex-col gap-2 shadow-inner">
-        <div className='grid sm:grid-cols-2 gap-2 h-[34rem] lg:h-[45rem] grid-rows-2'>
-         <AiVoiceAgentContainer localAudioRef={localAudioRef}/>
-         <VideoContainer localVideoRef={localVideoRef}/>
+      <div className="lg:w-3/4 flex flex-col gap-4 shadow-inner">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:h-[45rem] sm:[36rem]">
+          <div className="h-full">
+            <AiVoiceAgentContainer remoteAudioRef={remoteAudioRef}/>
+          </div>
+          <div className="h-full">
+            <VideoContainer localVideoRef={localVideoRef}/>
+          </div>
         </div>
         <div className="flex items-center justify-center p-4 border-2 rounded-2xl">
           <Controller />
-        </div>
+      </div>
       </div>
       {/* right section */}
       <Join />
