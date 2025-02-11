@@ -19,13 +19,17 @@
   "license": "ISC",
   "dependencies": {
     "@deepgram/sdk": "^3.9.0",
+    "@discordjs/opus": "github:discordjs/opus",
+    "@google/generative-ai": "^0.21.0",
     "@roro-ai/database": "workspace:*",
     "@socket.io/redis-adapter": "^8.3.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mediasoup": "^3.15.3",
+    "opus-decoder": "^0.7.7",
     "redis": "^4.7.0",
+    "rtp-parser": "^1.0.0",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
@@ -34,6 +38,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.1",
+    "@types/rtp-parser": "^1.0.4",
     "typescript": "^5.7.3"
   }
 }

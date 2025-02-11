@@ -5,15 +5,23 @@ import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rt
 import { PlainTransport } from "mediasoup/node/lib/PlainTransportTypes.js";
 import { DtlsParameters, WebRtcTransport } from "mediasoup/node/lib/WebRtcTransportTypes.js";
 import { Producer } from "mediasoup/node/lib/ProducerTypes.js";
+import { DeepgramSTT } from "./deepgram.js";
+import { DirectTransport } from 'mediasoup/node/lib/DirectTransportTypes.js';
+import * as RTPParser from "rtp-parser";
 
 class Ai {
   private consumerTransport: WebRtcTransport | null = null;
   private plainTransport: PlainTransport | null = null;
   private rtpProducer: Producer | null = null;
+  private directTransport: DirectTransport | null = null;
+  private directTransportConsumer: Consumer | null = null;
   private consumer: Consumer | null = null;
+  private deepgramSTT: DeepgramSTT;
   public room: Room | null = null;
 
-  constructor() {}
+  constructor() {
+    this.deepgramSTT = new DeepgramSTT();
+  }
 
   public async createWebRtcTransport() {
     console.log("Ai: Starting WebRTC transport creation");
@@ -96,6 +104,20 @@ class Ai {
     }
   }
 
+  private async createAiDirectTransport() {
+    if (!this.room?.router) {
+        throw new Error("Router is not initialized for the room");
+    }
+    console.log("Ai: Creating Direct Transport for Deepgram");
+    try {
+        this.directTransport = await this.room.router.createDirectTransport();
+        console.log("Ai: Direct Transport created");
+    } catch (error) {
+        console.error("Failed to create Direct Transport", error);
+        throw error;
+    }
+}
+
   public async receiveExternalRtpMedia(rtpParameters: RtpParameters) {
     if (!this.plainTransport) {
       throw new Error("Plain transport not found");
@@ -108,15 +130,61 @@ class Ai {
       this.rtpProducer = await this.plainTransport.produce({
         kind: "audio",
         rtpParameters: rtpParameters,
-      });
+    });
 
-      console.log("Ai: RTP paused", this.rtpProducer.paused);
-      
+     await this.createAiDirectTransport();
+
+     if (!this.directTransport) {
+      throw new Error("Direct Transport for Deepgram failed to initialize");
+     }
 
       this.rtpProducer.on("transportclose", () => {
         console.log("External RTP producer transport closed.");
         this.rtpProducer?.close();
       });
+
+
+      this.directTransportConsumer = await this.directTransport.consume({
+        producerId: this.rtpProducer.id,
+        rtpCapabilities: this.room.router.rtpCapabilities,
+        paused: false,
+      })
+
+      if(!this.directTransportConsumer) {
+         throw new Error("Direct Transport Consumer for Deepgram failed to initialize");
+      }
+
+      this.directTransportConsumer.on("transportclose", () => {
+        console.log("DirectTransport Consumer transport closed.");
+      })
+
+      const roomId = this.room.roomId;
+
+      const dgSocket = this.deepgramSTT.dgSocket(roomId);
+
+
+      this.directTransportConsumer.on("rtp", async (rtpPackets) => {
+        if(!dgSocket) {
+          console.error("Deepgram socket not found");
+          return;
+        }
+
+        const parserRtp = RTPParser.parseRtpPacket(rtpPackets);
+
+        let opusFrame = parserRtp.payload;
+
+        if(parserRtp.extension) {
+          const extHeader = opusFrame.slice(0, 4);
+
+          const extLengthWords = extHeader.readUInt16BE(2);
+
+          const totalExtSize = 4 + (extLengthWords * 4);
+
+          opusFrame = opusFrame.slice(totalExtSize);
+        }
+
+        this.deepgramSTT.sendAudio(roomId, opusFrame);
+      })
 
       return this.rtpProducer;
     } catch (error) {
@@ -181,15 +249,10 @@ class Ai {
         throw new Error("Consumer not created");
       }
 
-      setInterval(async() => {
-        console.log("Producer stats", await this.consumer?.getStats());
-      }, 3000)
-
       this.consumer.on("transportclose", () => {
         console.log("Consumer transport closed");
         this.consumer?.close();
       });
-
 
       const consumerParams = {
         producerId: this.rtpProducer.id,

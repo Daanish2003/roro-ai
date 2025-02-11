@@ -15,6 +15,7 @@ class Client {
     port: number,
     rtcpPort: number | undefined 
   } | null = null;
+  
   private clientProducer: Producer | null = null;
   public room: Room | null = null;
 
@@ -167,7 +168,6 @@ class Client {
       console.log("client produce")
       this.clientProducer = await this.producerTransport.produce({ kind, rtpParameters });
 
-      
       this.clientProducer.on("transportclose", () => {
         console.log("Producer transport closed");
         this.clientProducer?.close();

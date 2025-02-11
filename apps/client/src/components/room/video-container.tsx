@@ -20,7 +20,7 @@ export default function VideoContainer({localVideoRef}: {localVideoRef: React.Re
 
 
   return (
-    <div className="flex-grow bg-card rounded-2xl overflow-hidden sm:h-[34rem] lg:h-[45rem]">
+    <div className="flex-grow bg-card rounded-2xl overflow-hidden h-full">
           <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-fill rounded-2xl lg:aspect-[16/2] sm:aspect-[16/10] aspect-[17/16] border border-zinc-700" />
     </div>
   )
