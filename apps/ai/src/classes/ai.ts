@@ -6,8 +6,9 @@ import { PlainTransport } from "mediasoup/node/lib/PlainTransportTypes.js";
 import { DtlsParameters, WebRtcTransport } from "mediasoup/node/lib/WebRtcTransportTypes.js";
 import { Producer } from "mediasoup/node/lib/ProducerTypes.js";
 import { DeepgramSTT } from "./deepgram.js";
-import { DirectTransport } from 'mediasoup/node/lib/DirectTransportTypes.js';
-import * as RTPParser from "rtp-parser";
+import { DirectTransport } from 'mediasoup/node/lib/DirectTransportTypes.js'
+import { GroqModal } from "./groq-modal.js";
+import * as RTPParser from 'rtp-parser';
 
 class Ai {
   private consumerTransport: WebRtcTransport | null = null;
@@ -15,12 +16,15 @@ class Ai {
   private rtpProducer: Producer | null = null;
   private directTransport: DirectTransport | null = null;
   private directTransportConsumer: Consumer | null = null;
+  public directTransportProducer: Producer | null = null;
   private consumer: Consumer | null = null;
   private deepgramSTT: DeepgramSTT;
+  public groqModal: GroqModal;
   public room: Room | null = null;
 
   constructor() {
-    this.deepgramSTT = new DeepgramSTT();
+    this.groqModal = new GroqModal();
+    this.deepgramSTT = new DeepgramSTT(this.groqModal); 
   }
 
   public async createWebRtcTransport() {
@@ -83,6 +87,28 @@ class Ai {
     }
   }
 
+  public async createAudioPlainTransport() {
+    if (!this.room?.router) {
+      throw new Error("Router is not initialized for the room");
+    }
+    console.log("Ai: Creating plain transport");
+    try {
+      const plainTransport = await this.room.router.createPlainTransport(config.mediasoup.plainTransport);
+      const clientTransportParams = {
+        ip: plainTransport.tuple.localIp,
+        port: plainTransport.tuple.localPort,
+        rtcpPort: plainTransport.rtcpTuple?.localPort,
+      };
+      return {
+        plainTransport,
+        clientTransportParams
+      };
+    } catch (error) {
+      console.error("Failed to create plain transport", error);
+      throw error;
+    }
+  }
+
   
   public async connectPlainTransport(
     plainParams: { ip: string; port: number; rtcpPort: number | undefined }
@@ -110,8 +136,9 @@ class Ai {
     }
     console.log("Ai: Creating Direct Transport for Deepgram");
     try {
-        this.directTransport = await this.room.router.createDirectTransport();
+        const directTransport = await this.room.router.createDirectTransport();
         console.log("Ai: Direct Transport created");
+        return directTransport
     } catch (error) {
         console.error("Failed to create Direct Transport", error);
         throw error;
@@ -132,7 +159,7 @@ class Ai {
         rtpParameters: rtpParameters,
     });
 
-     await this.createAiDirectTransport();
+     this.directTransport = await this.createAiDirectTransport();
 
      if (!this.directTransport) {
       throw new Error("Direct Transport for Deepgram failed to initialize");
@@ -150,6 +177,11 @@ class Ai {
         paused: false,
       })
 
+      this.directTransportProducer = await this.directTransport.produce({
+        kind: this.directTransportConsumer.kind,
+        rtpParameters: this.directTransportConsumer.rtpParameters
+      })
+
       if(!this.directTransportConsumer) {
          throw new Error("Direct Transport Consumer for Deepgram failed to initialize");
       }
@@ -158,10 +190,8 @@ class Ai {
         console.log("DirectTransport Consumer transport closed.");
       })
 
-      const roomId = this.room.roomId;
-
-      const dgSocket = this.deepgramSTT.dgSocket(roomId);
-
+      const dgSocket = this.deepgramSTT.createConnection();
+      
 
       this.directTransportConsumer.on("rtp", async (rtpPackets) => {
         if(!dgSocket) {
@@ -170,23 +200,36 @@ class Ai {
         }
 
         const parserRtp = RTPParser.parseRtpPacket(rtpPackets);
+         let opusFrame = parserRtp.payload;
 
-        let opusFrame = parserRtp.payload;
+          if (parserRtp.extension) {
+              const extHeader = opusFrame.slice(0, 4);
+              const extLengthWords = extHeader.readUInt16BE(2);
+              const totalExtSize = 4 + extLengthWords * 4;
+              opusFrame = opusFrame.slice(totalExtSize);
+          }
 
-        if(parserRtp.extension) {
-          const extHeader = opusFrame.slice(0, 4);
-
-          const extLengthWords = extHeader.readUInt16BE(2);
-
-          const totalExtSize = 4 + (extLengthWords * 4);
-
-          opusFrame = opusFrame.slice(totalExtSize);
-        }
-
-        this.deepgramSTT.sendAudio(roomId, opusFrame);
+        this.deepgramSTT.sendAudio(opusFrame);
       })
 
+
+      this.directTransportProducer.on("listenererror", (error) => {
+        console.error(error)
+      })
+
+      this.directTransportProducer.on("score", (score) => {
+        console.log(score)
+      })
+
+      this.directTransportProducer.on('trace', (trace) => {
+        console.log(trace)
+      })
+
+
+      this.deepgramSTT.setDirectTransportProducer(this.directTransportProducer)
+
       return this.rtpProducer;
+
     } catch (error) {
       console.error("Failed to receive external RTP media", error);
       throw error;
@@ -226,19 +269,19 @@ class Ai {
     | { message: string }
   > {
     console.log("Ai: Starting media consumption");
-    if (!this.rtpProducer) {
-      return { message: "Producer not found" };
+    if (!this.directTransportProducer) {
+      return { message: "direct Producer not found" };
     }
     if (!this.consumerTransport) {
       throw new Error("Consumer transport not initialized");
     }
-    if (!this.room?.router?.canConsume({ producerId: this.rtpProducer.id, rtpCapabilities })) {
+    if (!this.room?.router?.canConsume({ producerId: this.directTransportProducer.id, rtpCapabilities })) {
       return { message: "Cannot consume" };
     }
 
     try {
       this.consumer = await this.consumerTransport.consume({
-        producerId: this.rtpProducer.id,
+        producerId: this.directTransportProducer.id,
         rtpCapabilities,
         paused: true,
       });
@@ -254,8 +297,12 @@ class Ai {
         this.consumer?.close();
       });
 
+      this.consumer.on("score", (score) => {
+        console.log(score)
+      })
+
       const consumerParams = {
-        producerId: this.rtpProducer.id,
+        producerId: this.directTransportProducer.id,
         id: this.consumer.id,
         kind: this.consumer.kind,
         rtpParameters: this.consumer.rtpParameters,

@@ -1,11 +1,10 @@
 import { createClient, type ListenLiveClient, LiveTranscriptionEvents, LiveTTSEvents } from "@deepgram/sdk";
 import "dotenv/config";
-import { GroqModal } from "./groq-modal.js";
 import { Producer } from "mediasoup/node/lib/types.js";
 import ffmpeg from "fluent-ffmpeg";
 import { Readable } from "stream";
 import OggOpusToRtp from "rtp-ogg-opus"
-import * as RTPParser from 'rtp-parser';
+import { GroqModal } from "./groq-modal.js";
 
 export class DeepgramSTT {
   private deepgram: ReturnType<typeof createClient>;
