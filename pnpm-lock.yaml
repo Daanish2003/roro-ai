@@ -117,6 +117,9 @@ importers:
       rtp-parser:
         specifier: ^1.0.0
         version: 1.0.0
+      rtp.js:
+        specifier: ^0.13.1
+        version: 0.13.1
       socket.io:
         specifier: ^4.8.1
         version: 4.8.1
@@ -6304,6 +6307,10 @@ packages:
 
   rtp-parser@1.0.0:
     resolution: {integrity: sha512-q+IpAl6wsMNK8BGsPaQrz8FartVpLcqie+a2Q6aNDV5D+qer2WX+jxbek4WbA+GYT+1hwwOqnF/CycJuJ5Brug==}
+
+  rtp.js@0.13.1:
+    resolution: {integrity: sha512-MxSg7lQqJr61dXy6kNRRWW/9PuukjqKqaM5feBcUcdObIt8U+ngYcLC6WkI3z8aqQ46MP2Ci4oXCaGQhbskkpg==}
+    engines: {node: '>=18'}
 
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
@@ -12629,6 +12636,11 @@ snapshots:
       - supports-color
 
   rtp-parser@1.0.0: {}
+
+  rtp.js@0.13.1:
+    dependencies:
+      debug: 4.4.0(supports-color@10.0.0)
+      supports-color: 10.0.0
 
   run-parallel@1.2.0:
     dependencies:
