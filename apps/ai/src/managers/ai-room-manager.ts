@@ -47,7 +47,7 @@ export class RoomManager {
       throw new Error("Room not found for WebRTC transport");
     }
     if (!room.ai) {
-      throw new Error("Client is not present in the room");
+      throw new Error("Ai is not present in the room");
     }
     const clientTransportParams = await room.ai.createWebRtcTransport();
     return clientTransportParams;
