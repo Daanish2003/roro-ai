@@ -20,6 +20,7 @@
     "REDIS_TLS",
     "DEEPGRAM_API_KEY",
     "GROQ_API_KEY",
+    "GEMINI_API_KEY",
     "ELEVENLABS_API_KEY"
   ],
   "tasks": {
