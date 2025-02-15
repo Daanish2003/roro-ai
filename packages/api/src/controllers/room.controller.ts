@@ -24,7 +24,7 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
           });
         }
     
-        const { roomName } = validatedFields.data;
+        const { roomName, prompt } = validatedFields.data;
 
         console.log(roomName)
 
@@ -32,7 +32,8 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
           { 
             userId: data?.session.userId as string, 
             roomName, 
-            username: data?.user.name as string
+            username: data?.user.name as string,
+            prompt
           });
 
         const room_session = await createRoomSession({

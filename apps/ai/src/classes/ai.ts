@@ -143,7 +143,7 @@ class Ai {
         console.error("Failed to create Direct Transport", error);
         throw error;
     }
-}
+  }
 
   public async receiveExternalRtpMedia(rtpParameters: RtpParameters) {
     if (!this.plainTransport) {

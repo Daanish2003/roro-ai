@@ -127,80 +127,6 @@ export class SocketServer {
 			);
 
 			socket.on(
-				"create-plain-transport",
-				async(
-					{
-					   roomId
-					}: {
-				      roomId: string
-					}, 
-					callback: ({
-						ip,
-						port,
-						rtcpPort,
-					}: {
-						ip: string,
-						port: number,
-						rtcpPort: number | undefined
-					}) => void
-				) => {
-					const plainParams = await this.roomManager.createPlainTransport({roomId})
-
-
-                    callback(plainParams)
-				}
-			)
-
-			socket.on(
-				"connect-plain-transport",
-				async(
-					{
-						roomId,
-						ip,
-						port,
-						rtcpPort
-					}: {
-						roomId: string,
-						ip: string,
-						port: number,
-						rtcpPort: number | undefined
-					},
-					callback: (
-						{
-							success
-						}: {
-							success: boolean
-						}
-					) => void
-				) => {
-					console.log("Connect plain transport:", ip, port, rtcpPort)
-					const { success } = await this.roomManager.connectPlainTransport({roomId, ip, port, rtcpPort})
-		
-					callback(success)
-				}
-			)
-
-
-			socket.on(
-				"forward-media", 
-				async (
-					{
-						roomId
-					}: {
-						roomId: string
-					},
-					callback: (
-						rtpParameters: RtpParameters
-					) => void
-				) => {
-					
-					const rtpParameters = await this.roomManager.forwardMedia({roomId})
-
-					callback(rtpParameters)
-				}
-			)
-
-			socket.on(
 				"start-produce",
 				async (
 					{
@@ -228,6 +154,36 @@ export class SocketServer {
 					callback({ id });
 				},
 			);
+
+			socket.on(
+				"consume-media",
+				async (
+				  { roomId, rtpCapabilities }: { roomId: string; rtpCapabilities: RtpCapabilities },
+				  callback: (response: { consumerParams?: { producerId: string; id: string; kind: MediaKind; rtpParameters: RtpParameters } } | { message: string }) => void
+				) => {
+				  const response = await this.roomManager.startConsume({ roomId, rtpCapabilities });
+				  callback(response);
+				}
+			);
+
+			socket.on("unpauseConsumer",
+				async ({
+					roomId
+				}: {
+					roomId: string
+				},
+			callback: ({
+			  success
+			}: {
+			  success: boolean
+			}) => void
+		  ) => {
+			  console.log("Unpausing consumer");
+					const success= await this.roomManager.unpauseConsumer(roomId)
+		
+			  callback(success)
+				}
+			  )
 
 			socket.on("disconnect", async () => {
 				console.log("Client Disconnected")

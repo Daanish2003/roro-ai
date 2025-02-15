@@ -5,11 +5,13 @@ export const createRoomService = async (
     {
         userId, 
         roomName, 
-        username
+        username,
+        prompt
     }: {
         userId: string, 
         roomName: string, 
-        username: string
+        username: string,
+        prompt: string
     }) => {
     try {
         const room = await prisma.room.create({
@@ -23,13 +25,15 @@ export const createRoomService = async (
                 name: roomName,
                 username, 
                 userId,
+                prompt
             }
         })
 
         return room
 
     } catch (error) {
-       throw new Error("Failed to create room", error as Error)
+       console.log("Create Room Error:", error)
+       throw new Error("Failed to create room")
     }
 }
 

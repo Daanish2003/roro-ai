@@ -41,7 +41,7 @@ export class RoomManager {
     return { success: false };
   }
 
-  public async createClientWebRtcTransport({ roomId }: { roomId: string }): Promise<any> {
+  public async createClientWebRtcTransport({ roomId }: { roomId: string }) {
     const room = this.getRoomById(roomId);
     if (!room) {
       throw new Error("Room not found for WebRTC transport");
