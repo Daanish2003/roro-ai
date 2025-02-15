@@ -1,53 +1,24 @@
-import { createClient, type ListenLiveClient, LiveTranscriptionEvents, LiveTTSEvents } from "@deepgram/sdk";
+import { createClient, type ListenLiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import "dotenv/config";
 import { GroqModal } from "./groq-modal.js";
 import { Producer } from "mediasoup/node/lib/types.js";
-import { Readable, Transform } from "stream";
-import * as RTPParser from 'rtp-parser';
 import { packets } from "rtp.js"
-import OpusScript from "opusscript";
+import prism from "prism-media"
+import { Readable } from "stream";
+import { JitterBuffer } from "./jitterBuffer.js";
 
-const OPUS_FRAME_SAMPLES = 960;
-const CHANNELS = 2;
-const BYTES_PER_SAMPLE = 2;
-const FRAME_BYTE_SIZE = OPUS_FRAME_SAMPLES * CHANNELS * BYTES_PER_SAMPLE;
 
-class OpusBufferingTransform extends Transform {
-  private buffer: Buffer = Buffer.alloc(0);
-  constructor(private encoder: OpusScript) {
-    super();
-  }
-  _transform(chunk: Buffer, encoding: BufferEncoding, callback: Function) {
-    // Append new incoming data to our buffer.
-    this.buffer = Buffer.concat([this.buffer, chunk]);
-    // While we have enough data for a full frame, encode one frame.
-    while (this.buffer.length >= FRAME_BYTE_SIZE) {
-      const frame = this.buffer.slice(0, FRAME_BYTE_SIZE);
-      this.buffer = this.buffer.slice(FRAME_BYTE_SIZE);
-      try {
-        const encoded = this.encoder.encode(frame, OPUS_FRAME_SAMPLES);
-        this.push(encoded);
-      } catch (err) {
-        return callback(err);
-      }
-    }
-    callback();
-  }
-  _flush(callback: Function) {
-    // Optionally: you can decide to pad or simply discard incomplete data.
-    callback();
-  }
-}
 
 export class DeepgramSTT {
   private deepgram: ReturnType<typeof createClient>;
   private connection: ListenLiveClient | null = null;
   private keepAliveInterval: NodeJS.Timeout | null = null;
   private directTransportProducer: Producer | null = null;
+  private jitterBuffer: JitterBuffer | null = null;
 
   private rtpSequenceNumber: number = 0;
   private rtpTimestamp: number = 0;
-  private rtpSSRC: number = 0; 
+  private rtpSSRC: number = 0;
 
   constructor(private groqModal: GroqModal) {
     const apiKey = process.env.DEEPGRAM_API_KEY;
@@ -55,6 +26,9 @@ export class DeepgramSTT {
       throw new Error("Deepgram API key is missing.");
     }
     this.deepgram = createClient(apiKey);
+    this.jitterBuffer = new JitterBuffer(20, (packet: Buffer) => {
+      this.directTransportProducer?.send(packet);
+    });
   }
 
   public createConnection(): ListenLiveClient {
@@ -137,48 +111,81 @@ export class DeepgramSTT {
     }
     this.cleanupConnection();
   }
+  
 
   public async textToSpeech(text:string) {
     try {
-      const dgConnection = this.deepgram.speak.live(
+      const response = this.deepgram.speak.request(
+        {
+          text
+        },
         { 
           model: "aura-asteria-en" ,
-          container: 'none',
-          sample_rate: 48000,
+          encoding: 'opus',
+          bit_rate: 24000,
         });
 
-        let audioBuffer = Buffer.alloc(0);
+        const stream = await (await response).getStream()
 
-        dgConnection.on(LiveTTSEvents.Open, () => {
-          console.log("Connection opened");
-    
-          // Send text data for TTS synthesis
-          dgConnection.sendText(text);
-          dgConnection.flush();
-        });
-
-        dgConnection.on(LiveTTSEvents.Audio, (data) => {
-          console.log("Deepgram audio data received");
-          const buffer = Buffer.from(data);
-          audioBuffer = Buffer.concat([audioBuffer, buffer]);
-        });
-    
-        dgConnection.on(LiveTTSEvents.Flushed, () => {
-          console.log("Deepgram Flushed - Writing audio file");
-          this.convertAndStream(audioBuffer);
-        });
-
-        dgConnection.on(LiveTTSEvents.Close, () => {
-          console.log("Connection closed");
-        });
-    
-        dgConnection.on(LiveTTSEvents.Error, (err) => {
-          console.error("Deepgram TTS Error:", err);
-        });
+        if(stream) {
+          this.processAudio(stream)
+        }
     } catch (error) {
         console.log("Error send to text to speech", error)
     }
   }
+
+  private async getAudioBuffer (response: ReadableStream<Uint8Array<ArrayBufferLike>>) {
+    const reader = response.getReader();
+    const chunks = [];
+  
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+  
+      chunks.push(value);
+    }
+  
+    const dataArray = chunks.reduce(
+      (acc, chunk) => Uint8Array.from([...acc, ...chunk]),
+      new Uint8Array(0)
+    );
+  
+    return Buffer.from(dataArray.buffer);
+  };
+
+  private async processAudio(response: ReadableStream<Uint8Array>) {
+    // Get the complete audio buffer
+    const audioBuffer = await this.getAudioBuffer(response);
+    
+    // Convert the buffer back into a Readable stream
+    const audioStream = Readable.from(audioBuffer);
+    
+    // Create the Ogg demuxer instance from prism-media
+    const oggDemuxer = new prism.opus.OggDemuxer();
+    
+    // Pipe the stream into the demuxer
+    audioStream.pipe(oggDemuxer);
+    
+    // Listen for opus frame data
+    oggDemuxer.on("data", (opusFrame: Buffer) => {
+      const currentPacketTimestamp = this.rtpTimestamp;
+      const rtpPackets = this.createRtpPacket(opusFrame)
+
+      const sequence = this.rtpSequenceNumber - 1;
+      this.jitterBuffer?.addPacket(sequence, rtpPackets, currentPacketTimestamp)
+    });
+    
+    oggDemuxer.on("error", (err: Error) => {
+      console.error("Ogg demuxer error:", err);
+    });
+    
+    oggDemuxer.on("end", () => {
+      console.log("Ogg demuxer ended");
+      this.jitterBuffer?.flushAllGradually();
+    });
+  }
+
 
   public setDirectTransportProducer(directTransportProducer: Producer) {
       this.directTransportProducer = directTransportProducer
@@ -188,66 +195,6 @@ export class DeepgramSTT {
        }
        this.rtpSSRC = ssrc;
 
-  }
-
-  private convertAndStream(audioBuffer: Buffer) {
-    try {
-      // Create a readable stream from the PCM audio buffer
-      const pcmStream = Readable.from(audioBuffer);
-
-      // Upmix mono PCM to stereo (assuming input PCM is 16-bit little-endian)
-      const upmixTransform = new Transform({
-        transform(chunk, encoding, callback) {
-          const numSamples = chunk.length / 2;
-          const stereoBuffer = Buffer.alloc(chunk.length * 2);
-          for (let i = 0; i < numSamples; i++) {
-            const sample = chunk.readInt16LE(i * 2);
-            stereoBuffer.writeInt16LE(sample, i * 4);       // Left channel
-            stereoBuffer.writeInt16LE(sample, i * 4 + 2);     // Right channel
-          }
-          callback(null, stereoBuffer);
-        },
-      });
-
-      // Encode PCM (stereo, 16-bit LE, 48000Hz) to Opus using opusscript.
-      const opusEncoder = new OpusScript(48000, 2, OpusScript.Application.AUDIO);
-      const bufferingOpusTransform = new OpusBufferingTransform(opusEncoder);
-
-      // Transform to encapsulate each Opus chunk in an RTP packet using rtp.js.
-      const rtpPacketTransform = new Transform({
-        transform: (chunk: Buffer, encoding, callback) => {
-          try {
-            // Create RTP packet from the Opus-encoded chunk.
-            const rtpPacketBuffer = this.createRtpPacket(chunk);
-
-            new Promise((resolve) => setTimeout(resolve, 30));
-            
-            callback(null, rtpPacketBuffer);
-          } catch (err) {
-            callback(err as Error);
-          }
-        },
-      });
-
-      // Build the pipeline:
-      // PCM -> Upmix -> Opus encode -> RTP packetize -> send via directTransportProducer
-      pcmStream
-        .pipe(upmixTransform)
-        .pipe(bufferingOpusTransform)
-        .pipe(rtpPacketTransform)
-        .on("data", async (rtpPacketBuffer: Buffer) => {
-          if (this.directTransportProducer) {
-            console.log("Sending RTP packet, length:", rtpPacketBuffer.length);
-            await new Promise((resolve) => setTimeout(resolve, 30));
-            this.directTransportProducer.send(rtpPacketBuffer);
-          } else {
-            console.error("directTransportProducer is not set");
-          }
-        });
-
-    } catch (error) {
-      console.error("Error in PCM to Opus streaming:", error);
-    }
   }
 
   private createRtpPacket(opusPayload: Buffer): Buffer {
@@ -279,5 +226,6 @@ export class DeepgramSTT {
       this.keepAliveInterval = null;
     }
     this.connection = null;
+    this.jitterBuffer?.stop();
   }
 }

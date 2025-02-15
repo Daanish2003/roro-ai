@@ -1,31 +1,28 @@
 import { ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate } from "@langchain/core/prompts";
 import { ConversationChain } from "langchain/chains";
-import { ChatGroq } from "@langchain/groq";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { BufferMemory } from "langchain/memory";
 
 export class GroqModal {
   private conversationChain: ConversationChain;
 
   constructor() {
-    const modelName = "gemma2-9b-it";
+    const modelName = "gemini-2.0-flash";
     const temperature = 0.7;
-    const apiKey = process.env.GROQ_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
 
 
     if (!apiKey) {
       console.warn("Warning: GEMINI_API_KEY is not set. Please ensure you have set it for API calls to work.");
     }
 
-    const model = new ChatGroq({ model: modelName, temperature, apiKey });
+    const model = new ChatGoogleGenerativeAI({ model: modelName, temperature, apiKey });
     const chatPrompt = ChatPromptTemplate.fromMessages([
       SystemMessagePromptTemplate.fromTemplate(
-        `You are an AI conversational partner designed to help users practice and improve their English communication skills.
-         Engage in natural, flowing conversation as if you were chatting with a friend. Your tone should be friendly, supportive,
-         and encouraging. Ask open-ended questions and share your own thoughts to keep the conversation lively. If the user makes
-         mistakes, gently offer corrections or suggestions without interrupting the natural flow of conversation. Focus on creating
-         a relaxed, stress-free environment where the user feels comfortable experimenting with new words and phrases. Avoid using
-         overly technical language unless the user asks for clarification. Your goal is to help the user build confidence in speaking
-         English through natural dialogue and real-life conversation scenarios. Also don't use emoji and apply some emotions`
+        `I want you to act a as spoken English teacher, I will speak to you in English and you will reply to me in
+        English to practice my spoken english i want you tu keep your reply neat. limiting the reply to 100 words.
+        I want you to strictly correct my grammer mistakes and typos. I want you to ask me a question first. Remember,
+        I want you to strictly correct my grammer mistakes and typos.`
       ),
       HumanMessagePromptTemplate.fromTemplate("{input}")
     ]);
