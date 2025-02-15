@@ -1,4 +1,4 @@
-import type { DtlsParameters, MediaKind, RtpParameters } from 'mediasoup/node/lib/types.js';
+import type { DtlsParameters, MediaKind, RtpCapabilities, RtpParameters } from 'mediasoup/node/lib/types.js';
 import { Room } from '../classes/room.js'
 import Client from '../classes/client.js';
 import { mediasoupWorkerManager } from './worker-manager.js';
@@ -56,6 +56,35 @@ export class RoomManager {
         }
     }
 
+    public async createClientConsumerTransport({ roomId }: { roomId: string }) {
+        const room = this.getRoomById(roomId);
+        if (!room) {
+          throw new Error("Room not found for WebRTC transport");
+        }
+        if (!room.client) {
+          throw new Error("Ai is not present in the room");
+        }
+        const clientTransportParams = await room.client.createConsumerTransport();
+        return clientTransportParams;
+      }
+    
+      public async connectClientConsumerTransport({
+        dtlsParameters,
+        roomId,
+      }: {
+        dtlsParameters: DtlsParameters;
+        roomId: string;
+      }): Promise<void> {
+        const room = this.getRoomById(roomId);
+        if (!room) {
+          throw new Error("Room not found for connecting transport");
+        }
+        if (!room.client) {
+          throw new Error("Client is not present in the room");
+        }
+        await room.client.connectConsumerTransport({ dtlsParameters });
+      }
+
     public async createClientWebRtcTransport(
         { 
             roomId, 
@@ -76,28 +105,6 @@ export class RoomManager {
 
         return clientTransportParams
 
-    }
-
-    public async createPlainTransport(
-        {
-            roomId
-        }: {
-            roomId: string
-        }
-    ) {
-        const room = this.getRoomById(roomId)
-
-        if(!room) {
-            throw new Error("Room not found consume")
-        }
-
-        if(!room.client) {
-            throw new Error("Client is not present in the room")
-        }
-
-        const plainParams = await room.client.createPlainTransport()
-
-        return plainParams
     }
 
     public async connectClientWebRtcTransport(
@@ -123,52 +130,6 @@ export class RoomManager {
         await room.client.connectWebRtcTransport({dtlsParameters})
     }
 
-    public async forwardMedia(
-        {
-            roomId
-        }: {
-            roomId: string
-        }
-    ) {
-        const room = this.getRoomById(roomId)
-
-        if(!room) {
-            throw new Error("Room not found forward media")
-        }
-
-        if(!room.client) {
-            throw new Error("Client is not present in the room")
-        }
-
-        const rtpParameters = await room.client.forwardProducerToPlainTransport()
-
-        return rtpParameters
-    }
-
-    public async connectPlainTransport(
-        {
-            roomId,
-            ip,
-            port,
-            rtcpPort
-        } : {
-            roomId: string,
-            ip: string,
-            port: number,
-            rtcpPort: number | undefined
-        }) {
-        const room = this.getRoomById(roomId);
-        if (!room) {
-          throw new Error("Room not found for plain transport");
-        }
-        if (!room.client) {
-          throw new Error("Client is not present in the room");
-        }
-    
-        const success = await room.client.connectPlainTransport({ip, port, rtcpPort}); 
-    
-        return { success };
-      }
 
     public async startClientWebRtcProduce(
         {
@@ -197,6 +158,48 @@ export class RoomManager {
 
         return params
     }
+
+    public async startConsume({
+        rtpCapabilities,
+        roomId,
+      }: {
+        rtpCapabilities: RtpCapabilities;
+        roomId: string;
+      }): Promise<
+        | {
+            consumerParams: {
+              producerId: string;
+              id: string;
+              kind: MediaKind;
+              rtpParameters: RtpParameters;
+            };
+          }
+        | { message: string }
+      > {
+        const room = this.getRoomById(roomId);
+        if (!room) {
+          throw new Error("Room not found for consuming media");
+        }
+        if (!room.client) {
+          throw new Error("Client is not present in the room");
+        }
+        const response = await room.client.consumeMedia({ rtpCapabilities });
+        return response;
+      }
+
+      public async unpauseConsumer(roomId: string) {
+        const room = this.getRoomById(roomId);
+        if (!room) {
+          throw new Error("Room not found for producing media");
+        }
+        if (!room.client) {
+          throw new Error("Client is not present in the room");
+        }
+    
+        const { success } = await room.client.unpauseConsumer();
+    
+        return { success }
+      }
 
     public getRoomById(roomId: string): Room | undefined {
         return this.rooms.get(roomId)

@@ -3,15 +3,12 @@
 import type * as React from "react"
 import {
   AudioWaveform,
-  Award,
-  BarChart,
-  BookOpen,
   Command,
   Flag,
   GalleryVerticalEnd,
+  History,
   LayoutDashboard,
   Settings2,
-  ShieldHalf,
   SquareTerminal,
 } from "lucide-react"
 
@@ -51,34 +48,19 @@ const data = {
   ],
   navMain: [
     {
-      title: "Overview",
-      url: "/dashboard/overview",
-      icon: LayoutDashboard,
-    },
-    {
       title: "Practice",
       url: "/dashboard/practice",
       icon: SquareTerminal,
     },
     {
-      title: "Topics",
-      url: "/dashboard/topics",
-      icon: BookOpen,
+      title: "Overview",
+      url: "/dashboard/overview",
+      icon: LayoutDashboard,
     },
     {
-      title: "Progress",
-      url: "/dashboard/progress",
-      icon: BarChart
-    },
-    {
-      title: "Achievements",
-      url: "/dashboard/achievements",
-      icon: Award
-    },
-    {
-      title: "Leaderboard",
-      url: "/dashboard/leaderboard",
-      icon: ShieldHalf
+      title: "History",
+      url: "/dashboard/history",
+      icon: History,
     },
     {
       title: "Settings",
@@ -96,10 +78,10 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="bg-card border">
         <NavUser  />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-card">
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>

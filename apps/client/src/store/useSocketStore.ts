@@ -1,4 +1,4 @@
-import { AiSocket, socket } from "@/lib/socket";
+import { socket } from "@/lib/socket";
 import { create } from "zustand"
 
 type SocketState = {
@@ -9,13 +9,13 @@ type SocketState = {
     disconnect: () => void
 }
 
-export const useSocketStore = create<SocketState>((set, get) => ({
+export const useSocketStore = create<SocketState>((set) => ({
     isConnected: false,
     loading: false,
     error: "",
 
     connect: () => {
-        if(socket.connected && AiSocket.connected) {
+        if(socket.connected) {
             set({loading: false});
             return
         }
@@ -23,7 +23,6 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         set({loading: true, error: ""});
 
         socket.connect()
-        AiSocket.connect()
 
         const handleConnect = () => set({ isConnected: true, loading:false, error: ""});
         const handleDisconnect = () => set({ isConnected: false });
@@ -32,15 +31,10 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         socket.on("connect", handleConnect);
         socket.on("disconnect", handleDisconnect);
         socket.on("connect_error", handleConnectError);
-
-        AiSocket.on("connect", handleConnect);
-        AiSocket.on("disconnect", handleDisconnect);
-        AiSocket.on("connect_error", handleConnectError);
     },
 
     disconnect: () => {
         socket.disconnect();
-        AiSocket.disconnect();
         set({ isConnected: false });
     }
 }))

@@ -7,7 +7,7 @@ import React, { useEffect } from 'react'
 import Join from './join'
 import Controller from './controller'
 import { useMediaStore } from '@/store/useMedia'
-import { useMediasoupConsumerStore } from '@/store/useMediasoupConsumerStore'
+import { useMediasoupStore } from '@/store/useMediasoupStore'
 
 
 export default function RoomContainer() {
@@ -15,7 +15,7 @@ export default function RoomContainer() {
   const disconnect = useSocketStore((state) => state.disconnect)
   const isConnected = useSocketStore((state) => state.isConnected)
   const getUserMedia = useMediaStore((state) => state.getUserMedia)
-  const remoteStream = useMediasoupConsumerStore((state) => state.remoteStream)
+  const remoteStream = useMediasoupStore((state) => state.remoteStream)
   const localVideoRef = React.useRef<HTMLVideoElement | null>(null)
   const remoteAudioRef = React.useRef<HTMLAudioElement | null>(null)
   

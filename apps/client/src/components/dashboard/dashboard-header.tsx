@@ -5,6 +5,7 @@ import { SidebarTrigger } from '@roro-ai/ui/components/ui/sidebar'
 import { Separator } from '@roro-ai/ui/components/ui/separator'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@roro-ai/ui/components/ui/breadcrumb'
 import { usePathname } from 'next/navigation'
+import Logo from '../landing-page/logo'
 
 export default function DashboardHeader() {
   const pathname = usePathname()
@@ -22,7 +23,7 @@ export default function DashboardHeader() {
     })
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+    <header className="flex h-16 shrink-0 items-center justify-between pr-6 gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b">
       <div className="flex items-center gap-2 px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
@@ -44,6 +45,9 @@ export default function DashboardHeader() {
             ))}
           </BreadcrumbList>
         </Breadcrumb>
+      </div>
+      <div className='border border-primary rounded-lg p-2'>
+      <Logo />
       </div>
     </header>
   )

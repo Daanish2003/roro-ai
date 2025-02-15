@@ -2,19 +2,24 @@ import { config } from "../config/media-config.js";
 import { Producer } from "mediasoup/node/lib/ProducerTypes.js";
 import { DtlsParameters, WebRtcTransport } from "mediasoup/node/lib/WebRtcTransportTypes.js";
 import { Room } from "./room.js";
-import { MediaKind, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes.js";
-import { PlainTransport } from "mediasoup/node/lib/PlainTransportTypes.js";
+import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes.js";
+import { DirectTransport } from "mediasoup/node/lib/DirectTransportTypes.js";
+import { Consumer } from "mediasoup/node/lib/ConsumerTypes.js";
+import { DeepgramSTT } from "./deepgram.js";
+import { GroqModal } from "./groq-modal.js";
+import * as RTPParser from 'rtp-parser';
 
 class Client {
   private userId: string;
   private username: string;
+  private directTransport: DirectTransport | null = null;
+  private directTransportConsumer: Consumer | null = null;
+  private consumerTransport: WebRtcTransport | null = null;
+  public directTransportProducer: Producer | null = null;
+  private consumer: Consumer | null = null;
+  private deepgramSTT: DeepgramSTT;
+  public groqModal: GroqModal;
   private producerTransport: WebRtcTransport | null = null;
-  private plainTransport: PlainTransport | null = null;
-  private plainTransportParams: {
-    ip: string,
-    port: number,
-    rtcpPort: number | undefined 
-  } | null = null;
   
   private clientProducer: Producer | null = null;
   public room: Room | null = null;
@@ -22,6 +27,49 @@ class Client {
   constructor(username: string, userId: string) {
     this.userId = userId;
     this.username = username;
+    this.groqModal = new GroqModal()
+    this.deepgramSTT = new DeepgramSTT(this.groqModal)
+  }
+
+  public async createConsumerTransport() {
+    console.log("Ai: Starting WebRTC transport creation");
+    if (!this.room?.router) {
+      throw new Error("Router is not initialized for the room");
+    }
+    try {
+      const transport = await this.room.router.createWebRtcTransport(config.mediasoup.webRtcTransport);
+
+      const transportParams = {
+        id: transport.id,
+        iceParameters: transport.iceParameters,
+        iceCandidates: transport.iceCandidates,
+        dtlsParameters: transport.dtlsParameters,
+      };
+
+      this.consumerTransport = transport;
+      return transportParams;
+    } catch (error) {
+      console.error("Failed to create WebRTC transport", error);
+      throw error;
+    }
+  }
+
+  public async connectConsumerTransport({
+    dtlsParameters,
+  }: {
+    dtlsParameters: DtlsParameters;
+  }): Promise<void> {
+    console.log("Ai: Connecting WebRTC transport");
+    if (!this.consumerTransport) {
+      throw new Error("Consumer transport not initialized");
+    }
+    try {
+      await this.consumerTransport.connect({ dtlsParameters });
+      console.log("Ai: WebRTC transport connected");
+    } catch (error) {
+      console.error("Error connecting WebRTC transport:", error);
+      throw error;
+    }
   }
 
 
@@ -69,85 +117,18 @@ class Client {
     }
   }
 
-
-  public async createPlainTransport() {
+  private async createAiDirectTransport() {
     if (!this.room?.router) {
-      throw new Error("Router is not initialized for the room");
+        throw new Error("Router is not initialized for the room");
     }
+    console.log("Ai: Creating Direct Transport for Deepgram");
     try {
-      console.log("client plain Transport")
-      this.plainTransport = await this.room.router.createPlainTransport(config.mediasoup.plainTransport);
-      this.plainTransportParams = {
-        ip: this.plainTransport.tuple.localIp,
-        port: this.plainTransport.tuple.localPort,
-        rtcpPort: this.plainTransport.rtcpTuple?.localPort,
-      };
-
-      this.plainTransport.on('tuple', (tuple) => {
-        console.log('Plain transport RTP tuple:', tuple);
-      });
-      this.plainTransport.on('rtcptuple', (tuple) => {
-        console.log('Plain transport RTCP tuple:', tuple);
-      });
-
-      return this.plainTransportParams
+        const directTransport = await this.room.router.createDirectTransport();
+        console.log("Ai: Direct Transport created");
+        return directTransport
     } catch (error) {
-      console.error("Error creating plain transport:", error);
-      throw error;
-    }
-  }
-
-  public async connectPlainTransport({ip, port, rtcpPort}:{ ip: string, port: number, rtcpPort: number | undefined}) {
-    if (!this.plainTransport) {
-      throw new Error("Plain transport not defined");
-    }
-    console.log("Ai: Connecting plain transport");
-    try {
-      await this.plainTransport.connect({
-        ip,
-        port,
-        rtcpPort,
-      });
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to connect plain transport:", error);
-      throw error;
-    }
-  }
-
-
-  public async forwardProducerToPlainTransport(): Promise<RtpParameters> {
-    console.log("client - forward")
-    if (!this.plainTransport) {
-      throw new Error("Plain transport not available");
-    }
-    if (!this.room?.router) {
-      throw new Error("Room or router not available");
-    }
-
-    if(!this.clientProducer) {
-      throw new Error("Client producer not found")
-    }
-
-
-
-    try {
-      const plainConsumer = await this.plainTransport.consume({
-        producerId: this.clientProducer.id,
-        rtpCapabilities: this.room.router.rtpCapabilities,
-      });
-
-      console.log("Producer closed:", plainConsumer.closed);
-      console.log("Producer paused:", plainConsumer.paused);
-      console.log("Producer RTP parameters:", plainConsumer.rtpParameters);
-      
-
-      
-      return plainConsumer.rtpParameters;
-
-    } catch (error) {
-      console.error("Failed to forward producer to plain transport", error);
-      throw error;
+        console.error("Failed to create Direct Transport", error);
+        throw error;
     }
   }
 
@@ -164,6 +145,11 @@ class Client {
     if (!this.room) {
       throw new Error("Room not found");
     }
+
+    if(!this.room.router) {
+      throw new Error("Router not initialized")
+    }
+
     try {
       console.log("client produce")
       this.clientProducer = await this.producerTransport.produce({ kind, rtpParameters });
@@ -173,10 +159,153 @@ class Client {
         this.clientProducer?.close();
       });
 
+      this.directTransport = await this.createAiDirectTransport();
+
+     if (!this.directTransport) {
+      throw new Error("Direct Transport for Deepgram failed to initialize");
+     }
+
+
+      this.directTransportConsumer = await this.directTransport.consume({
+        producerId: this.clientProducer.id,
+        rtpCapabilities: this.room.router.rtpCapabilities,
+        paused: false,
+      })
+
+      this.directTransportProducer = await this.directTransport.produce({
+        kind: this.directTransportConsumer.kind,
+        rtpParameters: this.directTransportConsumer.rtpParameters
+      })
+
+      if(!this.directTransportConsumer) {
+         throw new Error("Direct Transport Consumer for Deepgram failed to initialize");
+      }
+
+      this.directTransportConsumer.on("transportclose", () => {
+        console.log("DirectTransport Consumer transport closed.");
+      })
+
+      const dgSocket = this.deepgramSTT.createConnection();
+      
+
+      this.directTransportConsumer.on("rtp", async (rtpPackets) => {
+        if(!dgSocket) {
+          console.error("Deepgram socket not found");
+          return;
+        }
+
+        const parserRtp = RTPParser.parseRtpPacket(rtpPackets);
+         let opusFrame = parserRtp.payload;
+
+          if (parserRtp.extension) {
+              const extHeader = opusFrame.slice(0, 4);
+              const extLengthWords = extHeader.readUInt16BE(2);
+              const totalExtSize = 4 + extLengthWords * 4;
+              opusFrame = opusFrame.slice(totalExtSize);
+          }
+
+        this.deepgramSTT.sendAudio(opusFrame);
+      })
+
+
+      this.directTransportProducer.on("listenererror", (error) => {
+        console.error(error)
+      })
+
+      this.directTransportProducer.on("score", (score) => {
+        console.log(score)
+      })
+
+      this.directTransportProducer.on('trace', (trace) => {
+        console.log(trace)
+      })
+
+
+      this.deepgramSTT.setDirectTransportProducer(this.directTransportProducer)
+
       
       return this.clientProducer.id
     } catch (error) {
       console.error("Error producing media", error);
+      throw error;
+    }
+  }
+
+  public async consumeMedia({
+    rtpCapabilities,
+  }: {
+    rtpCapabilities: RtpCapabilities;
+  }): Promise<
+    | {
+        consumerParams: {
+          producerId: string;
+          id: string;
+          kind: MediaKind;
+          rtpParameters: RtpParameters;
+        };
+      }
+    | { message: string }
+  > {
+    console.log("Ai: Starting media consumption");
+    if (!this.directTransportProducer) {
+      return { message: "direct Producer not found" };
+    }
+    if (!this.consumerTransport) {
+      throw new Error("Consumer transport not initialized");
+    }
+    if (!this.room?.router?.canConsume({ producerId: this.directTransportProducer.id, rtpCapabilities })) {
+      return { message: "Cannot consume" };
+    }
+
+    try {
+      this.consumer = await this.consumerTransport.consume({
+        producerId: this.directTransportProducer.id,
+        rtpCapabilities,
+        paused: true,
+      });
+
+      console.log("Consume Paused:", this.consumer.paused);
+
+      if(!this.consumer) {
+        throw new Error("Consumer not created");
+      }
+
+      this.consumer.on("transportclose", () => {
+        console.log("Consumer transport closed");
+        this.consumer?.close();
+      });
+
+      this.consumer.on("score", (score) => {
+        console.log(score)
+      })
+
+      const consumerParams = {
+        producerId: this.directTransportProducer.id,
+        id: this.consumer.id,
+        kind: this.consumer.kind,
+        rtpParameters: this.consumer.rtpParameters,
+      };
+
+      return { consumerParams };
+    } catch (error) {
+      console.error("Error consuming media", error);
+      throw error;
+    }
+  }
+
+  public async unpauseConsumer() {
+    if (!this.consumer) {
+      throw new Error("Consumer not found");
+    }
+    console.log("Ai: Unpausing consumer");
+    try {
+      await this.consumer.resume();
+     
+      console.log("Consumer paused:", this.consumer.paused);
+      
+      return { success: true};
+    } catch (error) {
+      console.error("Failed to unpause consumer", error);
       throw error;
     }
   }

@@ -8,7 +8,7 @@ export default function DashboardLayout({children}: {children: React.ReactNode})
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className='bg-card'>
         <DashboardHeader />
         {children}
       </SidebarInset>
