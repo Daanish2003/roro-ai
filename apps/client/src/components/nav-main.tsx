@@ -29,15 +29,14 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
           const isActive = pathname === item.url
           console.log(isActive)
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={isActive}>
-                <Link href={item.url}>
+              <SidebarMenuButton asChild isActive={isActive} size={"lg"}>
+                <Link href={item.url} className="text-lg">
                   {item.icon && React.createElement(item.icon, { className: "w-5 h-5 mr-2" })}
                   {item.title}
                 </Link>
