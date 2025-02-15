@@ -31,6 +31,47 @@ class Client {
     this.deepgramSTT = new DeepgramSTT(this.groqModal)
   }
 
+  public async createConsumerTransport() {
+    console.log("Ai: Starting WebRTC transport creation");
+    if (!this.room?.router) {
+      throw new Error("Router is not initialized for the room");
+    }
+    try {
+      const transport = await this.room.router.createWebRtcTransport(config.mediasoup.webRtcTransport);
+
+      const transportParams = {
+        id: transport.id,
+        iceParameters: transport.iceParameters,
+        iceCandidates: transport.iceCandidates,
+        dtlsParameters: transport.dtlsParameters,
+      };
+
+      this.consumerTransport = transport;
+      return transportParams;
+    } catch (error) {
+      console.error("Failed to create WebRTC transport", error);
+      throw error;
+    }
+  }
+
+  public async connectConsumerTransport({
+    dtlsParameters,
+  }: {
+    dtlsParameters: DtlsParameters;
+  }): Promise<void> {
+    console.log("Ai: Connecting WebRTC transport");
+    if (!this.consumerTransport) {
+      throw new Error("Consumer transport not initialized");
+    }
+    try {
+      await this.consumerTransport.connect({ dtlsParameters });
+      console.log("Ai: WebRTC transport connected");
+    } catch (error) {
+      console.error("Error connecting WebRTC transport:", error);
+      throw error;
+    }
+  }
+
 
   public async createWebRtcTransport() {
     if (!this.room?.router) {

@@ -25,7 +25,7 @@ export class GroqModal {
          mistakes, gently offer corrections or suggestions without interrupting the natural flow of conversation. Focus on creating
          a relaxed, stress-free environment where the user feels comfortable experimenting with new words and phrases. Avoid using
          overly technical language unless the user asks for clarification. Your goal is to help the user build confidence in speaking
-         English through natural dialogue and real-life conversation scenarios.`
+         English through natural dialogue and real-life conversation scenarios. Also don't use emoji and apply some emotions`
       ),
       HumanMessagePromptTemplate.fromTemplate("{input}")
     ]);
@@ -37,7 +37,7 @@ export class GroqModal {
     });
   }
 
-  public async sendMessage(input: string): Promise<any> {
+  public async sendMessage(input: string) {
     try {
       
       const { response } = await this.conversationChain.call({ input });

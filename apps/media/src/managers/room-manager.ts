@@ -56,6 +56,35 @@ export class RoomManager {
         }
     }
 
+    public async createClientConsumerTransport({ roomId }: { roomId: string }) {
+        const room = this.getRoomById(roomId);
+        if (!room) {
+          throw new Error("Room not found for WebRTC transport");
+        }
+        if (!room.client) {
+          throw new Error("Ai is not present in the room");
+        }
+        const clientTransportParams = await room.client.createConsumerTransport();
+        return clientTransportParams;
+      }
+    
+      public async connectClientConsumerTransport({
+        dtlsParameters,
+        roomId,
+      }: {
+        dtlsParameters: DtlsParameters;
+        roomId: string;
+      }): Promise<void> {
+        const room = this.getRoomById(roomId);
+        if (!room) {
+          throw new Error("Room not found for connecting transport");
+        }
+        if (!room.client) {
+          throw new Error("Client is not present in the room");
+        }
+        await room.client.connectConsumerTransport({ dtlsParameters });
+      }
+
     public async createClientWebRtcTransport(
         { 
             roomId, 

@@ -127,6 +127,35 @@ export class SocketServer {
 			);
 
 			socket.on(
+				"createConsumerTransport",
+				async (
+				  { roomId }: { roomId: string },
+				  callback: (response: {
+					clientTransportParams: {
+					  id: string;
+					  iceParameters: IceParameters;
+					  iceCandidates: IceCandidate[];
+					  dtlsParameters: DtlsParameters;
+					};
+				  }) => void
+				) => {
+				  const clientTransportParams = await this.roomManager.createClientConsumerTransport({ roomId });
+				  callback({ clientTransportParams });
+				}
+			  );
+		
+			socket.on(
+				"connect-consumer-transport",
+				async (
+				  { roomId, dtlsParameters }: { roomId: string; dtlsParameters: DtlsParameters },
+				  callback: (response: { success: boolean }) => void
+				) => {
+				  await this.roomManager.connectClientConsumerTransport({ roomId, dtlsParameters });
+				  callback({ success: true });
+				}
+			);
+
+			socket.on(
 				"start-produce",
 				async (
 					{
