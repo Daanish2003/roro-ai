@@ -54,10 +54,12 @@ export class SocketServer {
 						roomId,
 						userId,
 						username,
+						prompt
 					 }: { 
 						roomId: string ,
 						userId: string,
-						username: string
+						username: string,
+						prompt: string
 					},
 					callback: (
 						response:
@@ -67,7 +69,8 @@ export class SocketServer {
 				) => {
 					
 					try {
-						const response = await this.roomManager.joinRoom(roomId, userId, username);
+						console.log(prompt)
+						const response = await this.roomManager.joinRoom(roomId, userId, username, prompt);
 
 						callback(response);
 					} catch (error) {

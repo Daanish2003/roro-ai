@@ -2,11 +2,10 @@ import { createClient, type ListenLiveClient, LiveTranscriptionEvents } from "@d
 import "dotenv/config";
 import { GroqModal } from "./groq-modal.js";
 import { Producer } from "mediasoup/node/lib/types.js";
-import { packets } from "rtp.js"
-import prism from "prism-media"
+import { packets } from "rtp.js";
+import prism from "prism-media";
 import { Readable } from "stream";
 import { JitterBuffer } from "./jitterBuffer.js";
-
 
 
 export class DeepgramSTT {
@@ -31,7 +30,7 @@ export class DeepgramSTT {
     });
   }
 
-  public createConnection(): ListenLiveClient {
+  public async createConnection(): Promise<ListenLiveClient> {
     if (this.connection) {
       return this.connection;
     }
@@ -57,10 +56,10 @@ export class DeepgramSTT {
     return this.connection;
   }
 
-  private setupEventListeners(): void {
+  private setupEventListeners (): void {
     if (!this.connection) return;
 
-    this.connection.on(LiveTranscriptionEvents.Open, () => {
+    this.connection.on(LiveTranscriptionEvents.Open, async () => {
       console.log("Deepgram connected");
       if (this.keepAliveInterval) {
         clearInterval(this.keepAliveInterval);
@@ -68,6 +67,10 @@ export class DeepgramSTT {
       this.keepAliveInterval = setInterval(() => {
         this.connection?.keepAlive();
       }, 3000);
+       const text="INIT"
+       const response = await this.groqModal.sendMessage(text)
+
+       await this.textToSpeech(response)
     });
 
     this.connection.on(LiveTranscriptionEvents.Transcript, async (data) => {
@@ -81,6 +84,7 @@ export class DeepgramSTT {
         }
       }
     });
+
 
     this.connection.on(LiveTranscriptionEvents.Metadata, (data) => {
       console.log("Metadata:", data);
@@ -194,7 +198,6 @@ export class DeepgramSTT {
           throw new Error("SSRC is undefined");
        }
        this.rtpSSRC = ssrc;
-
   }
 
   private createRtpPacket(opusPayload: Buffer): Buffer {

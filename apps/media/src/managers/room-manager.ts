@@ -26,14 +26,14 @@ export class RoomManager {
         return roomId;
     }
 
-    public async joinRoom(roomId: string, userId: string, username: string) {
+    public async joinRoom(roomId: string, userId: string, username: string, prompt: string) {
         if (!this.rooms.has(roomId)) {
            await this.createRoom(roomId);
         }
         const room = this.rooms.get(roomId);
         
         if (room) {
-            const client = new Client(username, userId);
+            const client = new Client(username, userId, prompt);
 
             room.addClient(client);
 

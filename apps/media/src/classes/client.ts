@@ -20,14 +20,16 @@ class Client {
   private deepgramSTT: DeepgramSTT;
   public groqModal: GroqModal;
   private producerTransport: WebRtcTransport | null = null;
+  private prompt: string
   
   private clientProducer: Producer | null = null;
   public room: Room | null = null;
 
-  constructor(username: string, userId: string) {
+  constructor(username: string, userId: string, prompt: string) {
     this.userId = userId;
     this.username = username;
-    this.groqModal = new GroqModal()
+    this.prompt = prompt;
+    this.groqModal = new GroqModal(this.prompt)
     this.deepgramSTT = new DeepgramSTT(this.groqModal)
   }
 
@@ -185,7 +187,7 @@ class Client {
         console.log("DirectTransport Consumer transport closed.");
       })
 
-      const dgSocket = this.deepgramSTT.createConnection();
+      const dgSocket = await this.deepgramSTT.createConnection();
       
 
       this.directTransportConsumer.on("rtp", async (rtpPackets) => {

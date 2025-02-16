@@ -2,6 +2,7 @@ import { useSession } from '@/lib/auth-client'
 import { useMediaStore } from '@/store/useMedia'
 
 import { useMediasoupStore } from '@/store/useMediasoupStore'
+import { usePromptStore } from '@/store/usePrompt'
 import { Button } from '@roro-ai/ui/components/ui/button'
 import { useParams } from 'next/navigation'
 import React from 'react'
@@ -16,6 +17,7 @@ export default function Join() {
       const localStream = useMediaStore((state) => state.localStream)
       const params = useParams()
       const {data:session} = useSession()
+      const { prompt } = usePromptStore()
       
       const roomId = params.roomId as string || ""
 
@@ -28,7 +30,8 @@ export default function Join() {
 
 
       const JoinHandler = async () => {
-        await joinRoom(roomId, userId, username)
+        console.log(prompt)
+        await joinRoom(roomId, userId, username, prompt)
         const device = await setupDevice()
         const response = await createRecvTransport(roomId, device)
         if (response.success) {
