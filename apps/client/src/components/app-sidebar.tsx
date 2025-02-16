@@ -7,7 +7,6 @@ import {
   Flag,
   GalleryVerticalEnd,
   History,
-  LayoutDashboard,
   Settings2,
   SquareTerminal,
 } from "lucide-react"
@@ -21,6 +20,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@roro-ai/ui/components/ui/sidebar"
+import LogoutButton from "./auth/logout-button"
 
 // This is sample data.
 const data = {
@@ -53,11 +53,6 @@ const data = {
       icon: SquareTerminal,
     },
     {
-      title: "Overview",
-      url: "/dashboard/overview",
-      icon: LayoutDashboard,
-    },
-    {
       title: "History",
       url: "/dashboard/history",
       icon: History,
@@ -78,14 +73,14 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="bg-card border">
-        <NavUser  />
+      <SidebarHeader className="bg-card border-b">
+        <NavUser />
       </SidebarHeader>
       <SidebarContent className="bg-card">
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        
+        <LogoutButton />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

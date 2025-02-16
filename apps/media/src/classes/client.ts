@@ -6,7 +6,7 @@ import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rt
 import { DirectTransport } from "mediasoup/node/lib/DirectTransportTypes.js";
 import { Consumer } from "mediasoup/node/lib/ConsumerTypes.js";
 import { DeepgramSTT } from "./deepgram.js";
-import { GroqModal } from "./groq-modal.js";
+import { GeminiModal } from "./gemini-modal.js";
 import * as RTPParser from 'rtp-parser';
 
 class Client {
@@ -18,7 +18,7 @@ class Client {
   public directTransportProducer: Producer | null = null;
   private consumer: Consumer | null = null;
   private deepgramSTT: DeepgramSTT;
-  public groqModal: GroqModal;
+  public geminiModal: GeminiModal;
   private producerTransport: WebRtcTransport | null = null;
   private prompt: string
   
@@ -29,8 +29,8 @@ class Client {
     this.userId = userId;
     this.username = username;
     this.prompt = prompt;
-    this.groqModal = new GroqModal(this.prompt)
-    this.deepgramSTT = new DeepgramSTT(this.groqModal)
+    this.geminiModal = new GeminiModal(this.prompt)
+    this.deepgramSTT = new DeepgramSTT(this.geminiModal)
   }
 
   public async createConsumerTransport() {

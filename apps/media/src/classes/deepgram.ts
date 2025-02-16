@@ -1,6 +1,6 @@
 import { createClient, type ListenLiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import "dotenv/config";
-import { GroqModal } from "./groq-modal.js";
+import { GeminiModal } from "./gemini-modal.js";
 import { Producer } from "mediasoup/node/lib/types.js";
 import { packets } from "rtp.js";
 import prism from "prism-media";
@@ -19,7 +19,7 @@ export class DeepgramSTT {
   private rtpTimestamp: number = 0;
   private rtpSSRC: number = 0;
 
-  constructor(private groqModal: GroqModal) {
+  constructor(private geminiModal: GeminiModal) {
     const apiKey = process.env.DEEPGRAM_API_KEY;
     if (!apiKey) {
       throw new Error("Deepgram API key is missing.");
@@ -68,7 +68,7 @@ export class DeepgramSTT {
         this.connection?.keepAlive();
       }, 3000);
        const text="INIT"
-       const response = await this.groqModal.sendMessage(text)
+       const response = await this.geminiModal.sendMessage(text)
 
        await this.textToSpeech(response)
     });
@@ -78,7 +78,7 @@ export class DeepgramSTT {
         const transcript = data.channel.alternatives[0].transcript;
         if (data.is_final && transcript.trim().length > 0) {
           console.log("Transcript", transcript);
-          const response = await this.groqModal.sendMessage(transcript);
+          const response = await this.geminiModal.sendMessage(transcript);
 
           await this.textToSpeech(response)
         }

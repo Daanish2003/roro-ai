@@ -4,10 +4,11 @@ import { useMediaStore } from '@/store/useMedia'
 import { useMediasoupStore } from '@/store/useMediasoupStore'
 import { usePromptStore } from '@/store/usePrompt'
 import { Button } from '@roro-ai/ui/components/ui/button'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import React from 'react'
 
 export default function Join() {
+      const router = useRouter()
       const joinRoom = useMediasoupStore((state) => state.joinRoom)
       const createSendTransport = useMediasoupStore((state) => state.createSendTransport)
       const setupDevice = useMediasoupStore((state) => state.setDevice)
@@ -44,6 +45,10 @@ export default function Join() {
         
       }
 
+      const ExitHandler = async () => {
+        router.replace("/dashboard/practice")
+      }
+
   return (
     <div className="bg-card lg:w-1/4 flex flex-col items-center justify-center rounded-2xl border p-4 gap-y-4">
         <div className="text-center space-y-4">
@@ -62,6 +67,7 @@ export default function Join() {
                variant={"outline"}
                size={"lg"}
                className="border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
+               onClick={ExitHandler}
             >
             Exit
             </Button>

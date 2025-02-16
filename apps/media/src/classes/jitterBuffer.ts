@@ -77,5 +77,12 @@ export class JitterBuffer {
       // Clear the buffer after scheduling all packets.
       this.buffer = [];
     }
+
+    public reset(): void {
+      this.buffer = [];
+      this.lastSentSequence = -1;
+      console.log("JitterBuffer: Reset sequence.");
+    }
+    
   }
   

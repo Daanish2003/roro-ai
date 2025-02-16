@@ -3,7 +3,7 @@ import { ConversationChain } from "langchain/chains";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { BufferMemory } from "langchain/memory";
 
-export class GroqModal {
+export class GeminiModal {
   private conversationChain: ConversationChain;
   private systemPrompt: string;
 

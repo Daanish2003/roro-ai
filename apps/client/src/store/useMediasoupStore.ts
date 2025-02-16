@@ -46,7 +46,8 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
         try {
           console.log("Emitting joinRoom with:", { roomId, userId, username, prompt });
             const { routerRtpCap } = await socket.emitWithAck("joinRoom", { roomId, userId, username, prompt })
-
+            
+            set({ joined: true})
             set({ routerRtpCapabilities: routerRtpCap})
         } catch (error){
             throw new Error(`[Failed to load device]: ${(error as Error).message}`);
