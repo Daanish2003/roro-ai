@@ -50,9 +50,9 @@ export default function AiVoiceAgentContainer({ remoteAudioRef }: AiVoiceAgentCo
         className="hidden"
       />
       <div className="w-full flex items-center justify-around gap-2">
-        <div className='bg-primary w-12 rounded-full' style={{ height: `${audioLevel}px`, transition: 'height 0.3s ease' }}/>
-        <div className='bg-primary w-12 rounded-full' style={{ height: `${audioLevel}px`, transition: 'height 0.3s ease' }}/>
-        <div className='bg-primary w-12 rounded-full' style={{ height: `${audioLevel}px`, transition: 'height 0.3s ease' }}/>
+        <div className='bg-primary w-12 rounded-full' style={{ height: `${audioLevel * 20}px`, transition: 'height 0.3s ease' }}/>
+        <div className='bg-primary w-12 rounded-full' style={{ height: `${audioLevel * 20}px`, transition: 'height 0.3s ease' }}/>
+        <div className='bg-primary w-12 rounded-full' style={{ height: `${audioLevel * 20}px`, transition: 'height 0.3s ease' }}/>
       </div>
     </div>
   );

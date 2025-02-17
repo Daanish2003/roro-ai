@@ -69,7 +69,6 @@ export class SocketServer {
 				) => {
 					
 					try {
-						console.log(prompt)
 						const response = await this.roomManager.joinRoom(roomId, userId, username, prompt);
 
 						callback(response);

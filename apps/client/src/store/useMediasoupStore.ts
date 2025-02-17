@@ -82,15 +82,11 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     
             try {
                 const audioTrack = localstream.getAudioTracks()[0];
-
                 console.log(audioTrack)
 
-        
                 const audioProducer = audioTrack
                   ? await sendTransport.produce({ track: audioTrack })
                   : null;
-
-                console.log(audioProducer)
 
                 set({ producers: 
                     { 

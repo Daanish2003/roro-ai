@@ -40,6 +40,7 @@ export class RoomManager {
             console.log(client)
 
             client.room = room
+        
 
             const routerRtpCap = await room.getRouterRtpCap()
 

@@ -2,16 +2,20 @@ import { Router } from "mediasoup/node/lib/RouterTypes.js";
 import { Worker } from "mediasoup/node/lib/WorkerTypes.js";
 import { config } from "../config/media-config.js";
 import Client from "./client.js";
+import { EventEmitter } from "events";
 
 export class Room {
 	public roomId: string;
     public router: Router | null
 	public client: Client | null
+	public eventEmitter: EventEmitter;
+
 
 	constructor(roomId: string) {
 		this.roomId = roomId;
 		this.router = null;
 		this.client = null;
+		this.eventEmitter = new EventEmitter()
 	}
 
 	public async initialize(worker: Worker) {
@@ -41,4 +45,13 @@ export class Room {
 		}
 		this.client = client
 	}
+
+	public on(event: string, listener: (...args: any[]) => void) {
+		this.eventEmitter.on(event, listener);
+	}
+
+	public emit(event: string, ...args: any[]) {
+		this.eventEmitter.emit(event, ...args);
+	  }
+	
 }
