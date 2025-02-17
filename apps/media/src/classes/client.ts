@@ -5,9 +5,9 @@ import { Room } from "./room.js";
 import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes.js";
 import { DirectTransport } from "mediasoup/node/lib/DirectTransportTypes.js";
 import { Consumer } from "mediasoup/node/lib/ConsumerTypes.js";
-import { DeepgramSTT } from "./deepgram.js";
-import { GroqModal } from "./groq-modal.js";
+import { AiAgentPipeline } from "./ai-agent-pipeline.js";
 import * as RTPParser from 'rtp-parser';
+
 
 class Client {
   private userId: string;
@@ -17,18 +17,18 @@ class Client {
   private consumerTransport: WebRtcTransport | null = null;
   public directTransportProducer: Producer | null = null;
   private consumer: Consumer | null = null;
-  private deepgramSTT: DeepgramSTT;
-  public groqModal: GroqModal;
   private producerTransport: WebRtcTransport | null = null;
+  public prompt: string
+
   
   private clientProducer: Producer | null = null;
   public room: Room | null = null;
 
-  constructor(username: string, userId: string) {
+  constructor(username: string, userId: string, prompt: string) {
     this.userId = userId;
     this.username = username;
-    this.groqModal = new GroqModal()
-    this.deepgramSTT = new DeepgramSTT(this.groqModal)
+    this.prompt= prompt;
+    
   }
 
   public async createConsumerTransport() {
@@ -165,6 +165,8 @@ class Client {
       throw new Error("Direct Transport for Deepgram failed to initialize");
      }
 
+     const aiAgentPipeline = new AiAgentPipeline(this.prompt, this.room)
+
 
       this.directTransportConsumer = await this.directTransport.consume({
         producerId: this.clientProducer.id,
@@ -185,26 +187,24 @@ class Client {
         console.log("DirectTransport Consumer transport closed.");
       })
 
-      const dgSocket = this.deepgramSTT.createConnection();
+      const dgSocket = aiAgentPipeline.deepgramSTT.createConnection()
       
 
       this.directTransportConsumer.on("rtp", async (rtpPackets) => {
         if(!dgSocket) {
-          console.error("Deepgram socket not found");
-          return;
+          throw new Error("Deepgram socket not initailized")
         }
-
         const parserRtp = RTPParser.parseRtpPacket(rtpPackets);
-         let opusFrame = parserRtp.payload;
+        let audioFrame = parserRtp.payload;
 
-          if (parserRtp.extension) {
-              const extHeader = opusFrame.slice(0, 4);
-              const extLengthWords = extHeader.readUInt16BE(2);
-              const totalExtSize = 4 + extLengthWords * 4;
-              opusFrame = opusFrame.slice(totalExtSize);
-          }
-
-        this.deepgramSTT.sendAudio(opusFrame);
+        if (parserRtp.extension) {
+           const extHeader = audioFrame.slice(0, 4);
+           const extLengthWords = extHeader.readUInt16BE(2);
+           const totalExtSize = 4 + extLengthWords * 4;
+           audioFrame = audioFrame.slice(totalExtSize);
+        }
+        
+        aiAgentPipeline.deepgramSTT.sendAudio(audioFrame);
       })
 
 
@@ -221,7 +221,7 @@ class Client {
       })
 
 
-      this.deepgramSTT.setDirectTransportProducer(this.directTransportProducer)
+      aiAgentPipeline.deepgramTTS.setDirectTransportProducer(this.directTransportProducer)
 
       
       return this.clientProducer.id

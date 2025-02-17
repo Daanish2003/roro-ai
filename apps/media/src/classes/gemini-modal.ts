@@ -2,14 +2,21 @@ import { ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemp
 import { ConversationChain } from "langchain/chains";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { BufferMemory } from "langchain/memory";
+import { Room } from "./room.js";
 
-export class GroqModal {
+export class GeminiModal {
   private conversationChain: ConversationChain;
+  private systemPrompt: string;
+  private room: Room
+  private isAgentSpeaking: boolean
 
-  constructor() {
+  constructor(prompt: string, room: Room) {
     const modelName = "gemini-2.0-flash";
     const temperature = 0.7;
     const apiKey = process.env.GEMINI_API_KEY;
+    this.room = room
+    this.systemPrompt = prompt
+    this.isAgentSpeaking = false
 
 
     if (!apiKey) {
@@ -18,12 +25,7 @@ export class GroqModal {
 
     const model = new ChatGoogleGenerativeAI({ model: modelName, temperature, apiKey });
     const chatPrompt = ChatPromptTemplate.fromMessages([
-      SystemMessagePromptTemplate.fromTemplate(
-        `I want you to act a as spoken English teacher, I will speak to you in English and you will reply to me in
-        English to practice my spoken english i want you tu keep your reply neat. limiting the reply to 100 words.
-        I want you to strictly correct my grammer mistakes and typos. I want you to ask me a question first. Remember,
-        I want you to strictly correct my grammer mistakes and typos.`
-      ),
+      SystemMessagePromptTemplate.fromTemplate(this.systemPrompt),
       HumanMessagePromptTemplate.fromTemplate("{input}")
     ]);
 
@@ -32,17 +34,23 @@ export class GroqModal {
       prompt: chatPrompt,
       memory: new BufferMemory(),
     });
+
+    this.room.on('Transcribed', (transcript) => {
+        this.sendMessage(transcript);
+    })
+
+    this.room.on("start", () => {
+      const text = "INIT"
+      this.sendMessage(text)
+    })
   }
 
   public async sendMessage(input: string) {
     try {
-      
       const { response } = await this.conversationChain.call({ input });
-
-      console.log(response)
-       
-       return response
-
+      
+      if(this.isAgentSpeaking) return
+      this.room.emit("llmResponse", response);
     } catch (error) {
       console.error("Error in sendMessage:", error);
       throw new Error(`Failed to send message and receive response from Gemini API: ${error}`);

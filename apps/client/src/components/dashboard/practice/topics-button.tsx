@@ -1,16 +1,23 @@
 import { HoverBorderGradient } from '@/components/hover-border-gradient'
 import React from 'react'
 
-export default function TopicsButton({topic}: {topic: string}) {
+export default function TopicsButton({topic, onClick}: {topic: string, onClick: () => void}) {
   return (
-    <div className="">
+    <button
+     type='button'
+     tabIndex={0}
+     onClick={(e) => {
+       e.preventDefault();
+       onClick()
+     }}
+    >
       <HoverBorderGradient
         containerClassName="rounded-full"
-        as="button"
+        as={"div"}
         className="bg-card/90 border-primary border flex items-center space-x-2"
       >
         <span>{topic}</span>
       </HoverBorderGradient>
-    </div>
+    </button>
   )
 }

@@ -7,33 +7,38 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button } from "@roro-ai/ui/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@roro-ai/ui/components/ui/form";
-import { Textarea } from "@roro-ai/ui/components/ui/textarea";
 import { useSession } from "@/lib/auth-client";
 import { PromptSchema } from "@/zod/prompt-schema";
 import { useRouter } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 import TopicsButton from './topics-button';
 import useShowToast from '@/hooks/use-show-toast';
+import { PromptTopic } from "@/lib/prompt-contant";
+import { AutosizeTextarea } from "./autosize-textarea"; // Import the updated component
+import { usePromptStore } from "@/store/usePrompt";
 
 export default function PromptInput() {
-  const showTaost = useShowToast()
   const router = useRouter();
+  const showToast = useShowToast();
   const { data: session } = useSession();
 
+  const { setPrompt } = usePromptStore()
+
   const promptForm = useForm<z.infer<typeof PromptSchema>>({
-    mode: "onBlur",
+    mode: "onSubmit",
     resolver: zodResolver(PromptSchema),
     defaultValues: {
       prompt: "",
     },
   });
 
+  const { watch, setValue } = promptForm;
+  const promptValue = watch("prompt");
 
-
-  const startPracticeHandler = async (values : z.infer<typeof PromptSchema>) => {
-  
+  const startPracticeHandler = async (values: z.infer<typeof PromptSchema>) => {
+    setPrompt(values.prompt)
     try {
-      const response  = await fetch(
+      const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/rooms/create-room`,
         {
           method: "POST",
@@ -41,33 +46,37 @@ export default function PromptInput() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-          roomName: `${session?.user.name}'s Room`,
-          prompt: values.prompt
+            roomName: `${session?.user.name}'s Room`,
+            prompt: values.prompt,
           }),
-          credentials: 'include'
-        })
+          credentials: 'include',
+        }
+      );
 
-      const data = await response.json()
+      const data = await response.json();
 
-      if(!response.ok) {
-          showTaost({
-            title: "Something went wrong",
-            description: data.message || "Failed to start session",
-            type: "error"
-          }) 
+      if (!response.ok) {
+        showToast({
+          title: "Something went wrong",
+          description: data.message || "Failed to start session",
+          type: "error",
+        });
       }
 
-      router.replace(`/room/${data.roomId}`)
-
+      router.replace(`/room/${data.roomId}`);
     } catch (error) {
-      showTaost({
+      showToast({
         title: "Error",
         description: "Failed to start practice. Please try again.",
-        type: "error"
-      })
-      console.error("Error starting practice:", error)
+        type: "error",
+      });
+      console.error("Error starting practice:", error);
     }
-  }
+  };
+
+  const handlePromptTemplate = (prompt: string) => {
+    setValue("prompt",  prompt, { shouldDirty: true, shouldTouch: true });
+  };
 
   return (
     <div className="flex mt-[200px] justify-center min-h-screen p-4">
@@ -89,18 +98,20 @@ export default function PromptInput() {
                 <FormItem>
                   <FormControl>
                     <div className="flex flex-col border border-green-300 dark:border-green-700 bg-transparent dark:bg-green-800 shadow-sm focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 transition-shadow duration-200 rounded-xl p-2">
-                      <Textarea
-                        placeholder="Type your scenario here..."
-                        className="w-full p-4 min-h-[100px] text-base resize-none overflow-hidden border-none"
+                      <AutosizeTextarea
                         {...field}
+                        value={promptValue}
+                        onChange={(e) => setValue("prompt", e.target.value, { shouldDirty: true, shouldTouch: true })}
+                        placeholder="Type your scenario here..."
+                        maxHeight={200}
+                        className="w-full p-4 min-h-[100px] text-base resize-none overflow-hidden border-none bg-transparent"
                       />
                       <div className="mt-4 flex justify-end">
                         <Button
                           type="submit"
-                          disabled={false}
                           className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 flex items-center space-x-2 focus:ring-2 focus:ring-green-400 focus:ring-offset-2 dark:focus:ring-offset-green-800"
                         >
-                          <span>{false ? "Processing..." : "Start Practice"}</span>
+                          <span>Start Practice</span>
                           <ArrowUpRight className="w-4 h-4" />
                         </Button>
                       </div>
@@ -110,18 +121,13 @@ export default function PromptInput() {
               )}
             />
             <div className="mt-4 flex justify-evenly">
-               <TopicsButton 
-               topic="Job Interview"
-               />
-               <TopicsButton 
-               topic="Self Introduction"
-               />
-               <TopicsButton 
-               topic="Meeting new People"
-               />
-               <TopicsButton 
-               topic="Conflict Resolution"
-               />
+              {PromptTopic.map(({ topic, prompt }) => (
+                <TopicsButton
+                  key={topic}
+                  topic={topic}
+                  onClick={() => handlePromptTemplate(prompt)}
+                />
+              ))}
             </div>
           </form>
         </Form>

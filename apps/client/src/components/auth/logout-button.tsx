@@ -1,11 +1,12 @@
 import { signOut } from '@/lib/auth-client'
+import { Button } from '@roro-ai/ui/components/ui/button'
+import { LogOut } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React from 'react'
 
 export default function LogoutButton() {
     const router = useRouter()
     const logoutHandler = async () => {
-        console.log("logout")
         try {
             await signOut({
                 fetchOptions: {
@@ -19,11 +20,13 @@ export default function LogoutButton() {
         }
     }
   return (
-    <button
+    <Button
+      variant={"destructive"}
       type='submit'
       onClick={() => logoutHandler()}
     >
         Logout
-    </button>
+        <LogOut />
+    </Button>
   )
 }

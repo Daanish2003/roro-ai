@@ -36,8 +36,8 @@ export function NavMain({
           return (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild isActive={isActive} size={"lg"}>
-                <Link href={item.url} className="text-lg">
-                  {item.icon && React.createElement(item.icon, { className: "w-5 h-5 mr-2" })}
+                <Link href={item.url}>
+                  {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
                   {item.title}
                 </Link>
               </SidebarMenuButton>

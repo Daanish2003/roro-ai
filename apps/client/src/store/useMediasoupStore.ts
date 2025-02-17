@@ -16,10 +16,8 @@ type MediasoupProducerState = {
     recvTransport: mediasoupClient.types.Transport | null
     remoteStream: MediaStream | null
 
-
-
     setDevice: () => Promise<mediasoupClient.types.Device>
-    joinRoom: (roomId: string, userId: string, username: string) => Promise<void>
+    joinRoom: (roomId: string, userId: string, username: string, prompt:string) => Promise<void>
     getDevice: () => Promise<mediasoupClient.types.Device>
     createSendTransport: (roomId: string) => Promise<void>
     startProducing: (localstream: MediaStream) => Promise<void>
@@ -44,10 +42,12 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
 
 
 
-    joinRoom: async(roomId, userId, username) => {
+    joinRoom: async(roomId, userId, username, prompt) => {
         try {
-            const { routerRtpCap } = await socket.emitWithAck("joinRoom", { roomId, userId, username })
-
+          console.log("Emitting joinRoom with:", { roomId, userId, username, prompt });
+            const { routerRtpCap } = await socket.emitWithAck("joinRoom", { roomId, userId, username, prompt })
+            
+            set({ joined: true})
             set({ routerRtpCapabilities: routerRtpCap})
         } catch (error){
             throw new Error(`[Failed to load device]: ${(error as Error).message}`);
@@ -82,15 +82,11 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     
             try {
                 const audioTrack = localstream.getAudioTracks()[0];
-
                 console.log(audioTrack)
 
-        
                 const audioProducer = audioTrack
                   ? await sendTransport.produce({ track: audioTrack })
                   : null;
-
-                console.log(audioProducer)
 
                 set({ producers: 
                     { 
