@@ -8,7 +8,7 @@ import { SocketServer } from "./classes/socket-server.js";
 const port = process.env.PORT || 3333;
 export const server = createServer(app);
 
-(() => {
+(async () => {
   try {
     const socketServer = SocketServer.getInstance()
     socketServer.initialize();

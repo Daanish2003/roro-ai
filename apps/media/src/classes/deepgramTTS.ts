@@ -1,11 +1,11 @@
 import { createClient } from "@deepgram/sdk";
 import { Readable } from "stream";
 import prism from 'prism-media';
-import { JitterBuffer } from "./jitterBuffer.js";
 import { Producer } from "mediasoup/node/lib/types.js";
 import { packets } from "rtp.js";
 import { Room } from "./room.js";
 import { v4 as uuidv4 } from 'uuid';
+import { JitterBuffer } from "./jitterBuffer.js";
 
 export class DeepgramTTS {
     private room: Room
@@ -26,7 +26,7 @@ export class DeepgramTTS {
         this.deepgramTTS = createClient(apiKey);
         this.room = room
 
-        this.room.on("llmResponse", (response) => {
+        this.room.on("LLM_RESPONSE", (response) => {
             this.textToSpeech(response)
         })
     }
@@ -112,10 +112,9 @@ export class DeepgramTTS {
         
         oggDemuxer.on("end", () => {
           console.log("Ogg demuxer ended");
-          this.room.emit("ai-agent-speaking");
           jitterBuffer?.flushAllGradually();
           jitterBuffer.reset();
-          this.room.emit("ai-agent-stop-speaking");
+       
           this.currentSessionId = null;
           this.currentJitterBuffer = null;
         });
@@ -149,15 +148,10 @@ export class DeepgramTTS {
         rtpPacket.setPayloadType(100);
         rtpPacket.setSequenceNumber(this.rtpSequenceNumber++);
         rtpPacket.setTimestamp(this.rtpTimestamp);
-        // Increment timestamp by 960 samples per packet (for 20ms at 48000Hz)
         this.rtpTimestamp += 960;
         rtpPacket.setSsrc(this.rtpSSRC);
-    
-        // Create a DataView from the opusPayload buffer.
         const payloadDataView = new DataView(opusPayload.buffer, opusPayload.byteOffset, opusPayload.byteLength);
         rtpPacket.setPayload(payloadDataView);
-    
-        // Allocate an ArrayBuffer for serialization.
         const packetLength = rtpPacket.getByteLength();
         const arrayBuffer = new ArrayBuffer(packetLength);
         rtpPacket.serialize(arrayBuffer);

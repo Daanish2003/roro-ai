@@ -8,7 +8,6 @@ export class DeepgramSTT {
   private deepgramSTT: ReturnType<typeof createClient>;
   private connection: ListenLiveClient | null = null;
   private keepAliveInterval: NodeJS.Timeout | null = null;
-  private isAgentSpeaking: boolean
 
   constructor(room: Room) {
     const apiKey = process.env.DEEPGRAM_API_KEY;
@@ -19,15 +18,6 @@ export class DeepgramSTT {
     }
 
     this.room = room
-    this.isAgentSpeaking = false
-
-    this.room.on("ai-agent-speaking", () => {
-       this.isAgentSpeaking = true
-    })
-
-    this.room.on("ai-agent-stop-speaking", () => {
-      this.isAgentSpeaking = false
-    })
   }
 
   public async createConnection(): Promise<ListenLiveClient> {
@@ -46,10 +36,11 @@ export class DeepgramSTT {
       filler_words: false,
       language: "en-US",
       vad_events: true,
-      utterance_end_ms: 5000,
-      endpointing: 5000,
+      utterance_end_ms: 1000,
+      endpointing:1000,
       no_delay: true,
       profanity_filter: false,
+      dictation: true
     });
 
     this.setupEventListeners();
@@ -67,8 +58,6 @@ export class DeepgramSTT {
       this.keepAliveInterval = setInterval(() => {
         this.connection?.keepAlive();
       }, 3000);
-
-      this.room.emit("start")
     });
 
 
@@ -77,8 +66,8 @@ export class DeepgramSTT {
       if (data.channel && data.channel.alternatives.length > 0) {
         const transcript = data.channel.alternatives[0].transcript;
         if (data.is_final && transcript.trim().length > 0) {
-          console.log("Transcript", transcript);
-           this.room.emit('Transcribed', transcript)
+          console.log("TRANSCRIPT", transcript);
+          this.room.emit('TRANSCRIPT', transcript)
         }
       }
     });
@@ -96,6 +85,14 @@ export class DeepgramSTT {
       console.log("Connection closed");
       this.cleanupConnection();
     });
+
+    this.connection.on(LiveTranscriptionEvents.SpeechStarted, () => {
+      console.log("speech started")
+    })
+
+    this.connection.on(LiveTranscriptionEvents.UtteranceEnd, () => {
+      console.log("speech ended")
+    })
   }
 
 
@@ -105,8 +102,6 @@ export class DeepgramSTT {
         console.warn("No active connection to send audio.");
         return;
     }
-
-    if(this.isAgentSpeaking) return
 
     this.connection.send(audioFrame);
 }
@@ -122,9 +117,6 @@ export class DeepgramSTT {
     }
     this.cleanupConnection();
   }
-
-
-
 
   
   private cleanupConnection(): void {

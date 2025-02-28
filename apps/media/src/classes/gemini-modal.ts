@@ -1,63 +1,93 @@
-import { ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate } from "@langchain/core/prompts";
-import { ConversationChain } from "langchain/chains";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { BufferMemory } from "langchain/memory";
+import dotenv from "dotenv";
 import { Room } from "./room.js";
+import { START, END, MessagesAnnotation, StateGraph, MemorySaver} from "@langchain/langgraph"
+import { ChatPromptTemplate } from '@langchain/core/prompts';
 
-export class GeminiModal {
-  private conversationChain: ConversationChain;
+
+dotenv.config();
+
+export class GeminiModel {
+  private room: Room;
+  private apiKey: string;
   private systemPrompt: string;
-  private room: Room
-  private isAgentSpeaking: boolean
+  private prompt_template: ChatPromptTemplate<any, any>
+  private model: ChatGoogleGenerativeAI;
+  private app: any;
 
   constructor(prompt: string, room: Room) {
-    const modelName = "gemini-2.0-flash";
-    const temperature = 0.7;
-    const apiKey = process.env.GEMINI_API_KEY;
-    this.room = room
+    this.room = room;
+    this.apiKey = process.env.GEMINI_API_KEY || "";
     this.systemPrompt = prompt
-    this.isAgentSpeaking = false
+    this.prompt_template = this.initializeChatPromptTemplate()
+    this.model = this.initializeModel()
+    this.app = this.initializeWorkflow()
 
-
-    if (!apiKey) {
-      console.warn("Warning: GEMINI_API_KEY is not set. Please ensure you have set it for API calls to work.");
+    if (!this.apiKey) {
+      throw new Error("GEMINI_API_KEY not found in environment variables");
     }
 
-    const model = new ChatGoogleGenerativeAI({ model: modelName, temperature, apiKey });
-    const chatPrompt = ChatPromptTemplate.fromMessages([
-      SystemMessagePromptTemplate.fromTemplate(this.systemPrompt),
-      HumanMessagePromptTemplate.fromTemplate("{input}")
-    ]);
-
-    this.conversationChain = new ConversationChain({
-      llm: model,
-      prompt: chatPrompt,
-      memory: new BufferMemory(),
-    });
-
-    this.room.on('Transcribed', (transcript) => {
-        this.sendMessage(transcript);
-    })
-
-    this.room.on("start", () => {
-      const text = "INIT"
-      this.sendMessage(text)
+    this.room.on("TRANSCRIPT", async (transcript) => {
+        if (!transcript) {
+            console.error("Transcript is undefined or empty");
+            return;
+        }
+        const llmResponse = await this.sendMessage(transcript)
+        this.room.emit("LLM_RESPONSE", llmResponse)
     })
   }
 
-  public async sendMessage(input: string) {
+  private initializeModel() {
+    return new ChatGoogleGenerativeAI({
+      apiKey: this.apiKey,
+      model:"gemini-2.0-flash",
+      temperature: 0.7
+    })
+  }
+
+  private initializeWorkflow() {
+    const memory = new MemorySaver()
+    const workflow = new StateGraph(MessagesAnnotation).addNode("model", this.callModel.bind(this)).addEdge(START, "model").addEdge("model", END)
+    const app = workflow.compile({ checkpointer: memory })
+
+    return app
+  }
+
+  private async callModel(state: typeof MessagesAnnotation.State) {
+    const prompt = await this.prompt_template.invoke(state)
+    const response = await this.model.invoke(prompt)
+
+    return {
+      messages: [response]
+    }
+  }
+
+  private initializeChatPromptTemplate() {
+    return ChatPromptTemplate.fromMessages([[
+      "system",
+       this.systemPrompt
+    ],
+    ["placeholder", "{messages}"]
+  ])
+  }
+
+  private async sendMessage(userMessage: string) {
+    console.log(userMessage)
     try {
-      const { response } = await this.conversationChain.call({ input });
-      
-      if(this.isAgentSpeaking) return
-      this.room.emit("llmResponse", response);
-    } catch (error) {
-      console.error("Error in sendMessage:", error);
-      throw new Error(`Failed to send message and receive response from Gemini API: ${error}`);
-    }
-  }
+      const output = await this.app.invoke({ messages: 
+        {
+          role: "user",
+          content: userMessage
+        }
+       }, { configurable: { thread_id: this.room.roomId}})
 
-  public clearHistory(): void {
-    (this.conversationChain.memory as BufferMemory).clear();
+       if (output && output.messages && output.messages[0]) {
+         return output.messages[output.messages.length - 1].content;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error("llm response error:", error)
+    }
   }
 }
