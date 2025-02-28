@@ -52,6 +52,7 @@ export class JitterBuffer {
   public flushAllGradually(): void {
     if (this.buffer.length === 0) return;
     const baseTimestamp = this.buffer[0]!.rtpTimestamp;
+    this.room.emit("AGENT_START_SPEAKING")
     for (let i = 0; i < this.buffer.length; i++) {
       const item = this.buffer[i]!;
       const delayMs = ((item.rtpTimestamp - baseTimestamp) / 48000) * 1000;
@@ -67,6 +68,7 @@ export class JitterBuffer {
       this.scheduledTimers.push(timer);
     }
     this.buffer = [];
+    this.room.emit("AGENT_STOP_SPEAKING")
   }
 
   public cancelScheduledFlushes(): void {

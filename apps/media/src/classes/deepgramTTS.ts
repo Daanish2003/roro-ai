@@ -17,6 +17,7 @@ export class DeepgramTTS {
 
     private currentSessionId: string | null = null;
     private currentJitterBuffer: JitterBuffer | null = null;
+    private isAgentSpeaking: boolean = false
 
     constructor(room: Room) {
         const apiKey = process.env.DEEPGRAM_API_KEY;
@@ -29,9 +30,18 @@ export class DeepgramTTS {
         this.room.on("LLM_RESPONSE", (response) => {
             this.textToSpeech(response)
         })
+
+        this.room.on("AGENT_START_SPEAKING", () => {
+          this.isAgentSpeaking = true
+        })
+
+        this.room.on("AGENT_STOP_SPEAKING", () => {
+          this.isAgentSpeaking = false
+        })
     }
 
     public async textToSpeech(text: string) {
+        if(this.isAgentSpeaking) return
         if(this.currentSessionId !== null) {
           this.endCurrentSession();
         }

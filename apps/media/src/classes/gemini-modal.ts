@@ -14,6 +14,8 @@ export class GeminiModel {
   private prompt_template: ChatPromptTemplate<any, any>
   private model: ChatGoogleGenerativeAI;
   private app: any;
+  private isAgentSpeaking: boolean = false
+  private isGeneratingVoice: boolean = false
 
   constructor(prompt: string, room: Room) {
     this.room = room;
@@ -34,6 +36,23 @@ export class GeminiModel {
         }
         const llmResponse = await this.sendMessage(transcript)
         this.room.emit("LLM_RESPONSE", llmResponse)
+        this.room.emit("AGENT_RESPONDED")
+    })
+
+    this.room.on("AGENT_START_SPEAKING", () => {
+      this.isAgentSpeaking = true
+    })
+
+    this.room.on("AGENT_STOP_SPEAKING", () => {
+      this.isAgentSpeaking = false
+    })
+
+    this.room.on("GENERATING_VOICE", () => {
+      this.isGeneratingVoice = true
+    })
+
+    this.room.on("GENERATED_VOICE", () => {
+      this.isGeneratingVoice = false
     })
   }
 
@@ -72,7 +91,11 @@ export class GeminiModel {
   }
 
   private async sendMessage(userMessage: string) {
-    console.log(userMessage)
+    this.room.emit("AGENT_GENERATING_RESPONSE")
+
+    if(this.isAgentSpeaking) return
+    if(this.isGeneratingVoice) return
+
     try {
       const output = await this.app.invoke({ messages: 
         {

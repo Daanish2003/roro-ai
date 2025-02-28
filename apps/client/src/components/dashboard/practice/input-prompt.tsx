@@ -79,7 +79,7 @@ export default function PromptInput() {
   };
 
   return (
-    <div className="flex mt-[200px] justify-center min-h-screen p-4">
+    <div className="flex justify-center items-center min-h-[40.1rem] p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

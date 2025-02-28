@@ -8,6 +8,9 @@ export class DeepgramSTT {
   private deepgramSTT: ReturnType<typeof createClient>;
   private connection: ListenLiveClient | null = null;
   private keepAliveInterval: NodeJS.Timeout | null = null;
+  private isAgentSpeaking: boolean = false;
+  private isAgentGeneratingResponse: boolean = false;
+  private isGeneratingVoice: boolean = false;
 
   constructor(room: Room) {
     const apiKey = process.env.DEEPGRAM_API_KEY;
@@ -18,6 +21,30 @@ export class DeepgramSTT {
     }
 
     this.room = room
+
+    this.room.on("AGENT_START_SPEAKING", () => {
+       this.isAgentSpeaking = true
+    })
+
+    this.room.on("AGENT_STOP_SPEAKING", () => {
+      this.isAgentSpeaking = false
+    })
+
+    this.room.on("AGENT_GENERATING_RESPONSE", () => {
+      this.isAgentGeneratingResponse = true
+    })
+
+    this.room.on("AGENT_RESPONDED", () => {
+      this.isAgentGeneratingResponse = false
+    })
+
+    this.room.on("GENERATING_VOICE", () => {
+      this.isGeneratingVoice = true
+    })
+
+    this.room.on("GENERATED_VOICE", () => {
+      this.isGeneratingVoice = false
+    })
   }
 
   public async createConnection(): Promise<ListenLiveClient> {
@@ -36,7 +63,7 @@ export class DeepgramSTT {
       filler_words: false,
       language: "en-US",
       vad_events: true,
-      utterance_end_ms: 1000,
+      utterance_end_ms: 3000,
       endpointing:1000,
       no_delay: true,
       profanity_filter: false,
@@ -102,6 +129,9 @@ export class DeepgramSTT {
         console.warn("No active connection to send audio.");
         return;
     }
+
+    if (this.isAgentSpeaking) return
+    if (this.isAgentGeneratingResponse) return
 
     this.connection.send(audioFrame);
 }
