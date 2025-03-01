@@ -4,7 +4,6 @@ import { User } from "lucide-react";
 import { useState } from "react";
 import { FaGithub } from "react-icons/fa";
 import { FaGoogle } from "react-icons/fa";
-import { toast as sonnerToast } from "sonner";
 import { Button } from "@roro-ai/ui/components/ui/button";
 import {
 	Card,
@@ -27,7 +26,7 @@ export function AuthCard() {
 			await signIn.social(
 				{
 					provider: provider,
-					callbackURL: 'http://localhost:3000/dashboard/overview'
+					callbackURL: 'http://localhost:3000/dashboard/practice'
 				},
 				{
 					onSuccess: () => {
@@ -66,7 +65,7 @@ export function AuthCard() {
 							title: "Login Successfully",
 							type: "success"
 						});
-						router.replace("/dashboard/overview")
+						router.replace("/dashboard/practice")
 					},
 					onError: (ctx) => {
 						showToast({
@@ -120,7 +119,7 @@ export function AuthCard() {
 						<span className="w-full border-t" />
 					</div>
 					<div className="relative flex justify-center text-xs uppercase">
-						<span className="bg-card px-2 text-muted-foreground">
+						<span className="bg-background px-2 text-muted-foreground">
 							Or continue as
 						</span>
 					</div>

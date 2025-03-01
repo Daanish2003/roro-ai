@@ -7,4 +7,4 @@ const authClient = createAuthClient({
 });
 
 
-export const { signIn, signOut, signUp, useSession, getSession, $Infer} = authClient;
+export const { signIn, signOut, signUp, useSession, getSession, $Infer, updateUser, deleteUser} = authClient;

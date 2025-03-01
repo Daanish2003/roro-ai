@@ -11,14 +11,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@roro-ai/ui/components/ui/sidebar"
 import { useSession } from "@/lib/auth-client"
+import dynamic from "next/dynamic"
 
 
-export function NavUser() {
+function NavUser() {
   const { data: session } = useSession()
-  const { isMobile } = useSidebar()
 
   if(!session) {
     return null
@@ -30,7 +29,7 @@ export function NavUser() {
       <SidebarMenuItem>
       <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-card data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[state=open]:bg-background data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-5 w-5 rounded-lg">
                 <AvatarImage src={session.user.image as string} alt={session.user.name} />
@@ -45,3 +44,5 @@ export function NavUser() {
     </SidebarMenu>
   )
 }
+
+export default dynamic(() => Promise.resolve(NavUser), { ssr: false });

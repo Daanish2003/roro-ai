@@ -77,7 +77,7 @@ export default function RoomContainer() {
   }, [remoteStream]);
 
   return (
-    <div className="bg-card flex flex-col lg:flex-row gap-4 p-4 max-h-screen">
+    <div className="bg-background flex flex-col lg:flex-row gap-4 p-4 max-h-screen">
       {/* left section */}
       <div className={`${!joined && 'lg:w-3/4'} lg:w-full flex flex-col gap-4 shadow-inner`}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:h-[45rem]">

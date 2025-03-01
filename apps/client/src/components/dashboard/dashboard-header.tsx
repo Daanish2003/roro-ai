@@ -23,7 +23,7 @@ export default function DashboardHeader() {
     })
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between pr-6 gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b">
+    <header className="flex h-16 items-center justify-between pr-6 gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
       <div className="flex items-center gap-2 px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
@@ -46,7 +46,7 @@ export default function DashboardHeader() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-      <div className='border border-primary rounded-lg p-2'>
+      <div>
       <Logo />
       </div>
     </header>

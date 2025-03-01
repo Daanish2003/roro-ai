@@ -1,5 +1,5 @@
 import { signOut } from '@/lib/auth-client'
-import { Button } from '@roro-ai/ui/components/ui/button'
+import { SidebarMenuButton } from '@roro-ai/ui/components/ui/sidebar'
 import { LogOut } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React from 'react'
@@ -20,13 +20,9 @@ export default function LogoutButton() {
         }
     }
   return (
-    <Button
-      variant={"destructive"}
-      type='submit'
-      onClick={() => logoutHandler()}
-    >
-        Logout
+        <SidebarMenuButton className='bg-destructive hover:bg-destructive/40' onClick={logoutHandler}>
         <LogOut />
-    </Button>
+        Logout
+        </SidebarMenuButton>
   )
 }

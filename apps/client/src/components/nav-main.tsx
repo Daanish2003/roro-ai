@@ -5,7 +5,6 @@ import type { LucideIcon } from "lucide-react"
 
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -35,7 +34,7 @@ export function NavMain({
           console.log(isActive)
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={isActive} size={"lg"}>
+              <SidebarMenuButton asChild isActive={isActive}>
                 <Link href={item.url}>
                   {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
                   {item.title}

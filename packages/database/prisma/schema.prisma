@@ -96,5 +96,10 @@ model Room {
   @@index([userId])
 }
 
+model Feedback {
+  id  String @id @default(cuid())
+  
+}
+
 
 

@@ -12,7 +12,7 @@ import {
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
+import NavUser from "@/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
@@ -73,13 +73,13 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="bg-card border-b">
+      <SidebarHeader className="bg-background border-b">
         <NavUser />
       </SidebarHeader>
-      <SidebarContent className="bg-card">
+      <SidebarContent className="bg-background">
         <NavMain items={data.navMain} />
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="bg-background">
         <LogoutButton />
       </SidebarFooter>
       <SidebarRail />

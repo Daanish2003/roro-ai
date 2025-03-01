@@ -50,7 +50,7 @@ export default function Join() {
       }
 
   return (
-    <div className="bg-card lg:w-1/4 flex flex-col items-center justify-center rounded-2xl border p-4 gap-y-4">
+    <div className="bg-background lg:w-1/4 flex flex-col items-center justify-center rounded-2xl border p-4 gap-y-4">
         <div className="text-center space-y-4">
             <h2 className="text-2xl font-semibold">Ready to Join Session?</h2>
             <p className="text-muted-foreground text-sm">Room ID: {roomId}</p>

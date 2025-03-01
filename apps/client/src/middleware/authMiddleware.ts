@@ -12,7 +12,6 @@ export async function verifySession(request: NextRequest) {
 		{
 			baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
 			headers: {
-				//get the cookie from the request
 				cookie: request.headers.get("cookie") || "",
 			},
 		},

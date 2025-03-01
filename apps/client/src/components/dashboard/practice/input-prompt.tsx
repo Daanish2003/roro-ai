@@ -104,7 +104,7 @@ export default function PromptInput() {
                         onChange={(e) => setValue("prompt", e.target.value, { shouldDirty: true, shouldTouch: true })}
                         placeholder="Type your scenario here..."
                         maxHeight={200}
-                        className="w-full p-4 min-h-[100px] text-base resize-none overflow-hidden border-none bg-transparent"
+                        className="w-full p-4 min-h-[100px] text-base resize-none overflow-hidden border-none bg-transparent scrollbar overflow-y-scroll scrollbar-thumb-zinc-900 scrollbar-track-rounded-full scrollbar-track-transparent scrollbar-thumb-rounded-full"
                       />
                       <div className="mt-4 flex justify-end">
                         <Button

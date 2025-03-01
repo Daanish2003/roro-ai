@@ -25,7 +25,7 @@ export async function verifyRoomAccess(roomId: string, request: NextRequest): Pr
 }
 
 export function redirectToDashboard(request: NextRequest, reason?: string) {
-    const dashboardUrl = new URL('/dashboard/overview', request.url);
+    const dashboardUrl = new URL('/dashboard/practice', request.url);
     if (reason) {
       dashboardUrl.searchParams.set('error', encodeURIComponent(reason));
     }
