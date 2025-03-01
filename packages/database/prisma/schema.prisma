@@ -10,6 +10,20 @@ generator client {
   output = "../generated/client"
 }
 
+enum FeedbackEnum {
+  SUGGESTION
+  ISSUE
+  QUESTION
+}
+
+enum IssueCategory {
+  USER_INTERFACE
+  BUG
+  ACCOUNT
+  PERFORMANCE
+  OTHERS
+}
+
 model User {
   id               String    @id @default(cuid())
   name             String
@@ -98,7 +112,14 @@ model Room {
 
 model Feedback {
   id  String @id @default(cuid())
-  
+  userId String
+  username String
+  feedbackType FeedbackEnum
+  subject   String
+  details   String
+  issue     IssueCategory
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 
