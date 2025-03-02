@@ -67,7 +67,7 @@ export default function PromptInput() {
     } catch (error) {
       showToast({
         title: "Error",
-        description: "Failed to start practice. Please try again.",
+        description: "Failed to start practice. Please try again later.",
         type: "error",
       });
       console.error("Error starting practice:", error);

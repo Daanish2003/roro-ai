@@ -1,9 +1,11 @@
-import { redis } from "../utils/redis.js";
 import { prisma } from "@roro-ai/database/client";
+import { redis } from "../utils/redis.js";
+import 'dotenv/config'
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin, anonymous, oAuthProxy } from "better-auth/plugins";
-import 'dotenv/config'
+
+
 
 export const auth = betterAuth(
     {

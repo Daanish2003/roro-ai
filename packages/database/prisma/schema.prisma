@@ -117,7 +117,7 @@ model Feedback {
   feedbackType FeedbackEnum
   subject   String
   details   String
-  issue     IssueCategory
+  issue     IssueCategory?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

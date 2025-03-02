@@ -22,7 +22,7 @@
     "@roro-ai/eslint-config": "workspace:*",
     "@roro-ai/typescript-config": "workspace:*",
     "@tsconfig/node-lts": "^22.0.1",
-    "better-auth": "^1.1.15",
+    "better-auth": "1.1.21",
     "compression": "^1.7.5",
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",

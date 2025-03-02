@@ -7,7 +7,7 @@ export default function useShowToast() {
 
   function showToast(
     { 
-        title, 
+        title,
         description, 
         type = "success" 
     } : { 

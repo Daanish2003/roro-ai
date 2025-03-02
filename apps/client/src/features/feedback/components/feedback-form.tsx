@@ -1,6 +1,6 @@
 "use client"
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@roro-ai/ui/components/ui/form'
-import React from 'react'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@roro-ai/ui/components/ui/form'
+import React, { Dispatch, SetStateAction } from 'react'
 import { useForm } from 'react-hook-form'
 import { FeedbackFormSchema, FeedbackFormValues } from '../zod/feedback-from-schema'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -13,13 +13,15 @@ import { Textarea } from '@roro-ai/ui/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@roro-ai/ui/components/ui/select';
 import { Button } from '@roro-ai/ui/components/ui/button'
 import { FaPaperPlane } from 'react-icons/fa'
+import useShowToast from '@/hooks/use-show-toast'
 
-export default function FeedbackForm() {
+export default function FeedbackForm({ setSubmitted }: { setSubmitted: Dispatch<SetStateAction<boolean>>}) {
+  const showToast = useShowToast()
     const feedbackForm = useForm<FeedbackFormValues>({
         mode: "onBlur",
         resolver: zodResolver(FeedbackFormSchema),
         defaultValues: {
-            feedbackType: 'Suggestion',
+            feedbackType: 'SUGGESTION',
             subject: '',
             details: '',
             issue: undefined
@@ -29,7 +31,44 @@ export default function FeedbackForm() {
     const feedbackType = feedbackForm.watch("feedbackType");
 
     const feedbackSubmitFormHandler = async (values: FeedbackFormValues) => {
-       console.log(values)
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/feedbacks/create-feedback`,
+          {
+            method: 'POST',
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+               feedbackType: values.feedbackType,
+               subject: values.subject,
+               issue: values.issue,
+               details: values.details,
+            }),
+            credentials: 'include',
+          }
+        )
+
+        const data = await response.json();
+
+      if (response.ok) {
+        setSubmitted(true)
+      } else {
+        showToast({
+          title: "Something went wrong",
+          description: data.error || "Failed to send feedback",
+          type: "error",
+        });
+      }
+
+      } catch (error) {
+        showToast({
+          title: "Error",
+          description: "Failed to send feedback. Please try again later.",
+          type: "error",
+        });
+        console.error("Error starting practice:", error);
+      }
     }
 
   return (
@@ -57,21 +96,21 @@ export default function FeedbackForm() {
                     >
                       <FeedbackTypeOption
                         id="suggestion"
-                        value='Suggestion'
+                        value='SUGGESTION'
                         icon={<ThumbsUp className="h-5 w-5" />}
                         label="Suggestion"
                         description="Share ideas for improvement"
                        />
                        <FeedbackTypeOption
                          id="issue"
-                         value='Issue'
+                         value='ISSUE'
                          icon={<ThumbsDown className="h-5 w-5" />}
                          label="Issue"
                          description="Report something that's not working"
                        />
                        <FeedbackTypeOption
                          id="question"
-                         value= "Question"
+                         value= "QUESTION"
                          icon={<HelpCircle className="h-5 w-5" />}
                          label="Question"
                          description="Ask about how something works"
@@ -79,6 +118,7 @@ export default function FeedbackForm() {
                     </RadioGroup>
                     </CardContent>
                     </FormControl>
+                    <FormMessage />
                 </FormItem>
                 </Card>
                )}
@@ -102,7 +142,7 @@ export default function FeedbackForm() {
                   </FormItem>
                 )}
               />
-              {feedbackType === "Issue" && (
+              {feedbackType === "ISSUE" && (
                 <FormField 
                   control={feedbackForm.control}
                   name='issue'
@@ -118,15 +158,16 @@ export default function FeedbackForm() {
                            <SelectTrigger>
                              <SelectValue placeholder="Select an Issue Category" />
                            </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="User Interface">User Interface</SelectItem>
-                        <SelectItem value="Performance">Performance</SelectItem>
-                        <SelectItem value="Bug">Bug</SelectItem>
-                        <SelectItem value="Account">Account</SelectItem>
-                        <SelectItem value='Others'>Others</SelectItem>
-                      </SelectContent>
-              </Select>
+                          </FormControl>
+                        <SelectContent>
+                          <SelectItem value="USER_INTERFACE">User Interface</SelectItem>
+                          <SelectItem value="PERFORMANCE">Performance</SelectItem>
+                          <SelectItem value="BUG">Bug</SelectItem>
+                          <SelectItem value="ACCOUNT">Account</SelectItem>
+                          <SelectItem value='OTHERS'>Others</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -146,12 +187,15 @@ export default function FeedbackForm() {
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
               </CardContent>
             </Card>
-            <Button className='text-white'>
+            <Button 
+            type='submit'
+            className='text-white'>
               <FaPaperPlane />
               Submit Feedback
             </Button>

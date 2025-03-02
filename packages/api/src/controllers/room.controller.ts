@@ -1,5 +1,5 @@
-import { createRoomSchema } from "../schema/createRoomSchema.js";
-import { createRoomService } from "../services/room.service.js";
+import { createRoomSchema } from "../schema/roomSchema.js";
+import { createRoomService, deleteAllRoomService, deleteRoomService, getAllRoomsService, getRoomService } from "../services/room.service.js";
 import type { Request, Response } from 'express';
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { auth } from "../config/auth-config.js";
@@ -26,8 +26,6 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
     
         const { roomName, prompt } = validatedFields.data;
 
-        console.log(roomName)
-
         const room = await createRoomService(
           { 
             userId: data?.session.userId as string, 
@@ -44,8 +42,6 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
         })
 
         const sessionId = uuidv4()
-
-        console.log(sessionId)
 
         await redis.set(`room_session:${sessionId}`, room_session, 20 * 60)
 
@@ -84,12 +80,9 @@ export const verifyRoomAccessHandler = asyncHandler(async(req: Request, res:Resp
 
     const roomSessionId = req.cookies.room_session;
 
-    console.log(roomSessionId)
-
 
     const roomSessionToken = await redis.get(`room_session:${roomSessionId}`);
 
-    console.log(roomSessionToken)
 
     if(!roomSessionToken) {
       return res.status(401).json({ isValid: false });
@@ -97,8 +90,6 @@ export const verifyRoomAccessHandler = asyncHandler(async(req: Request, res:Resp
 
     const { userId, roomId: room_id , expiresAt} = await verifyRoomSession(roomSessionToken);
 
-    console.log()
-    console.log(expiresAt < Date.now())
 
     if(expiresAt <  Date.now()) {
        await redis.del(`room_session:${roomSessionId}`)
@@ -127,5 +118,120 @@ export const verifyRoomAccessHandler = asyncHandler(async(req: Request, res:Resp
     return { isValid: false}
     
   }
+})
 
+export const getAllUserRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
+  try {
+
+        const data = await auth.api.getSession({
+          headers: fromNodeHeaders(req.headers)
+        })
+
+        const rooms = await getAllRoomsService({userId: data?.user.id as string})
+
+        return res.status(200).json({
+          rooms
+        })
+
+  } catch (error) {
+    console.error("Error getting all room:", error);
+
+        return res.status(500).json({
+          error: "Internal server error",
+          message: error instanceof Error ? error.message : "Unknown error occurred"
+        });
+  }
+})
+
+export const getUserRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
+  try {
+      const roomId = req.params.id
+
+        if (!roomId) {
+           return res.status(400).json({ isValid: false, message: "Missing roomId" });
+        }
+
+        const data = await auth.api.getSession({
+          headers: fromNodeHeaders(req.headers)
+        })
+
+
+        const rooms = await getRoomService(
+          {
+            userId: data!.user.id,
+            roomId
+          })
+
+        return res.status(200).json({
+          rooms
+        })
+        
+  } catch (error) {
+    console.error("Error getting room:", error);
+
+        return res.status(500).json({
+          error: "Internal server error",
+          message: error instanceof Error ? error.message : "Unknown error occurred"
+        });
+  }
+})
+
+export const deleteRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
+  try {
+      const roomId = req.params.id
+
+        if (!roomId) {
+           return res.status(400).json({ isValid: false, message: "Missing roomId" });
+        }
+
+        const data = await auth.api.getSession({
+          headers: fromNodeHeaders(req.headers)
+        })
+
+
+        const { success } = await deleteRoomService(
+          {
+            userId: data!.user.id,
+            roomId
+          })
+
+        return res.status(200).json({
+          success: success
+        })
+        
+  } catch (error) {
+    console.error("Error deleting room:", error);
+
+        return res.status(500).json({
+          error: "Internal server error",
+          message: error instanceof Error ? error.message : "Unknown error occurred"
+        });
+  }
+})
+
+export const deleteAllRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
+  try {
+
+        const data = await auth.api.getSession({
+          headers: fromNodeHeaders(req.headers)
+        })
+
+
+        const { success } = await deleteAllRoomService(
+          {
+            userId: data!.user.id,
+          })
+
+        return res.status(200).json({
+          success: success
+        })
+        
+  } catch (error) {
+    console.error("Error deleting room:", error);
+
+        return res.status(500).json({
+          error: "Internal server error",
+          message: error instanceof Error ? error.message : "Unknown error occurred"
+        });
+  }
 })

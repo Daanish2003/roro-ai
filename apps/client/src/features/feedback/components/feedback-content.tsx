@@ -5,7 +5,7 @@ import React, { useState } from 'react'
 import FeedbackForm from './feedback-form'
 
 export default function FeedbackContent() {
-    const [submitted, setSubmitted] = useState(false)
+    const [submitted, setSubmitted] = useState<boolean>(false)
 
 
     if (submitted) {
@@ -30,6 +30,8 @@ export default function FeedbackContent() {
 
 
   return (
-    <FeedbackForm />
+    <FeedbackForm 
+     setSubmitted={setSubmitted}
+    />
   )
 }
