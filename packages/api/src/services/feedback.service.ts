@@ -31,11 +31,26 @@ export const createFeedbackService = async ({
     }
 }
 
-export const getAllFeedbackService = async () => {
+export const getAllFeedbackService = async (
+    { 
+        skip, 
+        take
+    }: {
+        skip: number,
+        take: number
+    }) => {
     try {
-        const feedbacks = await prisma.feedback.findMany()
+        const feedbacks = await prisma.feedback.findMany({
+            skip,
+            take,
+        })
 
-        return feedbacks
+        const total = await prisma.feedback.count()
+
+        return {
+            total,
+            feedbacks
+        }
     } catch (error) {
         console.log("Get All Feedback Error:", error)
        throw new Error("Failed to create feedback")  

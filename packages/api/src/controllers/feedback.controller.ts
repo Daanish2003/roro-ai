@@ -48,11 +48,26 @@ export const createFeedbackHandler = asyncHandler(async(req: Request, res: Respo
 
 export const getAllFeedbacksHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
     try {
+        const page = Number(req.query.page) || 1;
+        const pageSize = Number(req.query.pageSize) || 10;
 
-        const feedbacks = await getAllFeedbackService()
+        const skip = (page - 1) * pageSize;
+        const take = pageSize;
+
+       if (skip < 0 || take < 1) {
+        return res.status(400).json({ error: "Invalid pagination parameters" });
+    }
+
+        const { feedbacks, total} = await getAllFeedbackService({
+           skip,
+           take
+        })
 
         return res.status(200).json({
-            feedbacks
+            feedbacks,
+            total,
+            page,
+            pageSize
         })
 
     } catch (error) {

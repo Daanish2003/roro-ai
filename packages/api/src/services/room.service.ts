@@ -6,12 +6,14 @@ export const createRoomService = async (
         userId, 
         roomName, 
         username,
-        prompt
+        prompt,
+        topic
     }: {
         userId: string, 
         roomName: string, 
         username: string,
-        prompt: string
+        prompt: string,
+        topic: string
     }) => {
     try {
         const room = await prisma.room.create({
@@ -25,7 +27,8 @@ export const createRoomService = async (
                 name: roomName,
                 username, 
                 userId,
-                prompt
+                prompt,
+                topic
             }
         })
 
@@ -39,19 +42,36 @@ export const createRoomService = async (
 
 export const getAllRoomsService = async (
     {
-        userId 
+        userId,
+        skip,
+        take 
     } : {
-        userId: string
+        userId: string,
+        skip: number,
+        take: number
     }
 ) => {
     try {
         const rooms = await prisma.room.findMany({
+            select: {
+                id: true,
+                name: true,
+                createdAt: true,
+                topic: true,
+            },
+            skip,
+            take,
             where: {
                 userId
             }
         })
 
-        return rooms
+        const total = await prisma.room.count()
+
+        return {
+            rooms,
+            total
+        }
     } catch (error) {
         console.log("Get All Room Error:", error)
         throw new Error("Failed to get all room")
@@ -111,14 +131,19 @@ export const deleteRoomService = async (
 export const deleteAllRoomService = async (
     {
         userId,
+        roomId
     } : {
         userId: string,
+        roomId: string[]
     }
 ) => {
     try {
         await prisma.room.deleteMany({
             where: {
-                userId,
+              userId,
+              id: {
+                in: roomId
+              }
             }
         })
 

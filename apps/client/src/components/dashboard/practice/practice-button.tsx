@@ -12,7 +12,7 @@ export default function PracticeButton() {
   }
 
   return (
-    <div className='border border-dashed h-[39rem] rounded-md flex items-center justify-center m-5'>
+    <div>
     <Button
     onClick={() => startPracticeHandler()}
     >

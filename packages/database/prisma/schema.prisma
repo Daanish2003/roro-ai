@@ -102,6 +102,7 @@ model Room {
   userId String
   username String
   prompt   String
+  topic    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

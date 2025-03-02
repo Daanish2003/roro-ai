@@ -7,6 +7,7 @@ import { fromNodeHeaders } from "better-auth/node";
 import { createRoomSession, verifyRoomSession } from "../utils/jwt.js";
 import { v4 as uuidv4} from "uuid"
 import { redis } from "../utils/redis.js";
+import { deleteRoomSchema } from '../schema/roomSchema.js';
 
 
 export const createRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
@@ -24,14 +25,15 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
           });
         }
     
-        const { roomName, prompt } = validatedFields.data;
+        const { roomName, prompt, topic } = validatedFields.data;
 
         const room = await createRoomService(
           { 
             userId: data?.session.userId as string, 
             roomName, 
             username: data?.user.name as string,
-            prompt
+            prompt,
+            topic
           });
 
         const room_session = await createRoomSession({
@@ -104,8 +106,6 @@ export const verifyRoomAccessHandler = asyncHandler(async(req: Request, res:Resp
       return res.status(401).json({ isValid: false })
     }
 
-    console.log(roomId)
-    console.log(room_id)
     if (roomId !== room_id) {
       return res.status(401).json({ isValid: false })
     }
@@ -122,15 +122,32 @@ export const verifyRoomAccessHandler = asyncHandler(async(req: Request, res:Resp
 
 export const getAllUserRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
   try {
+       const page = Number(req.query.page) || 0
+       const pageSize = Number(req.query.pageSize) || 10;
+
+       const skip = (page - 1) * pageSize;
+        const take = pageSize;
+       
+      if (skip < 0 || take < 1) {
+        return res.status(400).json({ error: "Invalid pagination parameters" });
+      }
 
         const data = await auth.api.getSession({
           headers: fromNodeHeaders(req.headers)
         })
 
-        const rooms = await getAllRoomsService({userId: data?.user.id as string})
+        const { rooms, total} = await getAllRoomsService(
+          {
+            userId: data?.user.id as string,
+            skip,
+            take
+          })
 
         return res.status(200).json({
-          rooms
+          rooms,
+          total,
+          page,
+          pageSize
         })
 
   } catch (error) {
@@ -211,15 +228,25 @@ export const deleteRoomHandler = asyncHandler(async(req: Request, res: Response)
 
 export const deleteAllRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
   try {
-
+        const validatedFields = deleteRoomSchema.safeParse(req.body)
         const data = await auth.api.getSession({
           headers: fromNodeHeaders(req.headers)
         })
+
+        if (!validatedFields.success) {
+          return res.status(400).json({
+            error: "Invalid fields",
+            details: validatedFields.error.flatten()
+          });
+        }
+
+        const { roomId } = validatedFields.data
 
 
         const { success } = await deleteAllRoomService(
           {
             userId: data!.user.id,
+            roomId
           })
 
         return res.status(200).json({

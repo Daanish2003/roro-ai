@@ -29,6 +29,7 @@ export default function PromptInput() {
     resolver: zodResolver(PromptSchema),
     defaultValues: {
       prompt: "",
+      topic: "",
     },
   });
 
@@ -48,6 +49,7 @@ export default function PromptInput() {
           body: JSON.stringify({
             roomName: `${session?.user.name}'s Room`,
             prompt: values.prompt,
+            topic: values.topic
           }),
           credentials: 'include',
         }
@@ -74,8 +76,9 @@ export default function PromptInput() {
     }
   };
 
-  const handlePromptTemplate = (prompt: string) => {
-    setValue("prompt",  prompt, { shouldDirty: true, shouldTouch: true });
+  const handlePromptTemplate = (values: z.infer<typeof PromptSchema>) => {
+    setValue("prompt",  values.prompt, { shouldDirty: true, shouldTouch: true });
+    setValue("topic", values.topic, { shouldDirty: true, shouldTouch: true })
   };
 
   return (
@@ -101,7 +104,10 @@ export default function PromptInput() {
                       <AutosizeTextarea
                         {...field}
                         value={promptValue}
-                        onChange={(e) => setValue("prompt", e.target.value, { shouldDirty: true, shouldTouch: true })}
+                        onChange={(e) => {
+                          setValue("prompt", e.target.value, { shouldDirty: true, shouldTouch: true })
+                          setValue("topic", "custom", { shouldDirty: true, shouldTouch: true })
+                        }}
                         placeholder="Type your scenario here..."
                         maxHeight={200}
                         className="w-full p-4 min-h-[100px] text-base resize-none overflow-hidden border-none bg-transparent scrollbar overflow-y-scroll scrollbar-thumb-zinc-900 scrollbar-track-rounded-full scrollbar-track-transparent scrollbar-thumb-rounded-full"
@@ -125,7 +131,7 @@ export default function PromptInput() {
                 <TopicsButton
                   key={topic}
                   topic={topic}
-                  onClick={() => handlePromptTemplate(prompt)}
+                  onClick={() => handlePromptTemplate({prompt, topic})}
                 />
               ))}
             </div>
