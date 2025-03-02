@@ -22,6 +22,8 @@ export const createRoomService = async (
                 name: true,
                 username: true,
                 userId: true,
+                prompt: true,
+                topic: true
             },
             data: {
                 name: roomName,

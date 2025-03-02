@@ -9,10 +9,10 @@ export class AiAgentPipeline {
 	public gemini2: GeminiModel;
 	public deepgramTTS: DeepgramTTS;
 
-    constructor (prompt: string, room: Room) {
+    constructor (room: Room) {
         this.room = room
         this.deepgramSTT = new DeepgramSTT(this.room)
-		this.gemini2 = new GeminiModel(prompt, this.room)
+		this.gemini2 = new GeminiModel(this.room)
 		this.deepgramTTS = new DeepgramTTS(this.room)
     }
 

@@ -40,12 +40,16 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
           userId: room.userId,
           username: room.username,
           roomId: room.id,
-          roomName: room.name
+          roomName: room.name,
+          topic: room.topic,
+          prompt: room.prompt
         })
 
         const sessionId = uuidv4()
 
         await redis.set(`room_session:${sessionId}`, room_session, 20 * 60)
+
+        await redis.publish('createRoom', JSON.stringify(room))
 
 
         res.status(200).cookie('room_session', sessionId, {

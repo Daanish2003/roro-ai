@@ -20,7 +20,6 @@ class Client {
   public directTransportProducer: Producer | null = null;
   private consumer: Consumer | null = null;
   private producerTransport: WebRtcTransport | null = null;
-  public prompt: string
   private ws: WebSocket | null
   private clientProducer: Producer | null = null;
   public room: Room | null = null;
@@ -28,10 +27,9 @@ class Client {
 
 
 
-  constructor(username: string, userId: string, prompt: string) {
+  constructor(username: string, userId: string) {
     this.userId = userId;
     this.username = username;
-    this.prompt= prompt;
     this.ws = null
   }
 
@@ -169,7 +167,7 @@ class Client {
       throw new Error("Direct Transport for Deepgram failed to initialize");
      }
 
-     const aiAgentPipeline = new AiAgentPipeline(this.prompt, this.room)
+     const aiAgentPipeline = new AiAgentPipeline(this.room)
 
 
       this.directTransportConsumer = await this.directTransport.consume({

@@ -4,12 +4,15 @@ import "dotenv/config"
 class RedisClient {
     private static instance: RedisClient;
     private client: RedisClientType;
+    private publisher: RedisClientType;
     private isConnected: boolean = false;
 
     private constructor() {
         this.client = createClient({
             url: process.env.REDIS_URL
         });
+
+        this.publisher = this.client.duplicate()
 
         this.setupEventHandlers();
     }
@@ -42,6 +45,7 @@ class RedisClient {
         if (!this.isConnected) {
             try {
                 await this.client.connect();
+                await this.publisher.connect()
             } catch (error) {
                 console.error('Failed to connect to Redis:', error);
                 throw error;
@@ -53,11 +57,23 @@ class RedisClient {
         if (this.isConnected) {
             try {
                 await this.client.disconnect();
+                await this.publisher.disconnect()
             } catch (error) {
                 console.error('Failed to disconnect from Redis:', error);
                 throw error;
             }
         }
+    }
+
+    public async publish(channel: string, message: string)  {
+        try {
+            await this.publisher.publish(channel, message)
+            console.log(`Published to ${channel}:`, message);
+        } catch (error) {
+            console.error('Failed to publish message to Redis:', error);
+            throw error;
+        }
+
     }
 
     public async set(key: string, value: string, ttl?: number): Promise<void> {

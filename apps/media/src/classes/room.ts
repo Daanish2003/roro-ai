@@ -8,14 +8,18 @@ export class Room {
 	public roomId: string;
     public router: Router | null
 	public client: Client | null
-	public eventEmitter: EventEmitter;
+	public eventEmitter: EventEmitter
+	public prompt: string
+	public topic: string
 
 
-	constructor(roomId: string) {
+	constructor(roomId: string, prompt: string, topic: string) {
 		this.roomId = roomId;
 		this.router = null;
 		this.client = null;
-		this.eventEmitter = new EventEmitter()
+		this.eventEmitter = new EventEmitter();
+		this.prompt = prompt;
+		this.topic = topic;
 	}
 
 	public async initialize(worker: Worker) {

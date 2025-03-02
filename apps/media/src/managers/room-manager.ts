@@ -3,17 +3,26 @@ import { Room } from '../classes/room.js'
 import Client from '../classes/client.js';
 import { mediasoupWorkerManager } from './worker-manager.js';
 
-export class RoomManager {
+class RoomManager {
+    private static instance: RoomManager
     private rooms: Map<string, Room>;
 
     constructor() {     
         this.rooms = new Map<string, Room>();
     }
 
-    public async createRoom(roomId: string): Promise<string> {
+    public static getInstance() {
+      if(!RoomManager.instance) {
+         RoomManager.instance = new RoomManager()
+      }
+
+      return RoomManager.instance
+    }
+
+    public async createRoom(roomId: string, prompt: string, topic: string) {
         if (!this.rooms.has(roomId)) {
             console.log(roomId)
-            const newRoom = new Room(roomId);
+            const newRoom = new Room(roomId, prompt, topic);
 
             const worker = await mediasoupWorkerManager.getWorker()
 
@@ -23,24 +32,20 @@ export class RoomManager {
             
             console.log(`Room ${roomId} created`);
         }
-        return roomId;
     }
 
-    public async joinRoom(roomId: string, userId: string, username: string, prompt: string) {
+    public async joinRoom(roomId: string, userId: string, username: string) {
         if (!this.rooms.has(roomId)) {
-           await this.createRoom(roomId);
+           throw new Error("Room not found: Room Manager")
         }
         const room = this.rooms.get(roomId);
         
         if (room) {
-            const client = new Client(username, userId, prompt);
+            const client = new Client(username, userId);
 
             room.addClient(client);
 
-            console.log(client)
-
             client.room = room
-        
 
             const routerRtpCap = await room.getRouterRtpCap()
 
@@ -210,3 +215,5 @@ export class RoomManager {
         return Array.from(this.rooms.keys());
     }
 }
+
+export const roomManager = RoomManager.getInstance()

@@ -11,16 +11,16 @@ export class GeminiModel {
   private room: Room;
   private apiKey: string;
   private systemPrompt: string;
-  private prompt_template: ChatPromptTemplate<any, any>
+  private prompt_template: ChatPromptTemplate<any, any>;
   private model: ChatGoogleGenerativeAI;
   private app: any;
   private isAgentSpeaking: boolean = false
   private isGeneratingVoice: boolean = false
 
-  constructor(prompt: string, room: Room) {
+  constructor(room: Room) {
     this.room = room;
     this.apiKey = process.env.GEMINI_API_KEY || "";
-    this.systemPrompt = prompt
+    this.systemPrompt = this.room.prompt
     this.prompt_template = this.initializeChatPromptTemplate()
     this.model = this.initializeModel()
     this.app = this.initializeWorkflow()

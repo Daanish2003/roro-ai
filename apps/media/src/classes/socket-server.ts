@@ -1,6 +1,6 @@
 import { Server, type Socket } from "socket.io";
 import type { Server as HttpServer } from "node:http";
-import { RoomManager } from "../managers/room-manager.js";
+import { roomManager } from "../managers/room-manager.js";
 import type {
 	MediaKind,
 	RtpCapabilities,
@@ -17,7 +17,6 @@ import { server } from "../index.js";
 export class SocketServer {
 	private static instance: SocketServer
 	private io: Server;
-	private roomManager: RoomManager;
 	
 
 	private constructor(httpServer: HttpServer) {
@@ -29,8 +28,6 @@ export class SocketServer {
 				allowedHeaders: ["content-Type"],
 			},
 		});
-
-		this.roomManager = new RoomManager();
 	}
 
 	public static getInstance() {
@@ -54,12 +51,10 @@ export class SocketServer {
 						roomId,
 						userId,
 						username,
-						prompt
 					 }: { 
 						roomId: string ,
 						userId: string,
 						username: string,
-						prompt: string
 					},
 					callback: (
 						response:
@@ -69,7 +64,7 @@ export class SocketServer {
 				) => {
 					
 					try {
-						const response = await this.roomManager.joinRoom(roomId, userId, username, prompt);
+						const response = await roomManager.joinRoom(roomId, userId, username);
 
 						callback(response);
 					} catch (error) {
@@ -98,7 +93,7 @@ export class SocketServer {
 						};
 					}) => void,
 				) => {
-					const clientTransportParams  =  await this.roomManager.createClientWebRtcTransport({ roomId });
+					const clientTransportParams  =  await roomManager.createClientWebRtcTransport({ roomId });
 
 
 					callback({ clientTransportParams });
@@ -117,7 +112,7 @@ export class SocketServer {
 					},
 					callback: ({ success }: { success: boolean }) => void,
 				) => {
-					await this.roomManager.connectClientWebRtcTransport({
+					await roomManager.connectClientWebRtcTransport({
 						dtlsParameters,
 						roomId,
 					});
@@ -141,7 +136,7 @@ export class SocketServer {
 					};
 				  }) => void
 				) => {
-				  const clientTransportParams = await this.roomManager.createClientConsumerTransport({ roomId });
+				  const clientTransportParams = await roomManager.createClientConsumerTransport({ roomId });
 				  callback({ clientTransportParams });
 				}
 			  );
@@ -152,7 +147,7 @@ export class SocketServer {
 				  { roomId, dtlsParameters }: { roomId: string; dtlsParameters: DtlsParameters },
 				  callback: (response: { success: boolean }) => void
 				) => {
-				  await this.roomManager.connectClientConsumerTransport({ roomId, dtlsParameters });
+				  await roomManager.connectClientConsumerTransport({ roomId, dtlsParameters });
 				  callback({ success: true });
 				}
 			);
@@ -176,7 +171,7 @@ export class SocketServer {
 					}) => void,
 				) => {
 					console.log("Start produce")
-					const id = await this.roomManager.startClientWebRtcProduce({
+					const id = await roomManager.startClientWebRtcProduce({
 						rtpParameters,
 						roomId,
 						kind,
@@ -192,7 +187,7 @@ export class SocketServer {
 				  { roomId, rtpCapabilities }: { roomId: string; rtpCapabilities: RtpCapabilities },
 				  callback: (response: { consumerParams?: { producerId: string; id: string; kind: MediaKind; rtpParameters: RtpParameters } } | { message: string }) => void
 				) => {
-				  const response = await this.roomManager.startConsume({ roomId, rtpCapabilities });
+				  const response = await roomManager.startConsume({ roomId, rtpCapabilities });
 				  callback(response);
 				}
 			);
@@ -210,7 +205,7 @@ export class SocketServer {
 			}) => void
 		  ) => {
 			  console.log("Unpausing consumer");
-					const success= await this.roomManager.unpauseConsumer(roomId)
+					const success= await roomManager.unpauseConsumer(roomId)
 		
 			  callback(success)
 				}
