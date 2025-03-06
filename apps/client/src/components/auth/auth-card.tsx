@@ -43,7 +43,9 @@ export function AuthCard() {
 						});
 					},
 					onRequest: () => setLoading(true),
-					onResponse: () => setLoading(false),
+					onResponse: () => {
+					   setLoading(false)
+					},
 				},
 			);
 		} catch (error) {

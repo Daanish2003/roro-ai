@@ -3,9 +3,7 @@ import { redis } from "../utils/redis.js";
 import 'dotenv/config'
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { admin, anonymous, oAuthProxy } from "better-auth/plugins";
-
-
+import { admin, anonymous, bearer, jwt, oAuthProxy } from "better-auth/plugins";
 
 export const auth = betterAuth(
     {
@@ -64,7 +62,9 @@ export const auth = betterAuth(
         plugins: [
           anonymous(), 
           oAuthProxy(), 
-          admin(), 
+          admin(),
+          bearer(),
+          jwt() 
         ],
     }
 );

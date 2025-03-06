@@ -21,8 +21,7 @@ export default function PromptInput() {
   const router = useRouter();
   const showToast = useShowToast();
   const { data: session } = useSession();
-
-  const { setPrompt } = usePromptStore()
+  const { setPrompt } = usePromptStore();
 
   const promptForm = useForm<z.infer<typeof PromptSchema>>({
     mode: "onSubmit",

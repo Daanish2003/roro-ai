@@ -7,7 +7,6 @@ import { DirectTransport } from "mediasoup/node/lib/DirectTransportTypes.js";
 import { Consumer } from "mediasoup/node/lib/ConsumerTypes.js";
 import { AiAgentPipeline } from "./ai-agent-pipeline.js";
 import * as RTPParser from 'rtp-parser';
-import WebSocket from "ws";
 
 
 
@@ -20,7 +19,6 @@ class Client {
   public directTransportProducer: Producer | null = null;
   private consumer: Consumer | null = null;
   private producerTransport: WebRtcTransport | null = null;
-  private ws: WebSocket | null
   private clientProducer: Producer | null = null;
   public room: Room | null = null;
 
@@ -30,7 +28,6 @@ class Client {
   constructor(username: string, userId: string) {
     this.userId = userId;
     this.username = username;
-    this.ws = null
   }
 
   public async createConsumerTransport() {
@@ -205,8 +202,6 @@ class Client {
            const totalExtSize = 4 + extLengthWords * 4;
            audioFrame = audioFrame.slice(totalExtSize);
         }
-
-
         aiAgentPipeline.deepgramSTT.sendAudio(audioFrame);
       })
 

@@ -23,7 +23,10 @@ initRedis();
 app.use(cors({
     origin: "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true
+    credentials: true,
+    exposedHeaders: [
+        'set-auth-token'
+    ]
 }))
 
 app.all('/api/auth/*', toNodeHandler(auth.handler))

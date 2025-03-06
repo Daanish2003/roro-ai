@@ -1,5 +1,3 @@
-
-
 datasource db {
   provider = "postgres"
   url      = env("DATABASE_URL")
@@ -41,7 +39,6 @@ model User {
   Sessions         Session[]
   Accounts         Account[]
   rooms            Room[]
-
 
   @@map("user")
 }
@@ -93,6 +90,13 @@ model Verification {
 
   @@unique([identifier, value])
   @@map("verification")
+}
+
+model Jwks {
+  id      String @id @default(cuid())
+  publicKey String
+  privateKey String
+  createdAt  DateTime @default(now())
 }
 
 
