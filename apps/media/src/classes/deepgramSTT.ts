@@ -58,7 +58,7 @@ export class DeepgramSTT {
       smart_format: true,
       interim_results: true,
       channels: 2,
-      encoding: "opus",
+      encoding: "linear16",
       sample_rate: 48000,
       filler_words: false,
       language: "en-US",
@@ -87,14 +87,11 @@ export class DeepgramSTT {
       }, 3000);
     });
 
-
-
     this.connection.on(LiveTranscriptionEvents.Transcript, async (data) => {
       if (data.channel && data.channel.alternatives.length > 0) {
         const transcript = data.channel.alternatives[0].transcript;
         if (data.is_final && transcript.trim().length > 0) {
-          console.log("TRANSCRIPT", transcript);
-          this.room.emit('TRANSCRIPT', transcript)
+          console.log(transcript)
         }
       }
     });

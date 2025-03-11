@@ -7,6 +7,7 @@ import { DirectTransport } from "mediasoup/node/lib/DirectTransportTypes.js";
 import { Consumer } from "mediasoup/node/lib/ConsumerTypes.js";
 import { AiAgentPipeline } from "./ai-agent-pipeline.js";
 import * as RTPParser from 'rtp-parser';
+import { decodedPackets } from "../utils/opusScript.js";
 
 
 
@@ -197,12 +198,14 @@ class Client {
         let audioFrame = parserRtp.payload;
 
         if (parserRtp.extension) {
-           const extHeader = audioFrame.slice(0, 4);
+           const extHeader = audioFrame.subarray(0, 4);
            const extLengthWords = extHeader.readUInt16BE(2);
            const totalExtSize = 4 + extLengthWords * 4;
-           audioFrame = audioFrame.slice(totalExtSize);
+           audioFrame = audioFrame.subarray(totalExtSize);
         }
-        aiAgentPipeline.deepgramSTT.sendAudio(audioFrame);
+
+        const decodedFrame = decodedPackets(audioFrame)
+        aiAgentPipeline.deepgramSTT.sendAudio(decodedFrame);
       })
 
 
