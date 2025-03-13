@@ -6,8 +6,9 @@ import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rt
 import { DirectTransport } from "mediasoup/node/lib/DirectTransportTypes.js";
 import { Consumer } from "mediasoup/node/lib/ConsumerTypes.js";
 import { AiAgentPipeline } from "./ai-agent-pipeline.js";
-import * as RTPParser from 'rtp-parser';
-import { decodedPackets } from "../utils/opusScript.js";
+import { packets, utils } from 'rtp.js';
+
+
 
 
 
@@ -187,41 +188,49 @@ class Client {
         console.log("DirectTransport Consumer transport closed.");
       })
 
-      const dgSocket = aiAgentPipeline.deepgramSTT.createConnection()
-      
+      const dgSocket = await aiAgentPipeline.deepgramSTT.createConnection()
+
+      // const resampler = new Resampler({
+      //   nativeSampleRate: 48000,
+      //   targetSampleRate: 16000,
+      //   targetFrameSize: 512
+      // })
 
       this.directTransportConsumer.on("rtp", async (rtpPackets) => {
         if(!dgSocket) {
-           throw new Error("Deepgram socket not initailized")
-        }
-        const parserRtp = RTPParser.parseRtpPacket(rtpPackets);
-        let audioFrame = parserRtp.payload;
+          throw new Error("Deepgram socket not initailized")
+       }
 
-        if (parserRtp.extension) {
-           const extHeader = audioFrame.subarray(0, 4);
-           const extLengthWords = extHeader.readUInt16BE(2);
-           const totalExtSize = 4 + extLengthWords * 4;
-           audioFrame = audioFrame.subarray(totalExtSize);
-        }
+        const view = utils.nodeBufferToDataView(rtpPackets)
+        const { RtpPacket } = packets
 
-        const decodedFrame = decodedPackets(audioFrame)
-        aiAgentPipeline.deepgramSTT.sendAudio(decodedFrame);
+        const report = new RtpPacket(view)
+
+        report.clearExtensions()
+
+        const payload = report.getPayload()
+
+        const audioFrame = utils.dataViewToNodeBuffer(payload)
+
+        const ndata = await opusDecoder(audioFrame)
+        // const rdata = resampler.process(ndata)
+        // for (const frame of rdata) {
+        //   const idata = new Int16Array(frame.length)
+        //   for (let i = 0; i < idata.length; i++) {
+        //     idata[i] = frame[i]! * 32768
+        //   }
+        // }
+        // const nview = utils.arrayBufferToNodeBuffer(ndata.buffer)
+
+        // console.log(nview)
+
+        await aiAgentPipeline.deepgramSTT.sendAudio(ndata)
       })
 
 
       this.directTransportProducer.on("listenererror", (error) => {
         console.error(error)
       })
-
-      this.directTransportProducer.on("score", (score) => {
-        console.log(score)
-      })
-
-      this.directTransportProducer.on('trace', (trace) => {
-        console.log(trace)
-      })
-
-
       aiAgentPipeline.deepgramTTS.setDirectTransportProducer(this.directTransportProducer)
 
       

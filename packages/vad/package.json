@@ -1,0 +1,25 @@
+{
+  "name": "@roro-ai/node-silero-vad",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "onnxruntime-common": "^1.21.0",
+    "tsx": "4.19.1",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "onnxruntime-node": "^1.20.1"
+  }
+}
