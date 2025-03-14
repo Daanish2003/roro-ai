@@ -1,6 +1,6 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import dotenv from "dotenv";
-import { Room } from "./room.js";
+import { Room } from "../core/room/classes/room.js";
 import { START, END, MessagesAnnotation, StateGraph, MemorySaver} from "@langchain/langgraph"
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 

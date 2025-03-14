@@ -3,14 +3,14 @@ import * as ort from "onnxruntime-node"
 export type SampleRate = 8000 | 16000;
 
 export class OnnxWrapper {
-    private _session?: ort.InferenceSession;
-    private _sampleRate: number;
-    private _state: Float32Array;
-    private _context: Float32Array;
-    private _lastSampleRate: BigInt64Array;
-    private _contextSize: number;
-    private _windowSampleSize: number;
-    private _inputBuffer: Float32Array
+    _session?: ort.InferenceSession;
+    _sampleRate: number;
+    _state: Float32Array;
+    _context: Float32Array;
+    _lastSampleRate: BigInt64Array;
+    _contextSize: number;
+    _windowSampleSize: number;
+    _inputBuffer: Float32Array
 
     constructor(path: string, forceCPU: boolean, sampleRate: SampleRate) {
         this._sampleRate = sampleRate;

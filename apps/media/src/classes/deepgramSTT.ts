@@ -1,8 +1,8 @@
 import { createClient, type ListenLiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import "dotenv/config";
-import { Room } from "./room.js";
-import { AudioByteStream } from "../audio/audio-byte-stream.js";
-import { AudioEnergyFilter } from "../audio/audio-energy-filter.js";
+import { Room } from "../core/room/classes/room.js";
+import { AudioByteStream } from "../core/audio/audio-byte-stream.js";
+import { AudioEnergyFilter } from "../core/audio/audio-energy-filter.js";
 
 
 

@@ -3,7 +3,7 @@ import { Readable } from "stream";
 import prism from 'prism-media';
 import { Producer } from "mediasoup/node/lib/types.js";
 import { packets } from "rtp.js";
-import { Room } from "./room.js";
+import { Room } from "../core/room/classes/room.js";
 import { v4 as uuidv4 } from 'uuid';
 import { JitterBuffer } from "./jitterBuffer.js";
 

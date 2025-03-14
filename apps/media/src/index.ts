@@ -1,11 +1,10 @@
 import { createServer } from "node:http";
 import { app } from "./module/app.js";
 import 'dotenv/config'
-import { mediasoupWorkerManager } from "./managers/worker-manager.js";
+import { mediasoupWorkerManager } from "./core/mediasoup/managers/media-worker-manager.js";
 import { SocketServer } from "./classes/socket-server.js";
 import { redis } from "./utils/redis.js";
-import { load_silero_vad } from "@roro-ai/node-silero-vad"
-import { decoder } from "./audio/audio-encoding.js";
+import { decoder } from "./core/audio/audio-encoding.js";
 
 
 const port = process.env.PORT || 3333;
@@ -22,8 +21,6 @@ const initRedis = async () => {
 };
 
 initRedis();
-
-export const model = (await load_silero_vad(true));
 
 (async () => {
   try {

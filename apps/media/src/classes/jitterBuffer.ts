@@ -1,4 +1,4 @@
-import { Room } from "./room.js";
+import { Room } from "../core/room/classes/room.js";
 
 // This is ai generated
 

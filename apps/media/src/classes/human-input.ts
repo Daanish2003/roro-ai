@@ -1,6 +1,6 @@
 import Client from "./client.js";
 import { DeepgramSTT } from "./deepgramSTT.js";
-import { Room } from "./room.js";
+import { Room } from "../core/room/classes/room.js";
 
 export class HumanInput {
     room: Room;

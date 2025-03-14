@@ -1,6 +1,6 @@
 import { DeepgramSTT } from "./deepgramSTT.js";
 import { DeepgramTTS } from "./deepgramTTS.js";
-import { Room } from "./room.js";
+import { Room } from "../core/room/classes/room.js";
 import { GeminiModel } from "./gemini-modal.js";
 
 export class AiAgentPipeline {

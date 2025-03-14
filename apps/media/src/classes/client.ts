@@ -1,16 +1,12 @@
-import { config } from "../config/media-config.js";
+import { config } from "../core/config/media-config.js";
 import { Producer } from "mediasoup/node/lib/ProducerTypes.js";
 import { DtlsParameters, WebRtcTransport } from "mediasoup/node/lib/WebRtcTransportTypes.js";
-import { Room } from "./room.js";
+import { Room } from "../core/room/classes/room.js";
 import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes.js";
 import { DirectTransport } from "mediasoup/node/lib/DirectTransportTypes.js";
 import { Consumer } from "mediasoup/node/lib/ConsumerTypes.js";
 import { AiAgentPipeline } from "./ai-agent-pipeline.js";
 import { packets, utils } from 'rtp.js';
-
-
-
-
 
 class Client {
   private userId: string;
@@ -310,8 +306,6 @@ class Client {
     console.log("Ai: Unpausing consumer");
     try {
       await this.consumer.resume();
-     
-      console.log("Consumer paused:", this.consumer.paused);
       
       return { success: true};
     } catch (error) {
