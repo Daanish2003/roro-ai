@@ -3,12 +3,12 @@ import { WebRtcTransport } from "mediasoup/node/lib/WebRtcTransportTypes.js"
 
 class MediasoupTransportManager {
     private static instance: MediasoupTransportManager
-    private webRTCTransport: Map<string, WebRtcTransport>
-    private directTransport: Map<string, DirectTransport>
+    private clientTransports: Map<string, WebRtcTransport>
+    private agentTransports: Map<string, DirectTransport>
 
     constructor() {
-        this.webRTCTransport = new Map()
-        this.directTransport = new Map()
+        this.clientTransports = new Map()
+        this.agentTransports = new Map()
     }
 
     static getInstance() {
@@ -19,28 +19,28 @@ class MediasoupTransportManager {
         return MediasoupTransportManager.instance
     }
 
-    addWebRTCTransport(transport: WebRtcTransport) {
-        this.webRTCTransport.set(transport.id, transport)
+    addClientTransport(transport: WebRtcTransport) {
+        this.clientTransports.set(transport.id, transport)
     }
 
-    addDirectTransport(transport: DirectTransport) {
-        this.directTransport.set(transport.id, transport)
+    addAgentTransport(transport: DirectTransport) {
+        this.agentTransports.set(transport.id, transport)
     }
 
-    getWebRTCTransport(transportId: string) {
-        return this.webRTCTransport.get(transportId)
+    getClientTransport(transportId: string) {
+        return this.clientTransports.get(transportId)
     }
 
-    getDirectTransport(transportId: string) {
-        return this.directTransport.get(transportId)
+    getAgentTransport(transportId: string) {
+        return this.agentTransports.get(transportId)
     }
 
-    hasWebRTCTransport(transportId: string) {
-        return this.webRTCTransport.has(transportId)
+    hasClientTransport(transportId: string) {
+        return this.clientTransports.has(transportId)
     }
 
-    hasDirectTransport(transportId: string) {
-        return this.directTransport.has(transportId)
+    hasAgentTransport(transportId: string) {
+        return this.agentTransports.has(transportId)
     }
 }
 

@@ -1,6 +1,6 @@
 import { createClient, RedisClientType } from 'redis';
 import "dotenv/config";
-import { createRoom } from '../core/room/functions/room-service.js';
+import { roomManager } from '../core/room/manager/room-manager.js';
 
 class RedisClient {
     private static instance: RedisClient;
@@ -30,7 +30,8 @@ class RedisClient {
     private async listener(message: string, channel: string) {
       if(channel === "createRoom") {
         const data = JSON.parse(message)
-        await createRoom(
+        //TODO: Add cache so that if server stops and restarts and it could get the data
+        await roomManager.createRoom(
             data.id,
             data.topic,
             data.prompt,

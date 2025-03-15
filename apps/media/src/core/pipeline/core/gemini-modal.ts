@@ -1,6 +1,6 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import dotenv from "dotenv";
-import { Room } from "../core/room/classes/room.js";
+
 import { START, END, MessagesAnnotation, StateGraph, MemorySaver} from "@langchain/langgraph"
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 
@@ -8,19 +8,16 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 dotenv.config();
 
 export class GeminiModel {
-  private room: Room;
   private apiKey: string;
-  private systemPrompt: string;
+  private systemPrompt: string | null =;
   private prompt_template: ChatPromptTemplate<any, any>;
   private model: ChatGoogleGenerativeAI;
   private app: any;
   private isAgentSpeaking: boolean = false
   private isGeneratingVoice: boolean = false
 
-  constructor(room: Room) {
-    this.room = room;
+  constructor() {
     this.apiKey = process.env.GEMINI_API_KEY || "";
-    this.systemPrompt = this.room.prompt
     this.prompt_template = this.initializeChatPromptTemplate()
     this.model = this.initializeModel()
     this.app = this.initializeWorkflow()
@@ -28,32 +25,6 @@ export class GeminiModel {
     if (!this.apiKey) {
       throw new Error("GEMINI_API_KEY not found in environment variables");
     }
-
-    this.room.on("TRANSCRIPT", async (transcript) => {
-        if (!transcript) {
-            console.error("Transcript is undefined or empty");
-            return;
-        }
-        const llmResponse = await this.sendMessage(transcript)
-        this.room.emit("LLM_RESPONSE", llmResponse)
-        this.room.emit("AGENT_RESPONDED")
-    })
-
-    this.room.on("AGENT_START_SPEAKING", () => {
-      this.isAgentSpeaking = true
-    })
-
-    this.room.on("AGENT_STOP_SPEAKING", () => {
-      this.isAgentSpeaking = false
-    })
-
-    this.room.on("GENERATING_VOICE", () => {
-      this.isGeneratingVoice = true
-    })
-
-    this.room.on("GENERATED_VOICE", () => {
-      this.isGeneratingVoice = false
-    })
   }
 
   private initializeModel() {
@@ -91,7 +62,6 @@ export class GeminiModel {
   }
 
   private async sendMessage(userMessage: string) {
-    this.room.emit("AGENT_GENERATING_RESPONSE")
 
     if(this.isAgentSpeaking) return
     if(this.isGeneratingVoice) return

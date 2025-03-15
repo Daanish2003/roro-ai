@@ -1,22 +1,19 @@
 import { createClient, type ListenLiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import "dotenv/config";
-import { Room } from "../core/room/classes/room.js";
-import { AudioByteStream } from "../core/audio/audio-byte-stream.js";
-import { AudioEnergyFilter } from "../core/audio/audio-energy-filter.js";
+import { AudioEnergyFilter } from "../../audio/audio-energy-filter.js";
+import { AudioByteStream } from "../../audio/audio-byte-stream.js";
 
 
 
 export class DeepgramSTT {
-  private room: Room
   private deepgramSTT: ReturnType<typeof createClient>;
   private connection: ListenLiveClient | null = null;
   private audioEnergyFilter: AudioEnergyFilter
   private keepAliveInterval: NodeJS.Timeout | null = null;
   private isAgentSpeaking: boolean = false;
   private isAgentGeneratingResponse: boolean = false;
-  private isGeneratingVoice: boolean = false;
 
-  constructor(room: Room) {
+  constructor() {
     const apiKey = process.env.DEEPGRAM_API_KEY;
     this.deepgramSTT = createClient(apiKey);
     this.audioEnergyFilter = new AudioEnergyFilter()
@@ -24,32 +21,6 @@ export class DeepgramSTT {
     if (!apiKey) {
       throw new Error("Deepgram API key is missing.");
     }
-
-    this.room = room
-
-    this.room.on("AGENT_START_SPEAKING", () => {
-       this.isAgentSpeaking = true
-    })
-
-    this.room.on("AGENT_STOP_SPEAKING", () => {
-      this.isAgentSpeaking = false
-    })
-
-    this.room.on("AGENT_GENERATING_RESPONSE", () => {
-      this.isAgentGeneratingResponse = true
-    })
-
-    this.room.on("AGENT_RESPONDED", () => {
-      this.isAgentGeneratingResponse = false
-    })
-
-    this.room.on("GENERATING_VOICE", () => {
-      this.isGeneratingVoice = true
-    })
-
-    this.room.on("GENERATED_VOICE", () => {
-      this.isGeneratingVoice = false
-    })
   }
 
   public async createConnection(): Promise<ListenLiveClient> {

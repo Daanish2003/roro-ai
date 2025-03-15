@@ -1,27 +1,29 @@
 import { RtpCapabilities } from "mediasoup/node/lib/rtpParametersTypes.js";
-import { routerManager } from "../../mediasoup/managers/media-router-manager.js";
+import { MediaTransport } from "../../mediasoup/core/media-transport.js";
+import { Router } from "mediasoup/node/lib/RouterTypes.js";
+import { MediaTrack } from "../../mediasoup/core/media-track.js";
 
 export class Room {
 	public readonly roomId: string;
-    public readonly routerId: string;
+	public readonly agentId: string;
 	public readonly authorId: string;
+	public router: Router;
 	private participantId: string | null = null
-	private producerTransportId: string | null = null
-	private consumerTransportId: string | null = null
-	private producerTrackId: string | null = null
-	private consumerTrackId: string | null = null
-	private listenerTrackId: string | null = null
-	private agentTrackId: string | null = null
+	public mediaTransports: MediaTransport
+	public mediaTracks: MediaTrack
 	public readonly topic: string
 	public readonly prompt: string
 
 
-	constructor(roomId: string, topic: string, authorId: string ,routerId: string, prompt: string) {
+	constructor(roomId: string, topic: string, authorId: string ,router: Router, prompt: string, agentId: string) {
+		this.agentId = agentId;
 		this.roomId = roomId;
 		this.topic = topic;
 		this.prompt = prompt;
 		this.authorId = authorId;
-		this.routerId = routerId;
+		this.router = router;
+		this.mediaTransports = new MediaTransport();
+		this.mediaTracks = new MediaTrack()
 	}
 
 	public async addParticipant(userId: string): Promise<{success: boolean, message: string, routerRtpCap?: RtpCapabilities}> {
@@ -34,7 +36,7 @@ export class Room {
 
 	   this.participantId = userId
 
-	   const routerRtpCap = await routerManager.getRouterRtpCap(this.routerId)
+	   const routerRtpCap = this.router.rtpCapabilities
 
 	   return {
 		 success: true,
@@ -43,56 +45,8 @@ export class Room {
 	   }
 	}
 
-	public addProducerTrack(trackId: string) {
-		this.producerTrackId = trackId
-	}
-
-	public addConsumerTrack(trackId: string) {
-		this.consumerTrackId = trackId
-	}
-
-	public addListenerTrack(trackId: string) {
-		this.listenerTrackId = trackId
-	}
-
-	public addAgentTrack(trackId: string) {
-		this.agentTrackId = trackId
-	}
-
-	public addProducerTransport(transportId: string) {
-		this.producerTransportId = transportId
-	}
-
-	public addConsumerTransport(transportId: string) {
-		this.consumerTransportId = transportId
-	}
-
-	public getProducerTransportId() {
-		return this.producerTransportId
-	}
-
-	public getConsumerTransportId() {
-		return this.consumerTransportId
-	}
-
 	public getParticipantId() {
 		return this.participantId;
-	}
-
-	public getProducerTrackId() {
-		return this.producerTrackId;
-	}
-
-	public getConsumerTrackId() {
-		return this.consumerTrackId;
-	}
-
-	public getListenerTrackId() {
-		return this.listenerTrackId;
-	}
-
-	public getAgentTrackId() {
-		return this.agentTrackId;
 	}
 
 

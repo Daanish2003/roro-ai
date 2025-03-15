@@ -45,7 +45,7 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     joinRoom: async(roomId, userId, username, prompt) => {
         try {
           console.log("Emitting joinRoom with:", { roomId, userId, username, prompt });
-            const { routerRtpCap } = await socket.emitWithAck("joinRoom", { roomId, userId, username, prompt })
+            const { routerRtpCap } = await socket.emitWithAck("joinRoom", { roomId, userId })
             
             set({ joined: true})
             set({ routerRtpCapabilities: routerRtpCap})

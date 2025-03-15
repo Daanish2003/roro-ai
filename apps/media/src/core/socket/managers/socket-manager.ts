@@ -1,15 +1,12 @@
 import { Server, Socket } from "socket.io";
 import { Server as HttpServer } from "node:http";
 import { server } from "../../../index.js";
-import { joinRoom } from "../../room/functions/room-service.js";
 import { DtlsParameters, IceCandidate, IceParameters } from "mediasoup/node/lib/WebRtcTransportTypes.js";
 import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes.js";
-import { connectWebRtcTransport, createDirectTransport, createWebRTCTransport } from "../../mediasoup/functions/media-transport.js";
 import { roomManager } from "../../room/manager/room-manager.js";
-import { agentTrack, ConsumerTrack, listenerTrack, produceTrack } from "../../mediasoup/functions/media-track.js";
-import { unpauseConsumer } from "../../mediasoup/functions/media-controller.js";
+import { agentManager } from "../../pipeline/managers/agent-pipeline-manager.js";
 
-class SocketManager {
+export class SocketManager {
   private static instance: SocketManager;
   private io: Server;
   private connections: Map<string, Socket>;
@@ -61,7 +58,7 @@ class SocketManager {
         callback: (response: { success: boolean; message: string; routerRtpCap?: RtpCapabilities }) => void
       ) => {
         try {
-          const response = await joinRoom(roomId, userId);
+          const response = await roomManager.joinRoom(roomId, userId);
           callback(response);
         } catch (error) {
           console.error("Error in joining room:", error);
@@ -87,7 +84,11 @@ class SocketManager {
         }) => void
       ) => {
         const room = roomManager.getRoom(roomId)
-        const clientTransportParams = await createWebRTCTransport(room!.routerId)
+        if(!room) {
+          throw new Error("CreateProducerRequest: Room not found")
+        }
+
+        const clientTransportParams = await room.mediaTransports.createClientProducerTransport(room.router)
         callback({ clientTransportParams });
       }
     );
@@ -99,10 +100,11 @@ class SocketManager {
         callback: (response: { success: boolean }) => void
       ) => {
         const room = roomManager.getRoom(roomId)
-        const transportId = room!.getProducerTransportId()!
 
-        await connectWebRtcTransport({
-          transportId,
+        if(!room) {
+          throw new Error("ConnectProducerRequest: Room not found")
+        }
+        await room.mediaTransports.connectClientProducerTransport({
           dtlsParameters
         })
 
@@ -124,7 +126,12 @@ class SocketManager {
         }) => void
       ) => {
         const room = roomManager.getRoom(roomId)
-        const clientTransportParams = await createWebRTCTransport(room!.routerId)
+
+        if(!room) {
+          throw new Error("CreateConsumerRequest: Room not found")
+        }
+
+        const clientTransportParams = await room.mediaTransports.createClientConsumerTransport(room.router)
         callback({ clientTransportParams });
       }
     );
@@ -136,9 +143,10 @@ class SocketManager {
         callback: (response: { success: boolean }) => void
       ) => {
         const room = roomManager.getRoom(roomId)
-        const transportId = room!.getConsumerTransportId()!
-        await connectWebRtcTransport({
-          transportId,
+        if(!room) {
+          throw new Error("ConnectConsumerRequest: Room not found")
+        }
+        await room.mediaTransports!.connectClientConsumerTransport({
           dtlsParameters
         })
         callback({ success: true });
@@ -152,24 +160,27 @@ class SocketManager {
         callback: ({ id }: { id: string }) => void
       ) => {
         const room = roomManager.getRoom(roomId)
-        const transportId = room!.getProducerTransportId()!
-        const id = await produceTrack({
+        if(!room) {
+          throw new Error("StartProducingRequest: Room not found")
+        }
+
+        const id = await room.mediaTracks.createClientProducerTrack({
           kind,
           rtpParameters,
-          transportId
+          transport: room.mediaTransports.clientProducerTransport!,
         })
 
-        const transport = await createDirectTransport(room!.roomId)
-        const track = await listenerTrack({
-          transport,
-          routerId: room!.roomId,
-          trackId: id
-        })
+        const transport = await room.mediaTransports.createAgentTransport(room.router)
+        const agentId = room.agentId
+        const agent = agentManager.getPipeline(agentId)
 
-        await agentTrack({
-          transport,
-          listenerTrack: track,
-        })
+        if(!agent) {
+          throw new Error("Agent not Initailized")
+        }
+
+        agent.setTransport(transport)
+
+        agent.subscribeTrack(id, room.router.rtpCapabilities)
 
         callback({ id });
       }
@@ -197,10 +208,22 @@ class SocketManager {
         if(!room) {
           throw new Error("ConsumeMediaRequest: Room not found")
         }
-        const trackId = room.getAgentTrackId()!
-        const transportId = room.getConsumerTransportId()!
 
-        const response = await ConsumerTrack(room.routerId, trackId, rtpCapabilities, transportId) 
+        const agentId = room.agentId
+        const agent = agentManager.getPipeline(agentId)
+
+        if(!agent) {
+          throw new Error("Agent not Initailized")
+        }
+
+        const agentTrackId = await agent.publishTrack()
+
+        const response = await room.mediaTracks.createClientConsumerTrack({
+          rtpCap: rtpCapabilities,
+          router: room.router,
+          trackId: agentTrackId,
+          transport: room.mediaTransports.clientConsumerTransport!
+        }) 
 
   
         callback(response);
@@ -218,9 +241,7 @@ class SocketManager {
         if(!room) {
           throw new Error("ConsumeMediaRequest: Room not found")
         }
-
-        const trackId = room.getConsumerTrackId()!
-        const response = await unpauseConsumer(trackId);
+        const response = await room.mediaTracks.unpauseConsumer()!;
         callback(response);
       }
     );
@@ -236,4 +257,3 @@ class SocketManager {
   }
 }
 
-export const socketManager = SocketManager.getInstance();

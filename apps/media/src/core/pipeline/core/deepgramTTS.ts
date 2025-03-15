@@ -8,7 +8,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { JitterBuffer } from "./jitterBuffer.js";
 
 export class DeepgramTTS {
-    private room: Room
     private deepgramTTS: ReturnType<typeof createClient>;
     private directTransportProducer: Producer | null = null;
     private rtpSequenceNumber: number = 0;
@@ -19,25 +18,12 @@ export class DeepgramTTS {
     private currentJitterBuffer: JitterBuffer | null = null;
     private isAgentSpeaking: boolean = false
 
-    constructor(room: Room) {
+    constructor() {
         const apiKey = process.env.DEEPGRAM_API_KEY;
         if (!apiKey) {
               throw new Error("Deepgram API key is missing.");
         }
         this.deepgramTTS = createClient(apiKey);
-        this.room = room
-
-        this.room.on("LLM_RESPONSE", (response) => {
-            this.textToSpeech(response)
-        })
-
-        this.room.on("AGENT_START_SPEAKING", () => {
-          this.isAgentSpeaking = true
-        })
-
-        this.room.on("AGENT_STOP_SPEAKING", () => {
-          this.isAgentSpeaking = false
-        })
     }
 
     public async textToSpeech(text: string) {

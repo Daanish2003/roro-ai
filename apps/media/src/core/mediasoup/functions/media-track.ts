@@ -4,14 +4,13 @@ import { trackManager } from "../managers/media-track-manager.js"
 import { DirectTransport } from "mediasoup/node/lib/DirectTransportTypes.js"
 import { routerManager } from "../managers/media-router-manager.js"
 import { Consumer } from "mediasoup/node/lib/ConsumerTypes.js"
-import { WebRtcTransport } from "mediasoup/node/lib/WebRtcTransportTypes.js"
 
 export const produceTrack = async ({ kind, rtpParameters, transportId} :{
     kind: MediaKind,
     rtpParameters: RtpParameters,
     transportId: string
 }) => {
-    const transport = transportManager.getWebRTCTransport(transportId)
+    const transport = transportManager.getClientTransport(transportId)
     const producer = await transport!.produce({
         kind,
         rtpParameters

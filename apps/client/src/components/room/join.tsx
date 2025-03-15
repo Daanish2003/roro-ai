@@ -31,7 +31,6 @@ export default function Join() {
 
 
       const JoinHandler = async () => {
-        console.log(prompt)
         await joinRoom(roomId, userId, username, prompt)
         const device = await setupDevice()
         const response = await createRecvTransport(roomId, device)
