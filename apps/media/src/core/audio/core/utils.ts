@@ -45,7 +45,13 @@ export abstract class AudioStream implements AsyncIterableIterator<AudioFrame>{
           throw new Error('Stream is closed');
         }
         this.input.close();
-      }
+    }
+
+    close() {
+      this.input.close();
+      this.output.close()
+      this.closed = true
+    }
 
     async next() {
         return this.output.next()
