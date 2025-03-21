@@ -3,6 +3,7 @@ import { routerManager } from '../../mediasoup/managers/media-router-manager.js'
 import { mediasoupWorkerManager } from '../../mediasoup/managers/media-worker-manager.js';
 import { AgentPipeline } from '../../pipeline/core/agent-pipeline.js';
 import { agentManager } from '../../pipeline/managers/agent-pipeline-manager.js';
+import { VAD } from '../../vad/core/vad.js';
 import { Room } from '../classes/room.js'
 
 class RoomManager {
@@ -30,8 +31,8 @@ class RoomManager {
                     console.log(`Router [${router.id}] for worker [${worker.pid}] has been closed`)
                 })
                   routerManager.addRouter(router)
-                   
-                  const agent = new AgentPipeline()
+                  const vad = await VAD.load()
+                  const agent = new AgentPipeline(vad)
                   agentManager.addPipeline(agent)
                   const room= new Room(roomId, topic, userId, router, prompt, agent.agentId);
                   this.rooms.set(room.roomId, room)

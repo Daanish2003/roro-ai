@@ -3,7 +3,6 @@ import { app } from "./module/app.js";
 import 'dotenv/config'
 import { mediasoupWorkerManager } from "./core/mediasoup/managers/media-worker-manager.js";
 import { redis } from "./utils/redis.js";
-import { decoder } from "./core/audio/audio-encoding.js";
 import { SocketManager} from "./core/socket/managers/socket-manager.js";
 
 
@@ -26,7 +25,6 @@ initRedis();
   try {
     SocketManager.getInstance()
     mediasoupWorkerManager.createWorkers();
-    await decoder.ready
   } catch (error) {
     console.error("Error during initialization:", error);
   }

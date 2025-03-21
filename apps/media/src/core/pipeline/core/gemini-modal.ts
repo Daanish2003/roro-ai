@@ -3,24 +3,24 @@ import dotenv from "dotenv";
 
 import { START, END, MessagesAnnotation, StateGraph, MemorySaver} from "@langchain/langgraph"
 import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { v4 as uuidv4 } from 'uuid';
 
 
 dotenv.config();
 
 export class GeminiModel {
   private apiKey: string;
-  private systemPrompt: string | null =;
   private prompt_template: ChatPromptTemplate<any, any>;
   private model: ChatGoogleGenerativeAI;
   private app: any;
-  private isAgentSpeaking: boolean = false
-  private isGeneratingVoice: boolean = false
+  private threadId: string;
 
-  constructor() {
+  constructor(prompt: string) {
     this.apiKey = process.env.GEMINI_API_KEY || "";
-    this.prompt_template = this.initializeChatPromptTemplate()
+    this.prompt_template = this.initializeChatPromptTemplate(prompt)
     this.model = this.initializeModel()
     this.app = this.initializeWorkflow()
+    this.threadId = uuidv4()
 
     if (!this.apiKey) {
       throw new Error("GEMINI_API_KEY not found in environment variables");
@@ -52,27 +52,23 @@ export class GeminiModel {
     }
   }
 
-  private initializeChatPromptTemplate() {
+  private initializeChatPromptTemplate(prompt: string) {
     return ChatPromptTemplate.fromMessages([[
       "system",
-       this.systemPrompt
+       prompt,
     ],
     ["placeholder", "{messages}"]
   ])
   }
 
-  private async sendMessage(userMessage: string) {
-
-    if(this.isAgentSpeaking) return
-    if(this.isGeneratingVoice) return
-
+  public async sendMessage(userMessage: string) {
     try {
       const output = await this.app.invoke({ messages: 
         {
           role: "user",
           content: userMessage
         }
-       }, { configurable: { thread_id: this.room.roomId}})
+       }, { configurable: { thread_id: this.threadId}})
 
        if (output && output.messages && output.messages[0]) {
          return output.messages[output.messages.length - 1].content;

@@ -1,6 +1,6 @@
 import { OpusDecoderWebWorker } from "opus-decoder"
 
-export const decoder = new OpusDecoderWebWorker({
+const decoder = new OpusDecoderWebWorker({
   sampleRate: 16000,
   channels: 2,
   streamCount: 1,

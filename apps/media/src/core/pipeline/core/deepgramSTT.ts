@@ -2,16 +2,12 @@ import { createClient, type ListenLiveClient, LiveTranscriptionEvents } from "@d
 import "dotenv/config";
 import { AudioEnergyFilter } from "../../audio/audio-energy-filter.js";
 import { AudioByteStream } from "../../audio/audio-byte-stream.js";
-
-
-
 export class DeepgramSTT {
   private deepgramSTT: ReturnType<typeof createClient>;
-  private connection: ListenLiveClient | null = null;
-  private audioEnergyFilter: AudioEnergyFilter
+  private connection: ListenLiveClient
+  private audioEnergyFilter: AudioEnergyFilter;
   private keepAliveInterval: NodeJS.Timeout | null = null;
-  private isAgentSpeaking: boolean = false;
-  private isAgentGeneratingResponse: boolean = false;
+  private stream: AudioByteStream
 
   constructor() {
     const apiKey = process.env.DEEPGRAM_API_KEY;
@@ -21,14 +17,24 @@ export class DeepgramSTT {
     if (!apiKey) {
       throw new Error("Deepgram API key is missing.");
     }
+
+    this.connection = this.createConnection()
+
+    const samples100Ms = Math.floor(1600 / 10);
+
+    this.stream = new AudioByteStream(
+      16000,
+      1,
+      samples100Ms
+    )
   }
 
-  public async createConnection(): Promise<ListenLiveClient> {
+  public createConnection(): ListenLiveClient{
     if (this.connection) {
       return this.connection;
     }
 
-    this.connection = this.deepgramSTT.listen.live({
+    const connection = this.deepgramSTT.listen.live({
       model: "nova-3",
       punctuate: true,
       smart_format: true,
@@ -46,7 +52,7 @@ export class DeepgramSTT {
     });
 
     this.setupEventListeners();
-    return this.connection;
+    return connection;
   }
 
   private setupEventListeners (): void {
@@ -102,18 +108,7 @@ export class DeepgramSTT {
         console.warn("No active connection to send audio.");
         return;
     }
-    if (this.isAgentSpeaking) return
-    if (this.isAgentGeneratingResponse) return
-
-    const samples100Ms = Math.floor(1600 / 10);
-
-    const stream = new AudioByteStream(
-      16000,
-      1,
-      samples100Ms
-    )
-
-    const frames = stream.write(data)
+    const frames = this.stream.write(data)
 
      for await (const frame of frames) {
       if(this.audioEnergyFilter.pushFrame(frame)) {
@@ -125,7 +120,6 @@ export class DeepgramSTT {
   public closeConnection(): void {
     if (this.connection) {
       this.connection.requestClose();
-      this.connection = null;
     }
     this.cleanupConnection();
   }
@@ -136,6 +130,5 @@ export class DeepgramSTT {
       clearInterval(this.keepAliveInterval);
       this.keepAliveInterval = null;
     }
-    this.connection = null;
   }
 }
