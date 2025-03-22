@@ -19,11 +19,11 @@ export enum VADEventType {
     END_OF_SPEECH,
 }
 
-export enum STTEventType {
+export enum SpeechEventType {
+    SPEECH_STARTED,
+    END_OF_SPEECH,
     FINAL_TRANSCRIPT,
     INTERM_TRANSCRIPT,
-    SPEECH_STARTED,
-    SPEECH_SEND,
 }
 
 export enum LLMEventType {

@@ -20,5 +20,7 @@ export const opusDecoder = async (opusFrame: Buffer) => {
     int16Data[i] = Math.max(-32768, Math.min(32767, fdata[i]! * 32768));
   }
 
+  console.log(int16Data)
+
   return int16Data
 }

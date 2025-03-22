@@ -10,7 +10,7 @@ export abstract class AudioStream implements AsyncIterableIterator<AudioFrame>{
     protected input = new AsyncIterableQueue<Buffer | typeof AudioStream.FLUSH_AUDIO>()
     protected output =  new AsyncIterableQueue<AudioFrame>()
     closed = false;
-    audio: Audio
+    audio: Audio;
     constructor(audio: Audio){
       this.audio = audio
     }
@@ -53,11 +53,11 @@ export abstract class AudioStream implements AsyncIterableIterator<AudioFrame>{
       this.closed = true
     }
 
-    async next() {
+    async next():Promise<IteratorResult<AudioFrame>> {
         return this.output.next()
     }
 
-    [Symbol.asyncIterator]() {
+    [Symbol.asyncIterator]():AudioStream {
         return this
     }
 

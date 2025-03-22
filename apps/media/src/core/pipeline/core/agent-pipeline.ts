@@ -2,25 +2,24 @@ import { v4 as uuidv4 } from 'uuid';
 import { RtpCapabilities } from 'mediasoup/node/lib/rtpParametersTypes.js';
 import { AgentTrack } from './agent-track.js';
 import { DirectTransport } from 'mediasoup/node/lib/DirectTransportTypes.js';
-import { DeepgramSTT } from './deepgramSTT.js';
+// import { DeepgramSTT } from './deepgramSTT.js';
 import { VAD } from '../../vad/core/vad.js';
-import { EventEmitter } from 'node:events';
 import { Audio } from '../../audio/core/audio.js';
+import { STT } from '../../stt/index.js';
 
-export class AgentPipeline extends EventEmitter {
+export class AgentPipeline {
     public readonly agentId: string;
     private transport: DirectTransport | null = null
     public mediaTracks: AgentTrack;
     private audio: Audio | null = null
-    private deepgramSTT: DeepgramSTT;
+    private stt: STT
     private vad: VAD
 
     constructor(vad: VAD) {
-        super();
         this.agentId = uuidv4();
         this.vad = vad
         this.mediaTracks = new AgentTrack();
-        this.deepgramSTT = new DeepgramSTT();
+        this.stt = STT.create();
     }
 
     setTransport(transport: DirectTransport){
@@ -41,13 +40,18 @@ export class AgentPipeline extends EventEmitter {
         })
 
         const audioStream = this.audio.stream()
+        const vadStream = this.vad.stream()
+        const sttStream = this.stt.stream()
 
         track.on('rtp', async (rtpPackets) => {
             audioStream.pushStream(rtpPackets)
-            for await (const frame of audioStream) {
-                console.log(frame)
-            }
         })
+
+        for await (const frame of audioStream) {
+            vadStream.push(frame)
+            sttStream.push(frame)
+        }
+        
     }
 
     async publishTrack() {

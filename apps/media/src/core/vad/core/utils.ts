@@ -65,11 +65,11 @@ export abstract class VADStream implements AsyncIterableIterator<VADEvent> {
         this.closed = true
     }
 
-    next(): Promise<IteratorResult<VADEvent>> {
+    async next(): Promise<IteratorResult<VADEvent>> {
         return this.output.next()
     }
 
-    [Symbol.asyncIterator]() {
+    [Symbol.asyncIterator](): VADStream {
         return this
     }
 

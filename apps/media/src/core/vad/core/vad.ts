@@ -1,8 +1,9 @@
 import { InferenceSession } from "onnxruntime-node";
 import { newInferenceSession, SampleRate, SileroVADOnnx } from "./model.js";
-import { ExpFilter } from "../../../utils/index.js";
-import { AudioFloatStream } from "../../audio/audio-float-stream.js";
-import { InferenceFrame } from "../../audio/inference-frame.js";
+import { VADStream as BaseStream } from "./utils.js";
+import { AudioFrame } from "../../audio/audio-frame.js";
+import { ExpFilter, mergeFrames } from "../../../utils/index.js";
+import { VADEventType } from "../../../utils/event.js";
 
 
 export interface VADOptions {
@@ -26,16 +27,11 @@ export interface VADOptions {
 export class VAD {
     _opts: VADOptions
     _session: InferenceSession
-    _model: SileroVADOnnx
-    _stream: AudioFloatStream
-    _expFilter: ExpFilter
+    _streams: VADStream[] = []
 
     constructor(session: InferenceSession, opts: VADOptions) {
         this._session = session;
         this._opts = opts
-        this._model = new SileroVADOnnx(this._session)
-        this._stream = new AudioFloatStream(16000, 1, 512)
-        this._expFilter = new ExpFilter(0.35)
     }
 
     static async load(opts: Partial<VADOptions> = {}) {
@@ -44,21 +40,91 @@ export class VAD {
         return new VAD(session, mergedOptions)
     }
 
-    async sendAudio(data: ArrayBuffer) {
-      const frames = this._stream.write(data)
+    stream() {
+      const stream = new VADStream(
+        this,
+        this._opts,
+        new SileroVADOnnx(this._session)
+      )
 
-      console.log(frames)
+      this._streams.push(stream)
 
-      // for await(const frame of frames) {
-      //   const p = await this.getSpeechProb(frame)
-      //   console.log(p)
-      // }
+      return stream
     }
+}
 
-    async getSpeechProb(frame: InferenceFrame) {
-      const data = await this._model.run(frame.data)
-      console.log(data)
-      return this._expFilter.apply(1, data);
+export class VADStream extends BaseStream {
+  private options: VADOptions
+  private model: SileroVADOnnx
+  private task: Promise<void>
+  private expFilter = new ExpFilter(0.35) 
+
+  constructor(vad: VAD, opts: VADOptions, model: SileroVADOnnx) {
+    super(vad)
+    this.options = opts
+    this.model = model
+    this.task = this.run()
+  }
+
+  private async run() {
+    let inferenceData = new Float32Array(this.model.windowSizeSamples)
+    let inferenceFrames: AudioFrame[] = []
+    let pubSpeaking:boolean = false;
+    let speechThresholdDuration = 0;
+    let silenceThresholdDuration = 0;
+    for await (const frame of this.input) {
+      if (typeof frame === 'symbol') {
+        continue;
+      }
+
+      inferenceFrames.push(frame)
+
+      while(true) {
+        const availableInferenceSamples = inferenceFrames
+            .map((x) => x.samplesPerChannel)
+            .reduce((acc, x) => acc + x, 0);
+
+        if (availableInferenceSamples < this.model.windowSizeSamples) {
+          break;
+        }
+
+        const inferenceFrame = mergeFrames(inferenceFrames);
+
+        const inferenceData = Float32Array.from(
+          inferenceFrame.data.subarray(0, this.model.windowSizeSamples),
+          (x) => x / 32767
+        )
+
+        const p = await this.model
+            .run(inferenceData)
+            .then((data) => this.expFilter.apply(1, data));
+
+        const windowDuration = (this.model.windowSizeSamples / this.options.sampleRate) * 1000
+
+        if(p > this.options.activationThreshold) {
+          speechThresholdDuration += windowDuration;
+          silenceThresholdDuration = 0;
+          if(!pubSpeaking && (speechThresholdDuration >= this.options.minSpeechDuration)) {
+            console.log("Allow")
+            pubSpeaking = true
+            this.output.put({
+              type: VADEventType.START_OF_SPEECH
+            })
+          }
+        } else {
+          silenceThresholdDuration += windowDuration
+          speechThresholdDuration = 0
+          if(pubSpeaking && (silenceThresholdDuration > this.options.minSilenceDuration)) {
+            console.log("DisAllow")
+            pubSpeaking = false
+            this.output.put({
+              type: VADEventType.END_OF_SPEECH
+            })
+          }
+        }
+        inferenceFrames = []
+      }
     }
+  }
 }
 

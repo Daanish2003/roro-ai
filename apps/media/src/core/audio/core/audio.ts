@@ -2,6 +2,7 @@ import { OpusDecoderWebWorker } from "opus-decoder";
 import { AudioStream as BaseStream } from "./utils.js"
 import { AudioFrame } from "../audio-frame.js";
 import { packets, utils } from "rtp.js";
+import { resamplerCubic } from "../../../utils/buffer.js";
 
 export interface AudioOptions {
     sampleRate: number,
@@ -53,13 +54,11 @@ export class Audio {
 export class AudioStream extends BaseStream {
     private options: AudioOptions
     private decoder: OpusDecoderWebWorker<16000>
-    private inputBuffer: Array<number>
     private task: Promise<void>
     constructor(audio: Audio, opts: AudioOptions, decoder: OpusDecoderWebWorker<16000>){
         super(audio)
         this.options = opts
         this.decoder = decoder
-        this.inputBuffer = []
         this.initDecoder();
         this.task = this.run()
     }
@@ -83,7 +82,6 @@ export class AudioStream extends BaseStream {
             const audioStream = this.clearRTPExtension(stream);
             const pcmData = await this.handleDecoding(audioStream);
             const frame = new AudioFrame(pcmData, 16000, 1, 512);
-            console.log(frame)
             this.output.put(frame)
         } catch (error) {
             console.error("Failed to handle input stream:", error);
@@ -100,33 +98,14 @@ export class AudioStream extends BaseStream {
         return stream
     }
 
-    private hasEnoughSamples() {
-        return (
-          (this.inputBuffer.length * this.options.samplesPerChannel) / this.options.sampleRate >= this.options.samplesPerChannel
-        )
-    }
-
     private async handleDecoding(stream: Buffer) {
         const audio = await this.decoder.decodeFrame(stream)
 
         const fdata = audio.channelData[0]!
+        const rdata = resamplerCubic(fdata, 512)
+        const int16Data = Int16Array.from(rdata, (x) => x * 32767);
 
-        for (const sample of fdata) {
-            this.inputBuffer.push(sample)
-        }
-
-        while(this.hasEnoughSamples) {
-            const frameSamples = this.inputBuffer.splice(0, this.options.samplesPerChannel);
-            const int16Data = new Int16Array(this.options.samplesPerChannel);
-
-            for (let i = 0; i < this.options.samplesPerChannel; i++) {
-                int16Data[i] = Math.max(-32768, Math.min(32767, frameSamples[i]! * 32768));
-            }
-
-            return int16Data
-        }
-
-        return new Int16Array(this.options.samplesPerChannel);
+        return int16Data;
     }
 
 }

@@ -27,9 +27,6 @@ export const useMediaStore = create<MediaState>((set, get) => ({
                 noiseSuppression: true,
                 autoGainControl: true,
                 echoCancellation: true,
-                sampleRate: 48000,
-                channelCount: 2,
-                sampleSize: 16,
               },
               video: true,
             });

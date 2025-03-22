@@ -42,3 +42,38 @@ export function bytesToLinear16(bytes: Uint8Array) {
     return samples;
 }
 
+export function resamplerCubic(input: Float32Array, targetFrameSize: number): Float32Array {
+  const output = new Float32Array(targetFrameSize)
+  const ratio = (input.length - 1) / (targetFrameSize - 1)
+
+  for (let i = 0; i < targetFrameSize; i++) {
+    const index = i * ratio
+    const x = Math.floor(index)
+    const t = index - x
+
+    // Get four neighboring points for cubic interpolation
+    const x0 = Math.max(x - 1, 0)
+    const x1 = x
+    const x2 = Math.min(x + 1, input.length - 1)
+    const x3 = Math.min(x + 2, input.length - 1)
+
+    const p0 = input[x0]!
+    const p1 = input[x1]!
+    const p2 = input[x2]!
+    const p3 = input[x3]!
+
+    // Cubic interpolation formula (Catmull-Rom spline)
+    output[i] =
+      p1 +
+      0.5 *
+        t *
+        (p2 - p0 +
+          t * (2 * p0 - 5 * p1 + 4 * p2 - p3 +
+          t * (3 * (p1 - p2) + p3 - p0)))
+
+  }
+
+  return output
+}
+
+
