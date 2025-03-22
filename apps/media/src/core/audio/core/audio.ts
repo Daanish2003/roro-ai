@@ -102,8 +102,7 @@ export class AudioStream extends BaseStream {
         const audio = await this.decoder.decodeFrame(stream)
 
         const fdata = audio.channelData[0]!
-        const rdata = resamplerCubic(fdata, 512)
-        const int16Data = Int16Array.from(rdata, (x) => x * 32767);
+        const int16Data = Int16Array.from(fdata.subarray(0, 512), (x) => x * 32767);
 
         return int16Data;
     }

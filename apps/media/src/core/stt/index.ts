@@ -88,7 +88,7 @@ export class STTStream extends BaseStream {
     }
 
     private async sendAudio() {
-        const samples100Ms = Math.floor(this.options.sample_rate / 10);
+        const samples100Ms = Math.floor(this.options.sample_rate / 32);
         const stream = new AudioByteStream(
             this.options.sample_rate,
             this.options.channels,

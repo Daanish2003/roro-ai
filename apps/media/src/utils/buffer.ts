@@ -51,7 +51,6 @@ export function resamplerCubic(input: Float32Array, targetFrameSize: number): Fl
     const x = Math.floor(index)
     const t = index - x
 
-    // Get four neighboring points for cubic interpolation
     const x0 = Math.max(x - 1, 0)
     const x1 = x
     const x2 = Math.min(x + 1, input.length - 1)
@@ -62,7 +61,6 @@ export function resamplerCubic(input: Float32Array, targetFrameSize: number): Fl
     const p2 = input[x2]!
     const p3 = input[x3]!
 
-    // Cubic interpolation formula (Catmull-Rom spline)
     output[i] =
       p1 +
       0.5 *
@@ -76,4 +74,6 @@ export function resamplerCubic(input: Float32Array, targetFrameSize: number): Fl
   return output
 }
 
-
+export function applyGain(audioData: Float32Array, gainFactor = 1.05) {
+  return Float32Array.from(audioData.map(sample => sample * gainFactor));
+}
