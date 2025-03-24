@@ -2,7 +2,8 @@ import { OpusDecoderWebWorker } from "opus-decoder";
 import { AudioStream as BaseStream } from "./utils.js"
 import { AudioFrame } from "../audio-frame.js";
 import { packets, utils } from "rtp.js";
-import { resamplerCubic } from "../../../utils/buffer.js";
+import { AudioByteStream } from "../audio-byte-stream.js";
+import audioType from 'audio-type'
 
 export interface AudioOptions {
     sampleRate: number,
@@ -41,7 +42,7 @@ export class Audio {
         const stream = new AudioStream(
             this,
             this.options,
-            this.decoder
+            this.decoder,
         )
 
         this.streams.push(stream)
@@ -85,6 +86,19 @@ export class AudioStream extends BaseStream {
             this.output.put(frame)
         } catch (error) {
             console.error("Failed to handle input stream:", error);
+        }
+    }
+
+    async handleOutputStream(data: ArrayBuffer) {
+        try {
+            const samples100Ms = Math.floor(48000 / 20);
+            const stream = new AudioByteStream(48000, 1, samples100Ms)
+            const frames = stream.write(data)
+            for await(const frame of frames) {
+                this.output.put(frame)
+            }
+        } catch (error) {
+            console.error("Failed to handle output stream:", error);
         }
     }
 

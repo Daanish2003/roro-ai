@@ -1,26 +1,15 @@
-import { OpusDecoderWebWorker } from "opus-decoder"
+import OpusScript from "opusscript"
 
-const decoder = new OpusDecoderWebWorker({
-  sampleRate: 16000,
-  channels: 2,
-  streamCount: 1,
-  coupledStreamCount: 1,
-  forceStereo: false,
-  channelMappingTable: [0, 1],
-})
+const samplingRate = 48000
+const frameDuration = 20
+const channels = 2
 
+const encoder = new OpusScript(samplingRate, channels, OpusScript.Application.AUDIO);
 
-export const opusDecoder = async (opusFrame: Buffer) => {
-  const audio = await decoder.decodeFrame(opusFrame);
+const frameSize = samplingRate * frameDuration / 1000;
 
-  const fdata = audio.channelData[0]!
+export function OpusEncoder(data: Buffer) {
+  const encodedPacket = encoder.encode(data, frameSize)
 
-  const int16Data = new Int16Array(fdata.length);
-  for (let i = 0; i < fdata.length; i++) {
-    int16Data[i] = Math.max(-32768, Math.min(32767, fdata[i]! * 32768));
-  }
-
-  console.log(int16Data)
-
-  return int16Data
+  return encodedPacket
 }

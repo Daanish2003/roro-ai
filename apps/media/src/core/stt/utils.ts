@@ -12,8 +12,7 @@ export interface SpeechData {
 
 export interface SpeechEvent {
     type: SpeechEventType;
-    alternatives?: [SpeechData, ...SpeechData[]];
-    requestId?: string;
+    transcript: string
   }
 
 export abstract class STT {
@@ -30,6 +29,7 @@ export abstract class STTStream implements AsyncIterableIterator<SpeechEvent> {
     constructor(stt: STT) {
         this.stt = stt
     }
+
 
     push(frame: AudioFrame) {
         if (this.input.closed) {

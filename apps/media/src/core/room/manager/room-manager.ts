@@ -32,9 +32,9 @@ class RoomManager {
                 })
                   routerManager.addRouter(router)
                   const vad = await VAD.load()
-                  const agent = new AgentPipeline(vad)
+                  const agent = new AgentPipeline(vad ,prompt)
                   agentManager.addPipeline(agent)
-                  const room= new Room(roomId, topic, userId, router, prompt, agent.agentId);
+                  const room= new Room(roomId, topic, userId, router, agent.agentId);
                   this.rooms.set(room.roomId, room)
               } catch (error) {
                   throw new Error(`Room Manager Failed to create room: ${error}`)

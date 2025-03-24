@@ -12,14 +12,11 @@ export class Room {
 	public mediaTransports: MediaTransport
 	public mediaTracks: MediaTrack
 	public readonly topic: string
-	public readonly prompt: string
 
-
-	constructor(roomId: string, topic: string, authorId: string ,router: Router, prompt: string, agentId: string) {
+	constructor(roomId: string, topic: string, authorId: string ,router: Router, agentId: string) {
 		this.agentId = agentId;
 		this.roomId = roomId;
 		this.topic = topic;
-		this.prompt = prompt;
 		this.authorId = authorId;
 		this.router = router;
 		this.mediaTransports = new MediaTransport();

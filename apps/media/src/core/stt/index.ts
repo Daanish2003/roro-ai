@@ -3,6 +3,7 @@ import { STT as BaseSTT, STTStream as BaseStream } from "./utils.js"
 import { AudioEnergyFilter } from '../../utils/index.js';
 import { AudioFrame } from "../audio/audio-frame.js";
 import { AudioByteStream } from "../audio/audio-byte-stream.js";
+import { SpeechEventType } from "../../utils/event.js";
 
 export interface STTOptions {
     model: string,
@@ -15,6 +16,7 @@ export interface STTOptions {
     filler_words: boolean,
     language: string,
     vad_events: boolean,
+    utterance_end_ms: number
     endpointing: number,
     no_delay: boolean,
     profanity_filter: boolean,
@@ -33,7 +35,8 @@ export const defaultSTTOptions: STTOptions = {
     filler_words: false,
     language: "en-US",
     vad_events: true,
-    endpointing:25,
+    utterance_end_ms: 1000,
+    endpointing: 25,
     no_delay: true,
     profanity_filter: false,
     dictation: true
@@ -120,20 +123,22 @@ export class STTStream extends BaseStream {
     private async listeners() {
         this.connection.on(LiveTranscriptionEvents.Open, async () => {
               console.log("Deepgram connected");
-              if (this.keepAliveInterval) {
-                clearInterval(this.keepAliveInterval);
-              }
-              this.keepAliveInterval = setInterval(() => {
-                this.connection?.keepAlive();
-              }, 3000);
+              if (!this.keepAliveInterval) {
+                this.keepAliveInterval = setInterval(() => {
+                    this.connection?.keepAlive();
+                }, 3000);
+            }
             });
         
             this.connection.on(LiveTranscriptionEvents.Transcript, async (data) => {
               console.log("event", data.channel.alternatives)
               if (data.channel && data.channel.alternatives.length > 0) {
                 const transcript = data.channel.alternatives[0].transcript;
-                if (data.is_final && transcript.trim().length > 0) {
-                console.log(transcript)
+                if (data.is_final && data.speech_final && transcript.trim().length > 0) {
+                  this.output.put({
+                    type: SpeechEventType.FINAL_TRANSCRIPT,
+                    transcript
+                  })
               }
               }
             });
