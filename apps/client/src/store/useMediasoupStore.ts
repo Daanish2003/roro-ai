@@ -1,6 +1,6 @@
 import { create } from "zustand"
-import { socket } from "../lib/socket"
 import * as mediasoupClient from 'mediasoup-client';
+import { useSocketStore } from "./useSocketStore";
 
 
 
@@ -43,6 +43,13 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
 
 
     joinRoom: async(roomId, userId, username, prompt) => {
+      const socket = useSocketStore.getState().socket;
+
+      if (!socket || !socket.connected) {
+          console.error("Socket is not connected. Cannot join room.");
+          set({ error: "Socket is not connected" });
+          return;
+      }
         try {
           console.log("Emitting joinRoom with:", { roomId, userId, username, prompt });
             const { routerRtpCap } = await socket.emitWithAck("joinRoom", { roomId, userId })
@@ -102,6 +109,13 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     },
 
     startConsuming: async (device, roomId) => {
+      const socket = useSocketStore.getState().socket; // Access the socket instance
+
+      if (!socket || !socket.connected) {
+          console.error("Socket is not connected. Cannot join room.");
+          set({ error: "Socket is not connected" });
+          return;
+      }
    
       const { recvTransport } = get();
       if (!recvTransport) {
@@ -167,6 +181,13 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     },
 
     createSendTransport: async(roomId) => {
+      const socket = useSocketStore.getState().socket; // Access the socket instance
+
+      if (!socket || !socket.connected) {
+          console.error("Socket is not connected. Cannot join room.");
+          set({ error: "Socket is not connected" });
+          return;
+      }
         try {
             const { getDevice } = get()
 
@@ -232,6 +253,12 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     },
 
     createRecvTransport: async (roomId, device) => {
+      const socket = useSocketStore.getState().socket; // Access the socket instance
+
+      if (!socket || !socket.connected) {
+          console.error("Socket is not connected. Cannot join room.");
+          set({ error: "Socket is not connected" });
+      }
           try {
               if (!socket || !socket.connected) {
                   throw new Error("AI socket is not connected");

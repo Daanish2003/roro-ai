@@ -1,40 +1,64 @@
-import { socket } from "@/lib/socket";
-import { create } from "zustand"
+import { io, Socket } from "socket.io-client";
+import { create } from "zustand";
+import { getSession, token } from '@/features/auth/auth-client';
+
+const URL = process.env.NEXT_PUBLIC_MEDIA_URL;
 
 type SocketState = {
+    socket: Socket | null;
     isConnected: boolean;
     loading: boolean;
     error: string;
-    connect: () => void
-    disconnect: () => void
-}
+    connect: () => void;
+    disconnect: () => void;
+};
 
-export const useSocketStore = create<SocketState>((set) => ({
+export const useSocketStore = create<SocketState>((set, get) => ({
+    socket: null,
     isConnected: false,
     loading: false,
     error: "",
 
-    connect: () => {
-        if(socket.connected) {
-            set({loading: false});
-            return
+    connect: async () => {
+        const { socket, loading } = get();
+    if (socket || loading) return; // Prevent duplicate connections
+
+    set({ loading: true });
+
+    const { data: session } = await getSession();
+
+    const { data }= await token({
+        fetchOptions: {
+            headers: {
+                "Authorization": `Bearer ${session?.session.token}`
+            }
         }
+    })
 
-        set({loading: true, error: ""});
+    if(!data) {
+        throw new Error("data is null")
+    }
 
-        socket.connect()
+    const newSocket: Socket = io(URL, {
+        withCredentials: true,
+        autoConnect: false,
+        auth: { token: data.token }
+    });
 
-        const handleConnect = () => set({ isConnected: true, loading:false, error: ""});
-        const handleDisconnect = () => set({ isConnected: false });
-        const handleConnectError = (err: Error) => set({ loading: false, error: err.message });
+    set({ socket: newSocket, error: "" });
 
-        socket.on("connect", handleConnect);
-        socket.on("disconnect", handleDisconnect);
-        socket.on("connect_error", handleConnectError);
+    newSocket.connect();
+
+    newSocket.on("connect", () => set({ isConnected: true, loading: false, error: "" }));
+    newSocket.on("disconnect", () => set({ isConnected: false }));
+    newSocket.on("connect_error", (err: Error) => set({ loading: false, error: err.message }));
     },
 
     disconnect: () => {
-        socket.disconnect();
-        set({ isConnected: false });
-    }
-}))
+        const socket = get().socket;
+        if (socket) {
+            socket.disconnect();
+            set({ isConnected: false, socket: null });
+        }
+    },
+}));

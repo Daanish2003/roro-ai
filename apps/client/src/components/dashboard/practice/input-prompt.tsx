@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button } from "@roro-ai/ui/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@roro-ai/ui/components/ui/form";
-import { useSession } from "@/features/auth/auth-client";
+import { getSession, useSession } from "@/features/auth/auth-client";
 import { PromptSchema } from "@/zod/prompt-schema";
 import { useRouter } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
@@ -36,6 +36,7 @@ export default function PromptInput() {
   const promptValue = watch("prompt");
 
   const startPracticeHandler = async (values: z.infer<typeof PromptSchema>) => {
+
     setPrompt(values.prompt)
     try {
       const response = await fetch(

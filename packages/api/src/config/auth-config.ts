@@ -64,7 +64,13 @@ export const auth = betterAuth(
           oAuthProxy(), 
           admin(),
           bearer(),
-          jwt() 
+          jwt({
+            jwt:{
+              issuer: "http://localhost:4000",
+              audience: "http://localhost:5000",
+              expirationTime: "1h"
+            }
+          }) 
         ],
     }
 );

@@ -69,7 +69,6 @@ export const useAuth = () => {
 				},
 			);
 	};
-
     return {
         socialSignInHandler,
         anonymousSignInHandler,
