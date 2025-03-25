@@ -2,8 +2,8 @@ import { createClient, RedisClientType } from 'redis';
 import "dotenv/config";
 import { roomManager } from '../core/room/manager/room-manager.js';
 
-class RedisClient {
-    private static instance: RedisClient;
+class RedisSubscriber {
+    private static instance: RedisSubscriber;
     private subscriber: RedisClientType;
 
     private constructor() {
@@ -12,15 +12,15 @@ class RedisClient {
     }
 
     private setupEventHandlers(): void {
-        this.subscriber.on('error', (err) => console.error('Redis Error:', err));
-        this.subscriber.on('connect', () => console.log('Media Redis Connected'));
+        this.subscriber.on('error', (err) => console.error('Redis Subscriber Error:', err));
+        this.subscriber.on('connect', () => console.log('Redis Subscriber Connected'));
     }
 
-    public static getInstance(): RedisClient {
-        if (!RedisClient.instance) {
-            RedisClient.instance = new RedisClient();
+    public static getInstance(): RedisSubscriber {
+        if (!RedisSubscriber.instance) {
+            RedisSubscriber.instance = new RedisSubscriber();
         }
-        return RedisClient.instance;
+        return RedisSubscriber.instance;
     }
 
     public async connect(): Promise<void> {
@@ -30,7 +30,6 @@ class RedisClient {
     private async listener(message: string, channel: string) {
       if(channel === "createRoom") {
         const data = JSON.parse(message)
-        //TODO: Add cache so that if server stops and restarts and it could get the data
         await roomManager.createRoom(
             data.id,
             data.topic,
@@ -46,4 +45,4 @@ class RedisClient {
     }
 
 
-export const redis = RedisClient.getInstance();
+export const redisSub = RedisSubscriber.getInstance();

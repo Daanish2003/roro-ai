@@ -1,9 +1,9 @@
+import { vad } from '../../../index.js';
 import { config } from '../../config/media-config.js';
 import { routerManager } from '../../mediasoup/managers/media-router-manager.js';
 import { mediasoupWorkerManager } from '../../mediasoup/managers/media-worker-manager.js';
 import { AgentPipeline } from '../../pipeline/core/agent-pipeline.js';
 import { agentManager } from '../../pipeline/managers/agent-pipeline-manager.js';
-import { VAD } from '../../vad/core/vad.js';
 import { Room } from '../classes/room.js'
 
 class RoomManager {
@@ -27,11 +27,7 @@ class RoomManager {
               try {
                   const worker = await mediasoupWorkerManager.getAvailableWorker()
                   const router = await worker.createRouter(config.mediasoup.router)
-                  router.on("@close", () => {
-                    console.log(`Router [${router.id}] for worker [${worker.pid}] has been closed`)
-                })
                   routerManager.addRouter(router)
-                  const vad = await VAD.load()
                   const agent = new AgentPipeline(vad ,prompt)
                   agentManager.addPipeline(agent)
                   const room= new Room(roomId, topic, userId, router, agent.agentId);

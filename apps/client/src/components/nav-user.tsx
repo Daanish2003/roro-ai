@@ -12,7 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@roro-ai/ui/components/ui/sidebar"
-import { useSession } from "@/lib/auth-client"
+import { useSession } from "@/features/auth/auth-client"
 import dynamic from "next/dynamic"
 
 

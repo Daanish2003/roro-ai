@@ -6,8 +6,9 @@ import { auth } from "../config/auth-config.js";
 import { fromNodeHeaders } from "better-auth/node";
 import { createRoomSession, verifyRoomSession } from "../utils/jwt.js";
 import { v4 as uuidv4} from "uuid"
-import { redis } from "../utils/redis.js";
 import { deleteRoomSchema } from '../schema/roomSchema.js';
+import { redis } from "@roro-ai/database/client";
+import { redisPub } from "../utils/redis.js";
 
 
 export const createRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
@@ -49,7 +50,7 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
 
         await redis.set(`room_session:${sessionId}`, room_session, 20 * 60)
 
-        await redis.publish('createRoom', JSON.stringify(room))
+        await redisPub.publish('createRoom', JSON.stringify(room))
 
 
         res.status(200).cookie('room_session', sessionId, {

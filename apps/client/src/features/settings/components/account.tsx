@@ -1,7 +1,7 @@
 "use client"
 
 import useShowToast from '@/hooks/use-show-toast'
-import { deleteUser, updateUser, useSession } from '@/lib/auth-client'
+import { deleteUser, updateUser, useSession } from '@/features/auth/auth-client'
 import { Avatar, AvatarFallback, AvatarImage } from '@roro-ai/ui/components/ui/avatar'
 import { Button } from '@roro-ai/ui/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@roro-ai/ui/components/ui/card'

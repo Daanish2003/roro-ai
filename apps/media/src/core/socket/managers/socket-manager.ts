@@ -5,6 +5,7 @@ import { DtlsParameters, IceCandidate, IceParameters } from "mediasoup/node/lib/
 import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes.js";
 import { roomManager } from "../../room/manager/room-manager.js";
 import { agentManager } from "../../pipeline/managers/agent-pipeline-manager.js";
+import cookie from "cookie"
 
 export class SocketManager {
   private static instance: SocketManager;

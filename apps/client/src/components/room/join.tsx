@@ -1,4 +1,4 @@
-import { useSession } from '@/lib/auth-client'
+import { useSession } from '@/features/auth/auth-client'
 import { useMediaStore } from '@/store/useMedia'
 
 import { useMediasoupStore } from '@/store/useMediasoupStore'

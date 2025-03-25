@@ -1,50 +1,46 @@
 import { createClient, RedisClientType } from 'redis';
 import "dotenv/config"
 
-class RedisClient {
-    private static instance: RedisClient;
-    private client: RedisClientType;
+class RedisPublisher {
+    private static instance: RedisPublisher;
     private publisher: RedisClientType;
     private isConnected: boolean = false;
 
     private constructor() {
-        this.client = createClient({
+        this.publisher = createClient({
             url: process.env.REDIS_URL
         });
-
-        this.publisher = this.client.duplicate()
 
         this.setupEventHandlers();
     }
 
     private setupEventHandlers(): void {
-        this.client.on('error', (err) => {
+        this.publisher.on('error', (err) => {
             console.error('Redis Client Error:', err);
             this.isConnected = false;
         });
 
-        this.client.on('connect', () => {
+        this.publisher.on('connect', () => {
             console.log('Redis Client Connected');
             this.isConnected = true;
         });
 
-        this.client.on('end', () => {
+        this.publisher.on('end', () => {
             console.log('Redis Client Connection Closed');
             this.isConnected = false;
         });
     }
 
-    public static getInstance(): RedisClient {
-        if (!RedisClient.instance) {
-            RedisClient.instance = new RedisClient();
+    public static getInstance(): RedisPublisher {
+        if (!RedisPublisher.instance) {
+            RedisPublisher.instance = new RedisPublisher();
         }
-        return RedisClient.instance;
+        return RedisPublisher.instance;
     }
 
     public async connect(): Promise<void> {
         if (!this.isConnected) {
             try {
-                await this.client.connect();
                 await this.publisher.connect()
             } catch (error) {
                 console.error('Failed to connect to Redis:', error);
@@ -56,7 +52,6 @@ class RedisClient {
     public async disconnect(): Promise<void> {
         if (this.isConnected) {
             try {
-                await this.client.disconnect();
                 await this.publisher.disconnect()
             } catch (error) {
                 console.error('Failed to disconnect from Redis:', error);
@@ -75,41 +70,6 @@ class RedisClient {
         }
 
     }
-
-    public async set(key: string, value: string, ttl?: number): Promise<void> {
-        try {
-            if (ttl) {
-                await this.client.set(key, value, { EX: ttl });
-            } else {
-                await this.client.set(key, value);
-            }
-        } catch (error) {
-            console.error('Failed to set Redis key:', error);
-            throw error;
-        }
-    }
-
-    public async get(key: string): Promise<string | null> {
-        try {
-            return await this.client.get(key);
-        } catch (error) {
-            console.error('Failed to get Redis key:', error);
-            throw error;
-        }
-    }
-
-    public async del(key: string): Promise<void> {
-        try {
-            await this.client.del(key);
-        } catch (error) {
-            console.error('Failed to delete Redis key:', error);
-            throw error;
-        }
-    }
-
-    public getClient(): RedisClientType {
-        return this.client;
-    }
 }
 
-export const redis = RedisClient.getInstance();
+export const redisPub = RedisPublisher.getInstance();

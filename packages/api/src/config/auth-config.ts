@@ -1,5 +1,5 @@
 import { prisma } from "@roro-ai/database/client";
-import { redis } from "../utils/redis.js";
+import { redis } from "@roro-ai/database/client";
 import 'dotenv/config'
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";

@@ -1,4 +1,4 @@
-import { signOut } from '@/lib/auth-client'
+import { signOut } from '@/features/auth/auth-client'
 import { SidebarMenuButton } from '@roro-ai/ui/components/ui/sidebar'
 import { LogOut } from 'lucide-react'
 import { useRouter } from 'next/navigation'

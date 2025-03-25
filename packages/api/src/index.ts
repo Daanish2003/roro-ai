@@ -1,17 +1,19 @@
 import express from 'express';
-import { auth } from './config/auth-config.js';
 import cors from "cors"
 import "dotenv/config.js"
 import room_router from './routes/room.routes.js';
-import { redis } from './utils/redis.js';
 import feedback_router from './routes/feedback.routes.js';
 import { toNodeHandler } from 'better-auth/node';
+import { redis } from '@roro-ai/database/client';
+import { redisPub } from './utils/redis.js';
+import { auth } from './config/auth-config.js';
 
 const app = express();
 
 const initRedis = async () => {
     try {
         await redis.connect();
+        await redisPub.connect()
     } catch (error) {
         console.error('Failed to initialize Redis:', error);
         process.exit(1);
@@ -25,7 +27,8 @@ app.use(cors({
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
     exposedHeaders: [
-        'set-auth-token'
+        'set-auth-token',
+
     ]
 }))
 
