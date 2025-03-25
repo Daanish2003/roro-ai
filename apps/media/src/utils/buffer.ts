@@ -77,3 +77,30 @@ export function resamplerCubic(input: Float32Array, targetFrameSize: number): Fl
 export function applyGain(audioData: Float32Array, gainFactor = 1.05) {
   return Float32Array.from(audioData.map(sample => sample * gainFactor));
 }
+
+
+export function bufferToInt16Array(data: Buffer) {
+  if(data.length % 2 !== 0) {
+    throw new Error("Buffer length must be even for Int16 conversion.");
+  }
+
+  const int16Array = new Int16Array(data.length / 2)
+
+  for (let i = 0; i < int16Array.length; i++) {
+    int16Array[i] = data.readInt16BE(i * 1)
+  }
+
+  return int16Array
+}
+
+export function lowPassFilter(audioData: Int16Array, alpha = 0.1) {
+  const filteredData = new Int16Array(audioData.length);
+  filteredData[0] = audioData[0]!;
+
+  for (let i = 1; i < audioData.length; i++) {
+      filteredData[i] = alpha * audioData[i]! + (1 - alpha) * filteredData[i - 1]!;
+  }
+
+  return filteredData;
+}
+

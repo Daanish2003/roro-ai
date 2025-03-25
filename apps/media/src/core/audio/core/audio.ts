@@ -89,19 +89,6 @@ export class AudioStream extends BaseStream {
         }
     }
 
-    async handleOutputStream(data: ArrayBuffer) {
-        try {
-            const samples100Ms = Math.floor(48000 / 20);
-            const stream = new AudioByteStream(48000, 1, samples100Ms)
-            const frames = stream.write(data)
-            for await(const frame of frames) {
-                this.output.put(frame)
-            }
-        } catch (error) {
-            console.error("Failed to handle output stream:", error);
-        }
-    }
-
     private clearRTPExtension(rtpPackets: Buffer) {
         const view = utils.nodeBufferToDataView(rtpPackets)
         const { RtpPacket } = packets

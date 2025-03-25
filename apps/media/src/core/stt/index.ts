@@ -54,7 +54,7 @@ export class STT extends BaseSTT {
     static create(opts: Partial<STTOptions> = {}) {
         const mergedOptions = {...defaultSTTOptions, ...opts}
         const client = createClient(process.env.DEEPGRAM_API_KEY)
-        const connection = client.listen.live(mergedOptions)
+        const connection =  client.listen.live(mergedOptions)
         return new STT(mergedOptions, connection)
     }
     stream(): STTStream {
@@ -73,21 +73,16 @@ export class STTStream extends BaseStream {
     private connection: ListenLiveClient
     private audioEnergyFilter: AudioEnergyFilter
     private keepAliveInterval: NodeJS.Timeout | null = null;
-    private task: Promise<void>
     constructor(stt: STT, opts: STTOptions, ws: ListenLiveClient) {
         super(stt)
         this.options = opts
         this.connection = ws
         this.audioEnergyFilter = new AudioEnergyFilter()
-        this.task = this.run()
+        this.run()
     }
 
     private async run() {
-        try {
             await Promise.all([this.sendAudio(), this.listeners()]);
-        } catch (error) {
-            console.error("Error in STTStream run method:", error);
-        }
     }
 
     private async sendAudio() {
@@ -121,49 +116,47 @@ export class STTStream extends BaseStream {
 
 
     private async listeners() {
-        this.connection.on(LiveTranscriptionEvents.Open, async () => {
-              console.log("Deepgram connected");
-              if (!this.keepAliveInterval) {
-                this.keepAliveInterval = setInterval(() => {
-                    this.connection?.keepAlive();
-                }, 3000);
-            }
+        if(!this.connection) {
+            console.log("no connection")
+            return
+        }
+        this.connection.on(LiveTranscriptionEvents.Open, () => {
+              console.log("STT connected");
+
+              console.log(this.keepAliveInterval)
+              
+              if (this.keepAliveInterval) {
+                clearInterval(this.keepAliveInterval);
+              }
+              this.keepAliveInterval = setInterval(() => {
+                this.connection.keepAlive();
+              }, 3000);
             });
         
-            this.connection.on(LiveTranscriptionEvents.Transcript, async (data) => {
-              console.log("event", data.channel.alternatives)
-              if (data.channel && data.channel.alternatives.length > 0) {
+        this.connection.on(LiveTranscriptionEvents.Transcript, async (data) => {
+            if (data.channel && data.channel.alternatives.length > 0) {
                 const transcript = data.channel.alternatives[0].transcript;
                 if (data.is_final && data.speech_final && transcript.trim().length > 0) {
+                    console.log(transcript)
                   this.output.put({
                     type: SpeechEventType.FINAL_TRANSCRIPT,
                     transcript
                   })
               }
-              }
-            });
-        
-        
-            this.connection.on(LiveTranscriptionEvents.Metadata, (data) => {
-              console.log("Metadata:", data);
-            });
-        
-            this.connection.on(LiveTranscriptionEvents.Error, (err) => {
-              console.error("Deepgram Error:", err);
-            });
-        
-            this.connection.on(LiveTranscriptionEvents.Close, () => {
-              console.log("Connection closed");
-              this.cleanupConnection();
-            });
-        
-            this.connection.on(LiveTranscriptionEvents.SpeechStarted, () => {
-              console.log("speech started")
-            })
-        
-            this.connection.on(LiveTranscriptionEvents.UtteranceEnd, () => {
-              console.log("speech ended")
-            })
+            }
+        });
+        this.connection.on(LiveTranscriptionEvents.Metadata, (data) => {
+          console.log("Metadata:", data);
+        });
+    
+        this.connection.on(LiveTranscriptionEvents.Error, (err) => {
+          console.error("Deepgram Error:", err);
+        });
+    
+        this.connection.on(LiveTranscriptionEvents.Close, () => {
+          console.log("STT Closed");
+          this.cleanupConnection();
+        });
     }
 
     public closeConnection(): void {

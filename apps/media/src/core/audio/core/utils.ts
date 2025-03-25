@@ -68,7 +68,7 @@ export abstract class RTP {
 
 export abstract class RTPStream implements AsyncIterableIterator<Buffer>{
     protected static readonly FLUSH_AUDIO = Symbol('FLUSH_AUDIO');
-    protected input = new AsyncIterableQueue<ArrayBuffer | typeof RTPStream.FLUSH_AUDIO>()
+    protected input = new AsyncIterableQueue<Buffer | typeof RTPStream.FLUSH_AUDIO>()
     protected output =  new AsyncIterableQueue<Buffer>()
     closed = false;
     audio: RTP;
@@ -76,7 +76,7 @@ export abstract class RTPStream implements AsyncIterableIterator<Buffer>{
       this.audio = audio
     }
 
-    pushStream(stream: ArrayBuffer) {
+    pushStream(stream: Buffer) {
         if(this.input.closed) {
             throw new Error("Input is closed")
         }

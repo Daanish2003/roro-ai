@@ -5,4 +5,9 @@
     }
   ],
   "python.analysis.extraPaths": ["./apps/ai"],
+  "workbench.editorAssociations": {
+    "*.wav": "wavPreview.audioPreview",
+    "*.mp3": "wavPreview.audioPreview",
+    "*.opus": "wavPreview.audioPreview"
+},
 }

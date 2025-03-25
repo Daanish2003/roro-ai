@@ -1,3 +1,4 @@
+import { bufferToInt16Array, lowPassFilter } from "../../utils/buffer.js";
 import { TTS as BaseTTS, TTSStream as BaseStreamTTS } from "./utils.js"
 import { createClient, LiveTTSEvents, SpeakLiveClient, SpeakSchema } from "@deepgram/sdk"
 
@@ -39,6 +40,7 @@ export class TTS extends BaseTTS {
 export class streamTTS extends BaseStreamTTS {
     private options: TTSOptions
     private connection: SpeakLiveClient
+    private audioBuffer: Buffer = Buffer.alloc(0);
     constructor(tts: TTS, opts: TTSOptions, ws: SpeakLiveClient){
         super(tts)
         this.options = opts
@@ -63,9 +65,17 @@ export class streamTTS extends BaseStreamTTS {
           console.dir(data, { depth: null });
         });
     
-        this.connection.on(LiveTTSEvents.Audio, (data: Buffer) => {
-            const sdata = this.convertMonoToStereo(data)
-            this.output.put(sdata)
+        this.connection.on(LiveTTSEvents.Audio, (data) => {
+            const buffer = Buffer.from(data);
+            this.audioBuffer = Buffer.concat([this.audioBuffer, buffer]);
+
+            const chunkSize = 960 * 2;
+
+            while (this.audioBuffer.length >= chunkSize) {
+                 const chunk = this.audioBuffer.subarray(0, chunkSize);
+                 this.output.put(chunk)
+                 this.audioBuffer = this.audioBuffer.subarray(chunkSize);
+            }
         })
     }
 
@@ -86,5 +96,5 @@ export class streamTTS extends BaseStreamTTS {
     public sendText(text: string) {
         this.connection.sendText(text)
         this.connection.flush()
-      }
+    }
 }

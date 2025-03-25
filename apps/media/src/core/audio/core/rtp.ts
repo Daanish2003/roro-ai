@@ -1,7 +1,8 @@
 import { RTPStream as BaseStream, RTP as BaseRTP } from "./utils.js"
 import { AudioByteStream } from "../audio-byte-stream.js";
 import { utils, packets } from "rtp.js";
-import { OpusEncoder } from "../audio-encoding.js";
+import { audifyEncoder } from "../audio-encoding.js";
+
 
 export interface RTPOptions {
     sampleRate: number,
@@ -65,32 +66,27 @@ export class RTPStream extends BaseStream {
         }
     }
 
-    async handleOutputStream(data: ArrayBuffer) {
+    async handleOutputStream(data: Buffer) {
         try {
-            const samples100Ms = Math.floor(this.options.sampleRate / 50);
-            const stream = new AudioByteStream(this.options.sampleRate, this.options.channel, samples100Ms)
-            const frames = stream.write(data)
-            for await(const frame of frames) {
-                const buffer = utils.arrayBufferToNodeBuffer(frame.data.buffer)
-                const encodedPackets = OpusEncoder(buffer)
-                const view = utils.nodeBufferToDataView(encodedPackets)
-                const rtpPackets = this.createRtpPacket(view)
-                this.output.put(rtpPackets)
-            }
+            const encodedPackets = audifyEncoder.encode(data, 960)
+            const rtpPackets = this.createRtpPacket(encodedPackets)
+            this.output.put(rtpPackets)
         } catch (error) {
             console.error("Failed to handle output stream:", error);
         }
     }
 
-    private createRtpPacket(view: DataView): Buffer {
+    private createRtpPacket(opusPayload: Buffer): Buffer {
         const { RtpPacket } = packets;
         const rtpPacket = new RtpPacket();
-        rtpPacket.setPayload(view);
         rtpPacket.setPayloadType(100);
         rtpPacket.setSequenceNumber(this.rtpSequenceNumber++);
         rtpPacket.setTimestamp(this.rtpTimestamp);
+        rtpPacket.enableOneByteExtensions()
         this.rtpTimestamp += 960;
         rtpPacket.setSsrc(this.options.ssrc);
+        const payloadDataView = new DataView(opusPayload.buffer, opusPayload.byteOffset, opusPayload.byteLength);
+        rtpPacket.setPayload(payloadDataView)
         const packetLength = rtpPacket.getByteLength();
         const arrayBuffer = new ArrayBuffer(packetLength);
         rtpPacket.serialize(arrayBuffer);

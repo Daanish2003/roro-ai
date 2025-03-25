@@ -9,7 +9,6 @@ import { STT } from '../../stt/index.js';
 import { LLM } from '../../llm/llm.js';
 import { TTS } from '../../tts/index.js';
 import { RTP } from '../../audio/core/rtp.js';
-import { packets, utils } from 'rtp.js';
 import { Consumer } from 'mediasoup/node/lib/ConsumerTypes.js';
 import { Producer } from 'mediasoup/node/lib/types.js';
 
@@ -35,6 +34,7 @@ export class AgentPipeline {
         this.stt = STT.create();
         this.llm = new LLM(prompt)
         this.tts = TTS.create()
+        
     }
 
     setTransport(transport: DirectTransport){
@@ -55,9 +55,9 @@ export class AgentPipeline {
         })
 
         this.rtp = await RTP.create({
-            channel: 2,
+            channel: 1,
             sampleRate: 48000,
-            samplesPerChannel: 960,
+            samplesPerChannel: 480,
             ssrc: this.consumerTrack.rtpParameters.encodings?.[0]?.ssrc,
         })
 
@@ -69,6 +69,10 @@ export class AgentPipeline {
         const rtpStream = this.rtp.stream()
 
         this.consumerTrack.on('rtp', async (rtpPackets) => {
+            // const view = utils.nodeBufferToDataView(rtpPackets)
+            // const { RtpPacket } = packets
+            // const report = new RtpPacket(view)
+            // console.log(report.getExtensions())
             audioStream.pushStream(rtpPackets)
         })
 
@@ -94,8 +98,7 @@ export class AgentPipeline {
 
         async function ttsStreamCo(){
             for await (const buffer of ttsStream) {
-                const arrayBuffer = utils.nodeBufferToArrayBuffer(buffer)
-                rtpStream.pushStream(arrayBuffer)
+                rtpStream.pushStream(buffer)
             }
         }
 
@@ -111,27 +114,10 @@ export class AgentPipeline {
             setInterval(() => {
                 if (packetQueue.length > 0) {
                     const rtpPacket = packetQueue.shift();
-                    const view = utils.nodeBufferToDataView(rtpPacket!);
-                    const { RtpPacket } = packets;
-                    const report = new RtpPacket(view);
-                    const rtpTimestamp = report.getTimestamp();
-                    const sequenceNumber = report.getSequenceNumber();
-                    
-                    console.log(`RTP Packet: Seq=${sequenceNumber}, Timestamp=${rtpTimestamp}`);
-        
-                    if (this.lastTimestamp !== undefined) {
-                        const timestampDiff = rtpTimestamp - this.lastTimestamp;
-                        const timeDiffMs = (timestampDiff / 48000) * 1000; // Convert to milliseconds (assuming 48 kHz sample rate)
-                        console.log(`Time difference: ${timeDiffMs.toFixed(2)} ms`);
-                        this.producerTrack?.send(rtpPacket!)
-                    }
-        
-                    this.lastTimestamp = rtpTimestamp;
+                    this.producerTrack?.send(rtpPacket!)
                 }
-            }, 20); // Run every 20ms
+            }, 20);
         };
-        
-
         
         await Promise.all([audioStreamCo(), sttStreamCo(), llmStreamCo(), ttsStreamCo(), rtpStreamCo()]);        
     }
@@ -140,14 +126,6 @@ export class AgentPipeline {
         this.producerTrack = await this.mediaTracks.createAgentProducerTrack({
             transport: this.transport!,
             listenerTrack: this.mediaTracks.agentConsumerTrack!,
-        })
-
-        this.producerTrack.on('trace', (data) => {
-            console.log(data)
-        })
-
-        this.producerTrack.on('score', (data) => {
-            console.log(data)
         })
 
         this.producerTrack.on('listenererror', (data) => {
