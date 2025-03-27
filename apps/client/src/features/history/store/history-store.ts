@@ -19,7 +19,7 @@ export const useHistoryStore = create<HistoryStore>((set) => ({
     rooms: [],
     total: 0,
     page: 1,
-    pageSize: 5,
+    pageSize: 10,
     fetchRooms: async (page, pageSize) => {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/rooms/get-all-rooms?page=${page}&pageSize=${pageSize}`, {

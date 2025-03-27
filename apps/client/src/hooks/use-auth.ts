@@ -12,7 +12,7 @@ export const useAuth = () => {
     async function socialSignInHandler (provider: 'github'| 'google') {
         await signIn.social({
             provider,
-            callbackURL: `${process.env.NEXT_PUBLIC_CLIENT_URL}/dashboard/practice`
+            callbackURL: `${process.env.NEXT_PUBLIC_CLIENT_URL}/practice`
         }, {
             onSuccess : () => {
                 toast("Login Success", {

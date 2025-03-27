@@ -45,11 +45,12 @@ export const defaultSTTOptions: STTOptions = {
 export class STT extends BaseSTT {
     private options: STTOptions
     private connection: ListenLiveClient
-    private streams: STTStream[] = []
+    private _stream: STTStream | null
     constructor(opts: STTOptions, ws: ListenLiveClient) {
         super()
         this.options = opts
         this.connection = ws
+        this._stream = null
     }
     static create(opts: Partial<STTOptions> = {}) {
         const mergedOptions = {...defaultSTTOptions, ...opts}
@@ -58,13 +59,12 @@ export class STT extends BaseSTT {
         return new STT(mergedOptions, connection)
     }
     stream(): STTStream {
-        const stream = new STTStream(
+        this._stream = new STTStream(
             this,
             this.options,
             this.connection
         )
-        this.streams.push(stream)
-        return stream
+        return this._stream
     }
 }
 
@@ -73,6 +73,7 @@ export class STTStream extends BaseStream {
     private connection: ListenLiveClient
     private audioEnergyFilter: AudioEnergyFilter
     private keepAliveInterval: NodeJS.Timeout | null = null;
+    private listenersRegistered = false;
     constructor(stt: STT, opts: STTOptions, ws: ListenLiveClient) {
         super(stt)
         this.options = opts
@@ -82,7 +83,11 @@ export class STTStream extends BaseStream {
     }
 
     private async run() {
-            await Promise.all([this.sendAudio(), this.listeners()]);
+        if(this.input.closed) {
+            this.closeConnection()
+        }
+
+        await Promise.all([this.sendAudio(), this.listeners()])
     }
 
     private async sendAudio() {
@@ -116,21 +121,21 @@ export class STTStream extends BaseStream {
 
 
     private async listeners() {
-        if(!this.connection) {
-            console.log("no connection")
-            return
-        }
+        if (this.listenersRegistered) return;
+        this.listenersRegistered = true;
         this.connection.on(LiveTranscriptionEvents.Open, () => {
               console.log("STT connected");
-
-              console.log(this.keepAliveInterval)
               
               if (this.keepAliveInterval) {
                 clearInterval(this.keepAliveInterval);
               }
               this.keepAliveInterval = setInterval(() => {
-                this.connection.keepAlive();
-              }, 3000);
+                if (this.connection.isConnected()) { 
+                    this.connection.keepAlive();
+                } else {
+                    this.cleanupConnection(); 
+                }
+            }, 3000);
             });
         
         this.connection.on(LiveTranscriptionEvents.Transcript, async (data) => {

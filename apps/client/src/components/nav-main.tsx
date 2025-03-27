@@ -28,13 +28,13 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarMenu>
+      <SidebarMenu className="gap-y-2">
         {items.map((item) => {
           const isActive = pathname === item.url
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={isActive}>
-                <Link href={item.url}>
+              <SidebarMenuButton asChild isActive={isActive} size={"lg"}>
+                <Link href={item.url} className="h-[34]">
                   {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
                   {item.title}
                 </Link>

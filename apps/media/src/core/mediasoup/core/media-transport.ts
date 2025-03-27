@@ -1,7 +1,6 @@
 import { DirectTransport } from 'mediasoup/node/lib/DirectTransportTypes.js';
 import { DtlsParameters, WebRtcTransport } from 'mediasoup/node/lib/WebRtcTransportTypes.js';
 import { config } from '../../config/media-config.js';
-import { transportManager } from '../managers/media-transport-manager.js';
 import { Router } from 'mediasoup/node/lib/RouterTypes.js';
 
 export class MediaTransport {
@@ -22,8 +21,6 @@ export class MediaTransport {
                 };
         
                 this._clientProducerTransport = transport
-
-                transportManager.addClientTransport(transport)
         
                 return transportParams
             } catch (error) {
@@ -63,7 +60,6 @@ export class MediaTransport {
         
                 this._clientConsumerTransport = transport
 
-                transportManager.addClientTransport(transport)
         
                 return transportParams
             } catch (error) {
@@ -95,12 +91,17 @@ export class MediaTransport {
         try {
             const directTransport = await router.createDirectTransport();
             this._agentTransport = directTransport
-            transportManager.addAgentTransport(directTransport)
             return directTransport
         } catch (error) {
             console.error("Failed to create Direct Transport", error);
             throw error;
         }
+    }
+
+    closeTransport(){
+        this._clientConsumerTransport?.close()
+        this._clientProducerTransport?.close()
+        this._agentTransport?.close()
     }
 
 

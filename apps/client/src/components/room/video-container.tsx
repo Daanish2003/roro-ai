@@ -11,7 +11,7 @@ export default function VideoContainer({localVideoRef}: {localVideoRef: React.Re
 
   if(loading) {
     return (
-      <div className='flex items-center justify-center sm:h-[34rem] lg:h-[45rem]'>
+      <div className='flex items-center justify-center'>
          <Loader />
       </div>
     )
@@ -20,8 +20,8 @@ export default function VideoContainer({localVideoRef}: {localVideoRef: React.Re
 
 
   return (
-    <div className="flex-grow bg-background rounded-2xl overflow-hidden h-full">
-          <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-fill rounded-2xl lg:aspect-[16/2] sm:aspect-[16/10] aspect-[17/16] border border-zinc-700" />
+    <div className='border rounded-2xl h-[40rem] w-[36rem]'>
+      <video ref={localVideoRef} autoPlay playsInline muted className="rounded-2xl object-cover h-full w-full"/>
     </div>
   )
 }

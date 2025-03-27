@@ -10,7 +10,7 @@ export default function FeedbackContent() {
 
     if (submitted) {
         return (
-            <div className='bg-card rounded-lg p-8 text-center border'>
+            <div className='bg-secondary/10 rounded-lg p-8 text-center border'>
                 <div className='bg-green-900/30 text-green-400 rounded-full p-3 w-16 mx-auto mb-4 flex items-center justify-center'>
                   <ThumbsUp className='h-8 w-8'/>
                 </div>

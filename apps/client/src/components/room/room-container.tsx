@@ -1,13 +1,12 @@
 "use client"
 
-import VideoContainer from './video-container'
-import AiVoiceAgentContainer from './ai-voice-agent-container'
 import { useSocketStore } from '@/store/useSocketStore'
 import React, { useEffect } from 'react'
-import Join from './join'
-import Controller from './controller'
 import { useMediaStore } from '@/store/useMedia'
 import { useMediasoupStore } from '@/store/useMediasoupStore'
+import { Sidebar } from '@roro-ai/ui/components/ui/sidebar'
+import AiVoiceAgentContainer from './ai-voice-agent-container'
+import VideoContainer from './video-container'
 
 
 export default function RoomContainer() {
@@ -77,23 +76,9 @@ export default function RoomContainer() {
   }, [remoteStream]);
 
   return (
-    <div className="bg-background flex flex-col lg:flex-row gap-4 p-4 max-h-screen">
-      {/* left section */}
-      <div className={`${!joined && 'lg:w-3/4'} lg:w-full flex flex-col gap-4 shadow-inner`}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:h-[45rem]">
-          <div className="h-full">
-            <AiVoiceAgentContainer remoteAudioRef={remoteAudioRef}/>
-          </div>
-          <div className="h-full">
-            <VideoContainer localVideoRef={localVideoRef}/>
-          </div>
-        </div>
-        <div className="flex items-center justify-center p-4 border-2 rounded-2xl">
-          <Controller />
-      </div>
-      </div>
-      {/* right section */}
-      {!joined && (<Join/>)}
+    <div className='flex items-center gap-x-2 mt-2'>
+      <AiVoiceAgentContainer remoteAudioRef={remoteAudioRef}/>
+      <VideoContainer localVideoRef={localVideoRef}/>
     </div>
   )
 }

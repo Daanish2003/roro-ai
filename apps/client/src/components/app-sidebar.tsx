@@ -3,11 +3,10 @@
 import type * as React from "react"
 import {
   AudioWaveform,
+  CircleHelp,
   Command,
-  Flag,
   GalleryVerticalEnd,
   History,
-  Settings2,
   SquareTerminal,
 } from "lucide-react"
 
@@ -16,11 +15,9 @@ import NavUser from "@/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarRail,
 } from "@roro-ai/ui/components/ui/sidebar"
-import LogoutButton from "./auth/logout-button"
 
 // This is sample data.
 const data = {
@@ -49,23 +46,18 @@ const data = {
   navMain: [
     {
       title: "Practice",
-      url: "/dashboard/practice",
+      url: "/practice",
       icon: SquareTerminal,
     },
     {
       title: "History",
-      url: "/dashboard/history",
+      url: "/history",
       icon: History,
     },
     {
-      title: "Settings",
-      url: "/dashboard/settings",
-      icon: Settings2,
-    },
-    {
       title: "Feedback",
-      url: "/dashboard/feedback",
-      icon: Flag
+      url: "/feedback",
+      icon: CircleHelp
     }
   ],
 }
@@ -79,9 +71,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent className="bg-background">
         <NavMain items={data.navMain} />
       </SidebarContent>
-      <SidebarFooter className="bg-background">
-        <LogoutButton />
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

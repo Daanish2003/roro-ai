@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button } from "@roro-ai/ui/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@roro-ai/ui/components/ui/form";
-import { getSession, useSession } from "@/features/auth/auth-client";
+import { useSession } from "@/features/auth/auth-client";
 import { PromptSchema } from "@/zod/prompt-schema";
 import { useRouter } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
@@ -16,6 +16,8 @@ import useShowToast from '@/hooks/use-show-toast';
 import { PromptTopic } from "@/lib/prompt-contant";
 import { AutosizeTextarea } from "./autosize-textarea"; // Import the updated component
 import { usePromptStore } from "@/store/usePrompt";
+import HistoryButton from "../history-button";
+import FeedbackButton from "../feedback-button";
 
 export default function PromptInput() {
   const router = useRouter();
@@ -126,7 +128,7 @@ export default function PromptInput() {
                 </FormItem>
               )}
             />
-            <div className="mt-4 flex justify-evenly">
+            <div className="mt-4 grid grid-rows-2 sm:grid-cols-2 gap-2 md:grid-cols-4 md:grid-rows-1">
               {PromptTopic.map(({ topic, prompt }) => (
                 <TopicsButton
                   key={topic}

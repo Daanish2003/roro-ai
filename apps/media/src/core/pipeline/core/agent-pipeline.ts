@@ -15,7 +15,7 @@ import { Producer } from 'mediasoup/node/lib/types.js';
 
 export class AgentPipeline {
     public readonly agentId: string;
-    private transport: DirectTransport | null = null
+    private _transport: DirectTransport | null = null
     public mediaTracks: AgentTrack;
     private consumerTrack : Consumer | null =null
     private producerTrack : Producer | null = null
@@ -38,7 +38,7 @@ export class AgentPipeline {
     }
 
     setTransport(transport: DirectTransport){
-        this.transport = transport
+        this._transport = transport
     }
 
     async subscribeTrack(trackId: string, rtpCap: RtpCapabilities) {
@@ -69,10 +69,6 @@ export class AgentPipeline {
         const rtpStream = this.rtp.stream()
 
         this.consumerTrack.on('rtp', async (rtpPackets) => {
-            // const view = utils.nodeBufferToDataView(rtpPackets)
-            // const { RtpPacket } = packets
-            // const report = new RtpPacket(view)
-            // console.log(report.getExtensions())
             audioStream.pushStream(rtpPackets)
         })
 
@@ -120,6 +116,26 @@ export class AgentPipeline {
         };
         
         await Promise.all([audioStreamCo(), sttStreamCo(), llmStreamCo(), ttsStreamCo(), rtpStreamCo()]);        
+    }
+
+    get transport() {
+        return this._transport
+    }
+
+    closeStream() {
+        const audioStream = this.audio!.stream()
+        const vadStream = this.vad.stream()
+        const sttStream = this.stt.stream()
+        const llmStream = this.llm.chat()
+        const ttsStream = this.tts.stream()
+        const rtpStream = this.rtp!.stream()
+
+        audioStream.close()
+        vadStream.close()
+        sttStream.close()
+        llmStream.close()
+        ttsStream.close()
+        rtpStream.close()
     }
 
     async publishTrack() {

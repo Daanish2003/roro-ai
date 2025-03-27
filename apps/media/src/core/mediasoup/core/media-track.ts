@@ -1,5 +1,4 @@
 import { Consumer, MediaKind, Producer, Router, RtpCapabilities, RtpParameters, WebRtcTransport } from "mediasoup/node/lib/types.js";
-import { trackManager } from "../managers/media-track-manager.js";
 
 export class MediaTrack {
     constructor(
@@ -27,8 +26,6 @@ export class MediaTrack {
             });
 
             this._clientProducerTrack = producer
-        
-            trackManager.addProducerTrack(producer)
         
             return producer.id
     }
@@ -89,6 +86,11 @@ export class MediaTrack {
                 } catch (error) {
                     throw new Error(`Failed to check for consume for ${trackId} : ${error}`)
                 }
+    }
+
+    closeTrack() {
+      this._clientConsumerTrack?.close()
+      this._clientProducerTrack?.close()
     }
 
     

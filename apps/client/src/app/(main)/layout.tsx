@@ -1,17 +1,20 @@
 import { AppSidebar } from '@/components/app-sidebar'
 import DashboardHeader from '@/components/dashboard/dashboard-header'
 import { SidebarInset, SidebarProvider } from '@roro-ai/ui/components/ui/sidebar'
+
 import type React from 'react'
 
 export default function DashboardLayout({children}: {children: React.ReactNode}) {
     
   return (
+    <>
     <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset className='bg-secondary/15'>
-        <DashboardHeader />
-        {children}
+      <AppSidebar variant='sidebar'/>
+      <SidebarInset>
+      <DashboardHeader />
+      {children}
       </SidebarInset>
     </SidebarProvider>
+    </>
   )
 }

@@ -260,6 +260,32 @@ export class SocketManager {
       }
     );
 
+    socket.on(
+      "exit-room",
+      async(
+        {roomId} : {roomId: string},
+        callback: ({ success }: { success: boolean}) => void
+      ) => {
+        const room = roomManager.getRoom(roomId)
+
+        if(!room) {
+          callback({ success: true})
+          return
+        }
+
+        const agent = agentManager.getPipeline(room.agentId)
+
+        agent?.mediaTracks.closeTrack()
+        agent?.closeStream()
+        room?.mediaTracks.closeTrack()
+        room.mediaTransports.closeTransport()
+
+        callback({ success: true})
+      }
+    )
+
+
+
     socket.on("disconnect", async () => {
         try {
             console.log("Client Disconnected");

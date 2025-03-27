@@ -1,5 +1,4 @@
 import { Consumer, DirectTransport, Producer, RtpCapabilities } from "mediasoup/node/lib/types.js";
-import { trackManager } from "../../mediasoup/managers/media-track-manager.js";
 
 export class AgentTrack {
     constructor(
@@ -24,7 +23,6 @@ export class AgentTrack {
     
                 this._agentConsumerTrack = consumer
             
-                trackManager.addListenerTrack(consumer)
 
                 return consumer
         }
@@ -41,9 +39,13 @@ export class AgentTrack {
     
             this._agentProducerTrack = producerTrack
         
-            trackManager.addAgentTrack(producerTrack)
     
             return producerTrack
+        }
+
+        closeTrack() {
+            this._agentConsumerTrack?.close()
+            this.agentProducerTrack?.close()
         }
 
         get agentProducerTrack() {

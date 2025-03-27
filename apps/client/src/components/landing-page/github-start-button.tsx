@@ -8,6 +8,7 @@ const SplitButton = () => {
     <Button
     variant={"outline"}
     size={"icon"}
+    className="border-primary"
     asChild
     >
         <Link

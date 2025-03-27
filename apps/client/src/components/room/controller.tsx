@@ -1,9 +1,12 @@
+"use client"
 import { useMediaStore } from '@/store/useMedia';
 import { Button } from '@roro-ai/ui/components/ui/button';
-import { Mic, MicOff, PhoneOff, Settings, Video, VideoOff } from 'lucide-react';
-import React from 'react';
+import { SidebarTrigger } from '@roro-ai/ui/components/ui/sidebar';
+import { MessageSquareText, Mic, MicOff, PhoneOff, Settings, Video, VideoOff } from 'lucide-react';
+import React, { useRef } from 'react';
 
 export default function Controller() {
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [isMuted, setIsMuted] = React.useState(false);
   const [isVideoOff, setIsVideoOff] = React.useState(false);
   const localStream = useMediaStore((state) => state.localStream);
@@ -54,6 +57,13 @@ export default function Controller() {
       <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full">
         <PhoneOff className="h-5 w-5" />
       </Button>
+      <div
+      className='cursor-pointer h-12 w-12 rounded-full border-zinc-700 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 items-center justify-center flex'
+      onClick={() => triggerRef.current?.click()}
+      >
+           <MessageSquareText />
+          <SidebarTrigger ref={triggerRef} className="sr-only hidden" />
+      </div>
     </div>
   );
 }

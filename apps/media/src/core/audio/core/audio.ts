@@ -2,8 +2,6 @@ import { OpusDecoderWebWorker } from "opus-decoder";
 import { AudioStream as BaseStream } from "./utils.js"
 import { AudioFrame } from "../audio-frame.js";
 import { packets, utils } from "rtp.js";
-import { AudioByteStream } from "../audio-byte-stream.js";
-import audioType from 'audio-type'
 
 export interface AudioOptions {
     sampleRate: number,

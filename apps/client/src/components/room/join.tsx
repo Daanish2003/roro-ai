@@ -1,21 +1,19 @@
+"use client"
 import { useSession } from '@/features/auth/auth-client'
 import { useMediaStore } from '@/store/useMedia'
 
 import { useMediasoupStore } from '@/store/useMediasoupStore'
 import { usePromptStore } from '@/store/usePrompt'
 import { Button } from '@roro-ai/ui/components/ui/button'
+import { Sidebar, SidebarContent } from '@roro-ai/ui/components/ui/sidebar'
 import { useParams, useRouter } from 'next/navigation'
 import React from 'react'
 
-export default function Join() {
+export default function Join({ ...props }: React.ComponentProps<typeof Sidebar>) {
       const router = useRouter()
-      const joinRoom = useMediasoupStore((state) => state.joinRoom)
-      const createSendTransport = useMediasoupStore((state) => state.createSendTransport)
+      const { joinRoom, createRecvTransport, createSendTransport, startProducing, startConsuming} = useMediasoupStore();
       const setupDevice = useMediasoupStore((state) => state.setDevice)
-      const startProducing = useMediasoupStore((state) => state.startProducing)
-      const createRecvTransport = useMediasoupStore((state) => state.createRecvTransport)
-      const startConsuming = useMediasoupStore((state) => state.startConsuming)
-      const localStream = useMediaStore((state) => state.localStream)
+      const { localStream, } = useMediaStore()
       const params = useParams()
       const {data:session} = useSession()
       const { prompt } = usePromptStore()
@@ -26,12 +24,9 @@ export default function Join() {
           return null
       }
 
-      const userId = session.user.id
-      const username = session.user.name
-
 
       const JoinHandler = async () => {
-        await joinRoom(roomId, userId, username, prompt)
+        await joinRoom(roomId, session.user.id, session.user.name, prompt)
         const device = await setupDevice()
         const response = await createRecvTransport(roomId, device)
         if (response.success) {
@@ -49,7 +44,11 @@ export default function Join() {
       }
 
   return (
-    <div className="bg-background lg:w-1/4 flex flex-col items-center justify-center rounded-2xl border p-4 gap-y-4">
+    <>
+      <Sidebar {...props} collapsible='offcanvas' side='right' className='w-80 border-l-2'>
+        <SidebarContent
+        className='flex justify-center items-center bg-background'
+        >
         <div className="text-center space-y-4">
             <h2 className="text-2xl font-semibold">Ready to Join Session?</h2>
             <p className="text-muted-foreground text-sm">Room ID: {roomId}</p>
@@ -73,6 +72,8 @@ export default function Join() {
            </div>
           <div>
         </div>
-      </div>
+        </SidebarContent>
+      </Sidebar>
+    </>
   )
 }
