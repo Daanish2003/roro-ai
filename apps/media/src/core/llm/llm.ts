@@ -64,10 +64,34 @@ export class LLMStream extends BaseStream {
 
     private async callModel(state: typeof MessagesAnnotation.State) {
         const prompt = await this.prompt_template.invoke(state)
-        const response = await this.client.invoke(prompt)
+        const stream = await this.client.stream(prompt)
+
+        let buffer = "";
+        const response: string[] = []
+
+        for await (const chunk of stream) {
+            buffer += chunk.content;
+
+            const parts = buffer.split(",");
+
+            for (let i = 0; i < parts.length - 1; i++) {
+                const chunkText = parts[i]!;
+                this.output.put(chunkText)
+                response.push(chunkText)
+                console.log(chunkText)
+            }
+
+            buffer = parts[parts.length - 1]!;
+        }
+
+        if (buffer.trim()) {
+            this.output.put(buffer);
+            response.push(buffer);
+            console.log(buffer)
+        }
     
         return {
-          messages: [response]
+          messages: response
         }
     }
 
@@ -91,18 +115,13 @@ export class LLMStream extends BaseStream {
 
     public async sendMessage(userMessage: string) {
         try {
-          const output = await this.app.invoke({ messages: 
+          await this.app.invoke({ messages: 
             {
               role: "user",
               content: userMessage
             }
            }, { configurable: { thread_id: this.threadId}})
-    
-           if (output && output.messages && output.messages[0]) {
-            this.output.put({
-                response: output.messages[output.messages.length - 1].content
-            });
-          }
+
         } catch (error) {
           console.error("llm response error:", error)
         }

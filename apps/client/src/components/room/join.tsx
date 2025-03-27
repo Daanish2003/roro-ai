@@ -3,7 +3,6 @@ import { useSession } from '@/features/auth/auth-client'
 import { useMediaStore } from '@/store/useMedia'
 
 import { useMediasoupStore } from '@/store/useMediasoupStore'
-import { usePromptStore } from '@/store/usePrompt'
 import { Button } from '@roro-ai/ui/components/ui/button'
 import { Sidebar, SidebarContent } from '@roro-ai/ui/components/ui/sidebar'
 import { useParams, useRouter } from 'next/navigation'
@@ -11,13 +10,11 @@ import React from 'react'
 
 export default function Join({ ...props }: React.ComponentProps<typeof Sidebar>) {
       const router = useRouter()
-      const { joinRoom, createRecvTransport, createSendTransport, startProducing, startConsuming} = useMediasoupStore();
+      const { joinRoom, createRecvTransport, createSendTransport, startProducing, startConsuming } = useMediasoupStore();
       const setupDevice = useMediasoupStore((state) => state.setDevice)
       const { localStream, } = useMediaStore()
       const params = useParams()
-      const {data:session} = useSession()
-      const { prompt } = usePromptStore()
-      
+      const {data:session} = useSession()      
       const roomId = params.roomId as string || ""
 
       if(!session) {
@@ -26,7 +23,7 @@ export default function Join({ ...props }: React.ComponentProps<typeof Sidebar>)
 
 
       const JoinHandler = async () => {
-        await joinRoom(roomId, session.user.id, session.user.name, prompt)
+        await joinRoom(roomId, session.user.id)
         const device = await setupDevice()
         const response = await createRecvTransport(roomId, device)
         if (response.success) {

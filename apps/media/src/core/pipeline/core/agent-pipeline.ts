@@ -87,8 +87,8 @@ export class AgentPipeline {
         }
 
         async function llmStreamCo() {
-            for await (const ev of llmStream) {
-                ttsStream.sendText(ev.response)
+            for await (const text of llmStream) {
+                ttsStream.push(text)
             }
         }
 

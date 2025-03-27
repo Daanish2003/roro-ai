@@ -73,6 +73,7 @@ export class SocketManager {
       ) => {
         try {
           const response = await roomManager.joinRoom(roomId, userId);
+          console.log(response)
           callback(response);
         } catch (error) {
           console.error("Error in joining room:", error);
@@ -264,12 +265,10 @@ export class SocketManager {
       "exit-room",
       async(
         {roomId} : {roomId: string},
-        callback: ({ success }: { success: boolean}) => void
       ) => {
         const room = roomManager.getRoom(roomId)
 
         if(!room) {
-          callback({ success: true})
           return
         }
 
@@ -279,8 +278,6 @@ export class SocketManager {
         agent?.closeStream()
         room?.mediaTracks.closeTrack()
         room.mediaTransports.closeTransport()
-
-        callback({ success: true})
       }
     )
 

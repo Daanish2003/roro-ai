@@ -63,7 +63,6 @@ class RedisPublisher {
     public async publish(channel: string, message: string)  {
         try {
             await this.publisher.publish(channel, message)
-            console.log(`Published to ${channel}:`, message);
         } catch (error) {
             console.error('Failed to publish message to Redis:', error);
             throw error;

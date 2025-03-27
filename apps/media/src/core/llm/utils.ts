@@ -4,13 +4,10 @@ export abstract class LLM {
     abstract chat(): LLMStream
 }
 
-export type ChatChunk = {
-    response: string
-}
 
-export abstract class LLMStream implements AsyncIterableIterator<ChatChunk> {
-    protected output = new AsyncIterableQueue<ChatChunk>();
-    private closed: boolean = false
+export abstract class LLMStream implements AsyncIterableIterator<string> {
+    protected output = new AsyncIterableQueue<string>();
+    closed: boolean = false
     private llm: LLM
     constructor(llm: LLM) {
         this.llm = llm
@@ -21,7 +18,7 @@ export abstract class LLMStream implements AsyncIterableIterator<ChatChunk> {
         this.closed = true
     }
 
-    next(): Promise<IteratorResult<ChatChunk>> {
+    next(): Promise<IteratorResult<string>> {
         return this.output.next()
     }
 

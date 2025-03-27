@@ -73,13 +73,13 @@ export class STTStream extends BaseStream {
     private connection: ListenLiveClient
     private audioEnergyFilter: AudioEnergyFilter
     private keepAliveInterval: NodeJS.Timeout | null = null;
-    private listenersRegistered = false;
     constructor(stt: STT, opts: STTOptions, ws: ListenLiveClient) {
         super(stt)
         this.options = opts
         this.connection = ws
         this.audioEnergyFilter = new AudioEnergyFilter()
-        this.run()
+        this.run();
+        this.keepAlive()
     }
 
     private async run() {
@@ -87,7 +87,7 @@ export class STTStream extends BaseStream {
             this.closeConnection()
         }
 
-        await Promise.all([this.sendAudio(), this.listeners()])
+        await Promise.all([this.listeners(), this.sendAudio()])
     }
 
     private async sendAudio() {
@@ -120,24 +120,10 @@ export class STTStream extends BaseStream {
     }
 
 
-    private async listeners() {
-        if (this.listenersRegistered) return;
-        this.listenersRegistered = true;
+    private async listeners() {   
         this.connection.on(LiveTranscriptionEvents.Open, () => {
-              console.log("STT connected");
-              
-              if (this.keepAliveInterval) {
-                clearInterval(this.keepAliveInterval);
-              }
-              this.keepAliveInterval = setInterval(() => {
-                if (this.connection.isConnected()) { 
-                    this.connection.keepAlive();
-                } else {
-                    this.cleanupConnection(); 
-                }
-            }, 3000);
-            });
-        
+            console.log("STT connected");   
+        });     
         this.connection.on(LiveTranscriptionEvents.Transcript, async (data) => {
             if (data.channel && data.channel.alternatives.length > 0) {
                 const transcript = data.channel.alternatives[0].transcript;
@@ -176,5 +162,18 @@ export class STTStream extends BaseStream {
           clearInterval(this.keepAliveInterval);
           this.keepAliveInterval = null;
         }
+    }
+
+    private keepAlive() {
+        if (this.keepAliveInterval) {
+            clearInterval(this.keepAliveInterval);
+          }
+          this.keepAliveInterval = setInterval(() => {
+            if (this.connection.isConnected()) { 
+                this.connection.keepAlive();
+            } else {
+                this.cleanupConnection(); 
+            }
+        }, 3000);
     }
 }

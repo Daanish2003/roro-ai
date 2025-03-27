@@ -14,6 +14,7 @@ export const server = createServer(app);
 const initRedis = async () => {
   try {
       await redis.connect();
+      await redisSub.connect();
       await redisSub.subscribe("createRoom");
   } catch (error) {
       console.error('Failed to initialize Redis:', error);

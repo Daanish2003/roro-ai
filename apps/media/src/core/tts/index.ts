@@ -1,4 +1,3 @@
-import { bufferToInt16Array, lowPassFilter } from "../../utils/buffer.js";
 import { TTS as BaseTTS, TTSStream as BaseStreamTTS } from "./utils.js"
 import { createClient, LiveTTSEvents, SpeakLiveClient, SpeakSchema } from "@deepgram/sdk"
 
@@ -15,10 +14,12 @@ export const defaultTTSOptions: TTSOptions = {
 export class TTS extends BaseTTS {
     private options: TTSOptions;
     private connection: SpeakLiveClient;
+    private _stream: streamTTS | null
     constructor(opts: TTSOptions, ws: SpeakLiveClient) {
         super();
         this.options = opts
         this.connection = ws
+        this._stream = null
     }
 
     static create(opts: Partial<TTSOptions> = {}) {
@@ -43,9 +44,9 @@ export class streamTTS extends BaseStreamTTS {
     private audioBuffer: Buffer = Buffer.alloc(0);
     constructor(tts: TTS, opts: TTSOptions, ws: SpeakLiveClient){
         super(tts)
-        this.options = opts
-        this.connection = ws
-        this.setupListener()
+        this.options = opts;
+        this.connection = ws;
+        this.run();
     }
 
     private setupListener() {
@@ -79,22 +80,28 @@ export class streamTTS extends BaseStreamTTS {
         })
     }
 
-    convertMonoToStereo(monoBuffer: Buffer): Buffer {
-        const sampleCount = monoBuffer.length / 2;
-        const stereoBuffer = Buffer.alloc(monoBuffer.length * 2);
-    
-        for (let i = 0; i < sampleCount; i++) {
-            const sample = monoBuffer.readInt16LE(i * 2); 
-    
-            stereoBuffer.writeInt16LE(sample, i * 4); 
-            stereoBuffer.writeInt16LE(sample, i * 4 + 2);
+    private async run() {
+        if(this.input.closed) {
+            this.closeConnection()
         }
-    
-        return stereoBuffer;
+        await Promise.all([this.setupListener(), this.sendText()])
     }
 
-    public sendText(text: string) {
-        this.connection.sendText(text)
-        this.connection.flush()
+    private async sendText() {
+        for await(const text of this.input) {
+
+            const textChunks = text.split(",").map(chunk => chunk.trim()).filter(Boolean);
+
+            for (const chunk of textChunks) {
+                this.connection.sendText(chunk + ",")
+               this.connection.flush()
+            }
+        }
+    }
+
+    private closeConnection() {
+        if (this.connection) {
+            this.connection.requestClose();
+        }
     }
 }

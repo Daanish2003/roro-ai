@@ -30,6 +30,7 @@ class RedisSubscriber {
     private async listener(message: string, channel: string) {
       if(channel === "createRoom") {
         const data = JSON.parse(message)
+        console.log(data)
         await roomManager.createRoom(
             data.id,
             data.topic,
@@ -40,7 +41,9 @@ class RedisSubscriber {
     }
 
     public async subscribe(channel: string): Promise<void> {
-        await this.subscriber.subscribe(channel, (message) => this.listener(message, channel))
+        await this.subscriber.subscribe(channel, (message) => {
+            this.listener(message, channel)
+        })
         };
     }
 
