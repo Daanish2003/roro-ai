@@ -8,7 +8,7 @@ export default function PracticeButton() {
   const router = useRouter()
 
   const startPracticeHandler = async () => {
-    router.push("/dashboard/practice")
+    router.push("/practice")
   }
 
   return (

@@ -38,7 +38,7 @@ class RoomManager {
           }
     }
 
-    async joinRoom(roomId: string, userId: string) {
+    async joinRoom(roomId: string, userId: string, socketId: string) {
       if (!this.hasRoom(roomId)) {
          return {
             success: false,
@@ -48,7 +48,7 @@ class RoomManager {
       
       const room = this.getRoom(roomId);
   
-      const response  = await room!.addParticipant(userId)
+      const response  = await room!.addParticipant(userId, socketId)
   
       return response
   }
@@ -63,6 +63,20 @@ class RoomManager {
 
     getRoom(roomId: string): Room | undefined {
         return this.rooms.get(roomId)
+    }
+
+    removeRoom(roomId: string) {
+      this.rooms.delete(roomId)
+    }
+
+    getRoomBySocketId(socketId: string) {
+      for (const room of this.rooms.values()) {
+        if(room.socketId === socketId) {
+          return room
+        }
+      }
+
+      return undefined
     }
 }
 

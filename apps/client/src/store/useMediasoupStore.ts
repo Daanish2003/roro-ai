@@ -1,8 +1,7 @@
 import { create } from "zustand"
 import * as mediasoupClient from 'mediasoup-client';
 import { useSocketStore } from "./useSocketStore";
-
-
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 type MediasoupProducerState = {
     device: mediasoupClient.types.Device | null
@@ -23,7 +22,7 @@ type MediasoupProducerState = {
     startProducing: (localstream: MediaStream) => Promise<void>
     createRecvTransport: (roomId: string, device: mediasoupClient.types.Device) => Promise<{ success: boolean; error?: string }>;
     startConsuming: (device: mediasoupClient.types.Device, roomId:string) => Promise<void>;
-    exitRoom: (roomId: string) => Promise<void>
+    exitRoom: (roomId: string, router: AppRouterInstance) => Promise<void>
     
 }
 
@@ -352,21 +351,20 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
         }
     },
 
-    exitRoom: async (roomId: string) => {
+    exitRoom: async (roomId: string, router: AppRouterInstance) => {
       const socket = useSocketStore.getState().socket;
 
       if (!socket || !socket.connected) {
           console.error("Socket is not connected. Cannot join room.");
           set({ error: "Socket is not connected" });
       }
-
       try {
-        await socket?.emitWithAck('exit-room', { roomId })
+        socket?.emit('exit-room', { roomId })
+        router.replace('/practice')
       } catch (error) {
         console.error("Failed to exit room")
         throw error
       }
     }
-
-
 }))
+

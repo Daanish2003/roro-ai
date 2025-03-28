@@ -9,6 +9,7 @@ export class Room {
 	public readonly authorId: string;
 	public router: Router;
 	private participantId: string | null = null
+	public socketId: string | null = null;
 	public mediaTransports: MediaTransport
 	public mediaTracks: MediaTrack
 	public readonly topic: string
@@ -23,7 +24,7 @@ export class Room {
 		this.mediaTracks = new MediaTrack()
 	}
 
-	public async addParticipant(userId: string): Promise<{success: boolean, message: string, routerRtpCap?: RtpCapabilities}> {
+	public async addParticipant(userId: string, socketId: string): Promise<{success: boolean, message: string, routerRtpCap?: RtpCapabilities}> {
 	   if(userId !== this.authorId) {
 		  return {
 			success: false,
@@ -32,6 +33,7 @@ export class Room {
 	   }
 
 	   this.participantId = userId
+	   this.socketId = socketId
 
 	   const routerRtpCap = this.router.rtpCapabilities
 

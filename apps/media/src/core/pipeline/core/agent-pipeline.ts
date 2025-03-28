@@ -10,12 +10,15 @@ import { LLM } from '../../llm/llm.js';
 import { TTS } from '../../tts/index.js';
 import { RTP } from '../../audio/core/rtp.js';
 import { Consumer } from 'mediasoup/node/lib/ConsumerTypes.js';
-import { Producer } from 'mediasoup/node/lib/types.js';
+import { DataProducer, Producer } from 'mediasoup/node/lib/types.js';
+import { Socket } from 'socket.io';
+import { VADEventType } from '../../../utils/event.js';
 
 
 export class AgentPipeline {
     public readonly agentId: string;
-    private _transport: DirectTransport | null = null
+    private _transport: DirectTransport | null = null;
+    private socket: Socket | null = null
     public mediaTracks: AgentTrack;
     private consumerTrack : Consumer | null =null
     private producerTrack : Producer | null = null
@@ -37,8 +40,9 @@ export class AgentPipeline {
         
     }
 
-    setTransport(transport: DirectTransport){
+    setTransport(transport: DirectTransport, socket: Socket){
         this._transport = transport
+        this.socket = socket
     }
 
     async subscribeTrack(trackId: string, rtpCap: RtpCapabilities) {
@@ -61,6 +65,10 @@ export class AgentPipeline {
             ssrc: this.consumerTrack.rtpParameters.encodings?.[0]?.ssrc,
         })
 
+        if (!this._transport) {
+            throw new Error("Transport is required for producing data.");
+        }
+
         const audioStream = this.audio.stream()
         const vadStream = this.vad.stream()
         const sttStream = this.stt.stream()
@@ -76,6 +84,18 @@ export class AgentPipeline {
             for await (const frame of audioStream) {
                 vadStream.push(frame)
                 sttStream.push(frame)
+            }
+        }
+
+        const vadStreamCo = async () => {
+            for await(const ev of vadStream) {
+                if(ev.type === VADEventType.START_OF_SPEECH) {
+                    this.socket!.emit("START_OF_SPEECH")
+                }
+
+                if(ev.type === VADEventType.END_OF_SPEECH) {
+                    this.socket!.emit("END_OF_SPEECH")
+                }
             }
         }
 
@@ -115,7 +135,7 @@ export class AgentPipeline {
             }, 20);
         };
         
-        await Promise.all([audioStreamCo(), sttStreamCo(), llmStreamCo(), ttsStreamCo(), rtpStreamCo()]);        
+        await Promise.all([audioStreamCo(), vadStreamCo(), sttStreamCo(), llmStreamCo(), ttsStreamCo(), rtpStreamCo()]);        
     }
 
     get transport() {
@@ -136,6 +156,8 @@ export class AgentPipeline {
         llmStream.close()
         ttsStream.close()
         rtpStream.close()
+        sttStream.closeConnection()
+        ttsStream.closeConnection()
     }
 
     async publishTrack() {

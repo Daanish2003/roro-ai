@@ -4,18 +4,16 @@ import { useSocketStore } from '@/store/useSocketStore'
 import React, { useEffect } from 'react'
 import { useMediaStore } from '@/store/useMedia'
 import { useMediasoupStore } from '@/store/useMediasoupStore'
-import { Sidebar } from '@roro-ai/ui/components/ui/sidebar'
 import AiVoiceAgentContainer from './ai-voice-agent-container'
 import VideoContainer from './video-container'
+import Controller from './controller'
+import JoinButton from './join-button'
 
 
 export default function RoomContainer() {
-  const connect = useSocketStore((state) => state.connect)
-  const disconnect = useSocketStore((state) => state.disconnect)
-  const isConnected = useSocketStore((state) => state.isConnected)
+  const { connect, disconnect, isConnected} = useSocketStore()
+  const { remoteStream, joined} = useMediasoupStore()
   const getUserMedia = useMediaStore((state) => state.getUserMedia)
-  const remoteStream = useMediasoupStore((state) => state.remoteStream)
-  const joined = useMediasoupStore((state) => state.joined)
   const localVideoRef = React.useRef<HTMLVideoElement | null>(null)
   const remoteAudioRef = React.useRef<HTMLAudioElement | null>(null)
   
@@ -76,9 +74,18 @@ export default function RoomContainer() {
   }, [remoteStream]);
 
   return (
-    <div className='flex items-center gap-x-2 mt-2'>
-      <AiVoiceAgentContainer remoteAudioRef={remoteAudioRef}/>
-      <VideoContainer localVideoRef={localVideoRef}/>
-    </div>
+    <>
+      <div className='flex flex-col items-center md:gap-x-2 mt-2 md:flex-row gap-y-2 mb-2'>
+         <AiVoiceAgentContainer remoteAudioRef={remoteAudioRef}/>
+         <VideoContainer localVideoRef={localVideoRef}/>
+      </div>
+      <div className="w-full flex items-center justify-center py-4 border-t">
+        { joined ? (
+          <Controller />
+        ) : (
+          <JoinButton />
+        )}
+      </div>
+    </>
   )
 }

@@ -83,10 +83,6 @@ export class STTStream extends BaseStream {
     }
 
     private async run() {
-        if(this.input.closed) {
-            this.closeConnection()
-        }
-
         await Promise.all([this.listeners(), this.sendAudio()])
     }
 

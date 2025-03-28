@@ -7,14 +7,10 @@ export const PublicRoutes = [
 ]
 
 export const ProtectedRoutes = [
-    '/dashboard/practice',
-    '/dashboard/overview',
-    '/dashboard/achievements',
-    '/dashboard/feedback',
-    '/dashboard/leaderboard',
-    '/dashboard/settings',
-    '/dashboard/topics',
-    '/dashboard/progress',
+    '/practice',
+    '/history',
+    '/feedback',
+    '/settings',
 ]
 
 export function matchesProtectedRoute(path: string): boolean {

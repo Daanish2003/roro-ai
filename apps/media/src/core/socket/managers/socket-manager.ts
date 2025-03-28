@@ -72,7 +72,7 @@ export class SocketManager {
         callback: (response: { success: boolean; message: string; routerRtpCap?: RtpCapabilities }) => void
       ) => {
         try {
-          const response = await roomManager.joinRoom(roomId, userId);
+          const response = await roomManager.joinRoom(roomId, userId, socket.id);
           console.log(response)
           callback(response);
         } catch (error) {
@@ -193,7 +193,7 @@ export class SocketManager {
           throw new Error("Agent not Initailized")
         }
 
-        agent.setTransport(transport)
+        agent.setTransport(transport, socket)
 
         agent.subscribeTrack(id, room.router.rtpCapabilities)
 
@@ -268,25 +268,43 @@ export class SocketManager {
       ) => {
         const room = roomManager.getRoom(roomId)
 
-        if(!room) {
-          return
+        if(room) {
+          const agent = agentManager.getPipeline(room.agentId)
+
+          if(agent) {
+            agent.mediaTracks.closeTrack()
+            agent.closeStream()
+          }
+
+          room.mediaTracks.closeTrack()
+          room.mediaTransports.closeTransport()
+          agentManager.removePipeline(room.agentId)
+          roomManager.removeRoom(room.roomId)
         }
-
-        const agent = agentManager.getPipeline(room.agentId)
-
-        agent?.mediaTracks.closeTrack()
-        agent?.closeStream()
-        room?.mediaTracks.closeTrack()
-        room.mediaTransports.closeTransport()
       }
     )
-
-
 
     socket.on("disconnect", async () => {
         try {
             console.log("Client Disconnected");
             this.connections.delete(socket.id);
+
+            const room = roomManager.getRoomBySocketId(socket.id)
+
+            if(room) {
+              const agent = agentManager.getPipeline(room.agentId)
+
+              if(agent) {
+                agent.mediaTracks.closeTrack()
+                agent.closeStream()
+              }
+
+              room.mediaTracks.closeTrack()
+              room.mediaTransports.closeTransport()
+              agentManager.removePipeline(room.agentId)
+              roomManager.removeRoom(room.roomId)
+            }
+
           } catch (error) {
             console.error("Error during disconnection cleanup:", error);
           }

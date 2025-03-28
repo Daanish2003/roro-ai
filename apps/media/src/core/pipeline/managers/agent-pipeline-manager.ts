@@ -27,6 +27,10 @@ class AgentPipelineManager {
     hasPipeline(pipelineId: string) {
         return this.pipeline.has(pipelineId)
     }
+
+    removePipeline(pipelineId: string) {
+        return this.pipeline.delete(pipelineId)
+    }
 }
 
 export const agentManager = AgentPipelineManager.getInstance()

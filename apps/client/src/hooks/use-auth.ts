@@ -53,7 +53,7 @@ export const useAuth = () => {
                                onClick: () => console.log("Undo"),
                             },
 						});
-						router.replace("/dashboard/practice")
+						router.replace("/practice")
 					},
 					onError: (ctx) => {
 						toast("Login Failed", {

@@ -81,9 +81,6 @@ export class streamTTS extends BaseStreamTTS {
     }
 
     private async run() {
-        if(this.input.closed) {
-            this.closeConnection()
-        }
         await Promise.all([this.setupListener(), this.sendText()])
     }
 
@@ -99,7 +96,7 @@ export class streamTTS extends BaseStreamTTS {
         }
     }
 
-    private closeConnection() {
+    public closeConnection() {
         if (this.connection) {
             this.connection.requestClose();
         }

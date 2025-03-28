@@ -37,7 +37,6 @@ export const config: Config = {
             enableUdp: true,
             enableTcp: true,
             preferUdp: true,
-            
         },
         plainTransport: {
             listenInfo: 
