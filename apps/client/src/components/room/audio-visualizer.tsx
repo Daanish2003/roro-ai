@@ -28,7 +28,7 @@ export default function AudioVisualizer({ audioRef }: AudioVisualizerProps) {
 
       // Create analyser
       analyser = audioContext.createAnalyser();
-      analyser.fftSize = 32; // Lower FFT for smooth visualization
+      analyser.fftSize = 32;
       analyserRef.current = analyser;
 
       // Connect audio element to analyser
@@ -59,10 +59,11 @@ export default function AudioVisualizer({ audioRef }: AudioVisualizerProps) {
 
       const width = canvas.width;
       const height = canvas.height;
+      const barWidth = width / 10;
+      const barSpacing = barWidth * 1.5;
       const centerX = width / 2;
       const centerY = height / 2;
-      const minRadius = 20; // Minimum circle size
-      const maxRadius = Math.min(width, height) / 2.2; // Maximum size relative to canvas
+      const minBarHeight = 10;
 
       const draw = () => {
         animationRef.current = requestAnimationFrame(draw);
@@ -70,15 +71,19 @@ export default function AudioVisualizer({ audioRef }: AudioVisualizerProps) {
         analyser.getByteFrequencyData(dataArray);
         ctx.clearRect(0, 0, width, height);
 
-        // Calculate the average volume
         const avgVolume = dataArray.reduce((sum, val) => sum + val, 0) / bufferLength;
-        const radius = minRadius + (avgVolume / 255) * (maxRadius - minRadius);
+        const barHeight = Math.max((avgVolume / 255) * (height / 2), minBarHeight);
 
-        // Draw growing circle
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         ctx.fillStyle = "hsl(142.1, 76.2%, 36.3%)";
-        ctx.fill();
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+
+        [-1, 0, 1].forEach((i) => {
+          const x = centerX + i * barSpacing - barWidth / 2;
+          ctx.beginPath();
+          ctx.roundRect(x, centerY - barHeight, barWidth, barHeight * 2, barWidth / 2);
+          ctx.fill();
+        });
       };
 
       draw();
@@ -122,5 +127,5 @@ export default function AudioVisualizer({ audioRef }: AudioVisualizerProps) {
     };
   }, [audioRef]);
 
-  return <canvas ref={canvasRef} width={200} height={200} className="w-full h-full" />;
+  return <canvas ref={canvasRef} width={300} height={200} className="w-full h-full" />;
 }
