@@ -1,3 +1,4 @@
+import { Future } from "../../utils/index.js";
 import { TTS as BaseTTS, TTSStream as BaseStreamTTS } from "./utils.js"
 import { createClient, LiveTTSEvents, SpeakLiveClient, SpeakSchema } from "@deepgram/sdk"
 
@@ -14,7 +15,7 @@ export const defaultTTSOptions: TTSOptions = {
 export class TTS extends BaseTTS {
     private options: TTSOptions;
     private connection: SpeakLiveClient;
-    private _stream: streamTTS | null
+    private _stream: streamTTS | null;
     constructor(opts: TTSOptions, ws: SpeakLiveClient) {
         super();
         this.options = opts
@@ -41,7 +42,8 @@ export class TTS extends BaseTTS {
 export class streamTTS extends BaseStreamTTS {
     private options: TTSOptions
     private connection: SpeakLiveClient
-    private audioBuffer: Buffer = Buffer.alloc(0);
+    private audioBuffer: Buffer = Buffer.alloc(24000);
+    private future: Future |  null = null
     constructor(tts: TTS, opts: TTSOptions, ws: SpeakLiveClient){
         super(tts)
         this.options = opts;
@@ -65,17 +67,23 @@ export class streamTTS extends BaseStreamTTS {
         this.connection.on(LiveTTSEvents.Metadata, (data) => {
           console.dir(data, { depth: null });
         });
+
+        this.connection.on(LiveTTSEvents.Flushed, () => {
+            if (this.future && !this.future.done) {
+                this.future.resolve();
+            }
+        })
     
         this.connection.on(LiveTTSEvents.Audio, (data) => {
             const buffer = Buffer.from(data);
             this.audioBuffer = Buffer.concat([this.audioBuffer, buffer]);
 
-            const chunkSize = 960 * 2;
+            const chunkSize = 960 * 2
 
-            while (this.audioBuffer.length >= chunkSize) {
-                 const chunk = this.audioBuffer.subarray(0, chunkSize);
-                 this.output.put(chunk)
-                 this.audioBuffer = this.audioBuffer.subarray(chunkSize);
+            while(this.audioBuffer.length >= chunkSize) {
+                const chunk = this.audioBuffer.subarray(0, chunkSize)
+                this.output.put(chunk)
+                this.audioBuffer = this.audioBuffer.subarray(chunkSize)
             }
         })
     }
@@ -90,8 +98,10 @@ export class streamTTS extends BaseStreamTTS {
             const textChunks = text.split(",").map(chunk => chunk.trim()).filter(Boolean);
 
             for (const chunk of textChunks) {
+                this.future = new Future()
                 this.connection.sendText(chunk + ",")
                this.connection.flush()
+               await this.future.await
             }
         }
     }

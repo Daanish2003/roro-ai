@@ -25,8 +25,8 @@ export class AudioByteStream {
         const frames: AudioFrame[] = []
 
         while (this.buffer.length >= this.bytesPerFrame) {
-            const frameData = this.buffer.slice(0, this.bytesPerFrame)
-            this.buffer = this.buffer.slice(this.bytesPerFrame);
+            const frameData = this.buffer.subarray(0, this.bytesPerFrame)
+            this.buffer = this.buffer.subarray(this.bytesPerFrame);
 
             frames.push(
                 new AudioFrame(

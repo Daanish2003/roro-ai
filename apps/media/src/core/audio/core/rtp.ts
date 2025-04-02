@@ -1,7 +1,6 @@
 import { RTPStream as BaseStream, RTP as BaseRTP } from "./utils.js"
-import { AudioByteStream } from "../audio-byte-stream.js";
 import { utils, packets } from "rtp.js";
-import { audifyEncoder } from "../audio-encoding.js";
+import { encoder } from "../audio-encoding.js";
 
 
 export interface RTPOptions {
@@ -68,7 +67,7 @@ export class RTPStream extends BaseStream {
 
     async handleOutputStream(data: Buffer) {
         try {
-            const encodedPackets = audifyEncoder.encode(data, 960)
+            const encodedPackets = encoder.encode(data)
             const rtpPackets = this.createRtpPacket(encodedPackets)
             this.output.put(rtpPackets)
         } catch (error) {
