@@ -4,14 +4,15 @@ interface Room {
     id: string,
     name: string,
     createdAt: Date,
-    topic: string
+    topic: string,
+    prompt: string
 }
 
 interface HistoryStore {
     rooms: Room[],
     total: number,
     page: number
-    pageSize: number
+    pageSize: number,
     fetchRooms: (page: number, pageSize: number) => Promise<void>;
 }
 

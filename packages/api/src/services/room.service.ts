@@ -60,6 +60,7 @@ export const getAllRoomsService = async (
                 name: true,
                 createdAt: true,
                 topic: true,
+                prompt: true
             },
             skip,
             take,
