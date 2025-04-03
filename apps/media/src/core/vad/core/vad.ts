@@ -90,7 +90,7 @@ export class VADStream extends BaseStream {
 
         const inferenceFrame = mergeFrames(inferenceFrames);
 
-        const inferenceData = Float32Array.from(
+        inferenceData = Float32Array.from(
           inferenceFrame.data.subarray(0, this.model.windowSizeSamples),
           (x) => x / 32767
         )
