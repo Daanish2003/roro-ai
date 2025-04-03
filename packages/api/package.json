@@ -14,8 +14,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@better-auth/utils": "^0.2.4",
     "@roro-ai/database": "workspace:*",
-    "better-auth": "^1.1.15",
+    "better-auth": "1.2.2",
     "connect-redis": "^8.0.1",
     "cookie-parser": "^1.4.7",
     "cookies": "^0.9.1",

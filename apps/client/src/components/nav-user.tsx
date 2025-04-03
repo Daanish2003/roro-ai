@@ -1,47 +1,80 @@
-"use client"
-
+"use client";
 
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@roro-ai/ui/components/ui/avatar"
+} from "@roro-ai/ui/components/ui/avatar";
 
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@roro-ai/ui/components/ui/sidebar"
-import { useSession } from "@/lib/auth-client"
+} from "@roro-ai/ui/components/ui/sidebar";
+import { useSession } from "@/features/auth/auth-client";
+import dynamic from "next/dynamic";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@roro-ai/ui/components/ui/dropdown-menu";
+import {
 
+  ChevronsUpDown,
+} from "lucide-react";
+import Profile from "./dashboard/profile";
+import SettingsButton from "./dashboard/setting-button";
+import LogoutButton from "./auth/logout-button";
 
-export function NavUser() {
-  const { data: session } = useSession()
-  const { isMobile } = useSidebar()
+function NavUser() {
+  const { isMobile } = useSidebar();
+  const { data: session } = useSession();
 
-  if(!session) {
-    return null
+  if (!session) {
+    return null;
   }
-
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-      <SidebarMenuButton
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-card data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[state=open]:bg-transparent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-5 w-5 rounded-lg">
                 <AvatarImage src={session.user.image as string} alt={session.user.name} />
-                <AvatarFallback className="rounded-lg bg-primary">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{session.user.name}</span>
-                <span className="truncate text-xs">{session?.user.email}</span>
+                <span className="truncate text-xs">{session.user.email}</span>
               </div>
+              <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            side={isMobile ? "bottom" : "right"}
+            align="end"
+            sideOffset={4}
+          >
+            <DropdownMenuLabel className="p-0 font-normal">
+              <Profile />
+              <DropdownMenuSeparator />
+              <SettingsButton />
+              <DropdownMenuSeparator />
+              <LogoutButton />
+            </DropdownMenuLabel>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }
+
+export default dynamic(() => Promise.resolve(NavUser), { ssr: false });

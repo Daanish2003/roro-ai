@@ -1,4 +1,5 @@
-import { signOut } from '@/lib/auth-client'
+"use client"
+import { signOut } from '@/features/auth/auth-client'
 import { Button } from '@roro-ai/ui/components/ui/button'
 import { LogOut } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -20,13 +21,9 @@ export default function LogoutButton() {
         }
     }
   return (
-    <Button
-      variant={"destructive"}
-      type='submit'
-      onClick={() => logoutHandler()}
-    >
-        Logout
+        <Button onClick={logoutHandler} className='bg-transparent text-white text-sm font-normal px-2 m-0 w-full content-start hover:bg-secondary/90 justify-start gap-2'>
         <LogOut />
-    </Button>
+        Logout
+        </Button>
   )
 }

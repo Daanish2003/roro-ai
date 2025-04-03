@@ -1,6 +1,6 @@
 import { betterFetch } from "@better-fetch/fetch";
 import { NextRequest, NextResponse } from "next/server";
-import { $Infer } from "@/lib/auth-client";
+import { $Infer } from "@/features/auth/auth-client";
 
 type Session = typeof $Infer.Session
 
@@ -12,7 +12,6 @@ export async function verifySession(request: NextRequest) {
 		{
 			baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
 			headers: {
-				//get the cookie from the request
 				cookie: request.headers.get("cookie") || "",
 			},
 		},

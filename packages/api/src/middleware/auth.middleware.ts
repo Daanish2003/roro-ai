@@ -9,7 +9,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     });
 
     if (!session) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ error: 'Middleware: Unauthorized' });
     }
     
     next();

@@ -5,7 +5,6 @@ import type { LucideIcon } from "lucide-react"
 
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -29,14 +28,13 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarMenu>
+      <SidebarMenu className="gap-y-2">
         {items.map((item) => {
           const isActive = pathname === item.url
-          console.log(isActive)
           return (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild isActive={isActive} size={"lg"}>
-                <Link href={item.url}>
+                <Link href={item.url} className="h-[34]">
                   {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
                   {item.title}
                 </Link>

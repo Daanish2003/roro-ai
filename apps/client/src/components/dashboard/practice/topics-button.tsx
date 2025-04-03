@@ -1,4 +1,5 @@
-import { HoverBorderGradient } from '@/components/hover-border-gradient'
+import { Badge } from "@roro-ai/ui/components/ui/badge"
+import { ArrowUp } from "lucide-react";
 import React from 'react'
 
 export default function TopicsButton({topic, onClick}: {topic: string, onClick: () => void}) {
@@ -11,13 +12,13 @@ export default function TopicsButton({topic, onClick}: {topic: string, onClick: 
        onClick()
      }}
     >
-      <HoverBorderGradient
-        containerClassName="rounded-full"
-        as={"div"}
-        className="bg-card/90 border-primary border flex items-center space-x-2"
+      <Badge
+        variant={"outline"}
+        className="bg-background/90 border-primary border flex items-center rounded-full text-[13px] p-2 justify-center gap-2 content-stretch"
       >
-        <span>{topic}</span>
-      </HoverBorderGradient>
+        <span className="text-nowrap">{topic}</span>
+        <ArrowUp className="w-4 h-4"/>
+      </Badge>
     </button>
   )
 }

@@ -1,12 +1,20 @@
+"use client"
 import { useMediaStore } from '@/store/useMedia';
+import { useMediasoupStore } from '@/store/useMediasoupStore';
 import { Button } from '@roro-ai/ui/components/ui/button';
 import { Mic, MicOff, PhoneOff, Settings, Video, VideoOff } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
 import React from 'react';
 
 export default function Controller() {
   const [isMuted, setIsMuted] = React.useState(false);
   const [isVideoOff, setIsVideoOff] = React.useState(false);
+  const { exitRoom } = useMediasoupStore();
+  const params = useParams()
+  const router = useRouter()
   const localStream = useMediaStore((state) => state.localStream);
+
+  const roomId = params.roomId as string || ""
 
   const toggleMute = () => {
     if (localStream) {
@@ -51,7 +59,7 @@ export default function Controller() {
       >
         <Settings className="h-5 w-5" />
       </Button>
-      <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full">
+      <Button variant="destructive" size="icon" className="h-12 w-12 rounded-full" onClick={() => exitRoom(roomId, router)}>
         <PhoneOff className="h-5 w-5" />
       </Button>
     </div>

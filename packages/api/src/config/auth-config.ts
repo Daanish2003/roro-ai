@@ -1,9 +1,9 @@
-import { redis } from "../utils/redis.js";
 import { prisma } from "@roro-ai/database/client";
+import { redis } from "@roro-ai/database/client";
+import 'dotenv/config'
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { admin, anonymous, oAuthProxy } from "better-auth/plugins";
-import 'dotenv/config'
+import { admin, anonymous, bearer, jwt, oAuthProxy } from "better-auth/plugins";
 
 export const auth = betterAuth(
     {
@@ -11,6 +11,11 @@ export const auth = betterAuth(
         database: prismaAdapter(prisma, {
           provider: "postgresql",
         }),
+        user: {
+            deleteUser: {
+              enabled: true,
+            },
+        },
         socialProviders: {
           google: {
             clientId: process.env.GOOGLE_CLIENT_ID as string,
@@ -57,7 +62,15 @@ export const auth = betterAuth(
         plugins: [
           anonymous(), 
           oAuthProxy(), 
-          admin(), 
+          admin(),
+          bearer(),
+          jwt({
+            jwt:{
+              issuer: "http://localhost:4000",
+              audience: "http://localhost:5000",
+              expirationTime: "1h"
+            }
+          }) 
         ],
     }
 );

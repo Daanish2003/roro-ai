@@ -26,7 +26,8 @@
   },
   "name": "with-prisma",
   "dependencies": {
-    "@prisma/client": "latest"
+    "@prisma/client": "latest",
+    "nan": "^2.22.2"
   },
   "packageManager": "pnpm@9.14.4"
 }

@@ -1,10 +1,8 @@
 "use client";
 
 import { User } from "lucide-react";
-import { useState } from "react";
 import { FaGithub } from "react-icons/fa";
 import { FaGoogle } from "react-icons/fa";
-import { toast as sonnerToast } from "sonner";
 import { Button } from "@roro-ai/ui/components/ui/button";
 import {
 	Card,
@@ -13,81 +11,10 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@roro-ai/ui/components/ui/card";
-import { signIn } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
-import useShowToast from "@/hooks/use-show-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 export function AuthCard() {
-	const router = useRouter()
-	const showToast = useShowToast();
-	const [loading, setLoading] = useState(false);
-
-	const socialSignInHandler = async (provider: "github" | "google") => {
-		try {
-			await signIn.social(
-				{
-					provider: provider,
-					callbackURL: 'http://localhost:3000/dashboard/overview'
-				},
-				{
-					onSuccess: () => {
-						showToast({
-							title: "Login Successfully",
-							type: "success"
-						});
-					},
-					onError: (ctx) => {
-						showToast({
-							type: "error",
-							title: "Login failed",
-							description: ctx.error.message,
-						});
-					},
-					onRequest: () => setLoading(true),
-					onResponse: () => setLoading(false),
-				},
-			);
-		} catch (error) {
-			console.error("Social SignIn Error:", error);
-			showToast({
-				type: "error",
-				title: "Something went wrong... please try again",
-			});
-		}
-	};
-
-	const anonymousSignInHandler = async () => {
-		try {
-			await signIn.anonymous(
-				{},
-				{
-					onSuccess: () => {
-						showToast({
-							title: "Login Successfully",
-							type: "success"
-						});
-						router.replace("/dashboard/overview")
-					},
-					onError: (ctx) => {
-						showToast({
-							type: "error",
-							title: "Login failed",
-							description: ctx.error.message,
-						});
-					},
-					onRequest: () => setLoading(true),
-					onResponse: () => setLoading(false),
-				},
-			);
-		} catch (error) {
-			console.error("Anonynous SignIn Error:", error);
-			showToast({
-				type: "error",
-				title: "Something went wrong... please try again",
-			});
-		}
-	};
-
+	const { socialSignInHandler, anonymousSignInHandler, loading} = useAuth()
 	return (
 		<Card>
 			<CardHeader className="space-y-1">
@@ -120,7 +47,7 @@ export function AuthCard() {
 						<span className="w-full border-t" />
 					</div>
 					<div className="relative flex justify-center text-xs uppercase">
-						<span className="bg-card px-2 text-muted-foreground">
+						<span className="bg-transparent px-2 text-muted-foreground">
 							Or continue as
 						</span>
 					</div>

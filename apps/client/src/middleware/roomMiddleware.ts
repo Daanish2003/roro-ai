@@ -7,7 +7,7 @@ export function extractRoomId(url: URL): string | null {
 
 export async function verifyRoomAccess(roomId: string, request: NextRequest): Promise<boolean> {
   try {
-    const response = await fetch(new URL(`/api/v1/rooms/${roomId}/verify-access`, process.env.NEXT_PUBLIC_BACKEND_URL), {
+    const response = await fetch(new URL(`/api/v1/rooms/verify-access/${roomId}`, process.env.NEXT_PUBLIC_BACKEND_URL), {
       headers: { 
         cookie: request.headers.get('cookie') || '',
       }
@@ -25,7 +25,7 @@ export async function verifyRoomAccess(roomId: string, request: NextRequest): Pr
 }
 
 export function redirectToDashboard(request: NextRequest, reason?: string) {
-    const dashboardUrl = new URL('/dashboard/overview', request.url);
+    const dashboardUrl = new URL('/practice', request.url);
     if (reason) {
       dashboardUrl.searchParams.set('error', encodeURIComponent(reason));
     }

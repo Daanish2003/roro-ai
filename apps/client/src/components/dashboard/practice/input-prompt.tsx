@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button } from "@roro-ai/ui/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@roro-ai/ui/components/ui/form";
-import { useSession } from "@/lib/auth-client";
+import { useSession } from "@/features/auth/auth-client";
 import { PromptSchema } from "@/zod/prompt-schema";
 import { useRouter } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
@@ -16,19 +16,21 @@ import useShowToast from '@/hooks/use-show-toast';
 import { PromptTopic } from "@/lib/prompt-contant";
 import { AutosizeTextarea } from "./autosize-textarea"; // Import the updated component
 import { usePromptStore } from "@/store/usePrompt";
+import HistoryButton from "../history-button";
+import FeedbackButton from "../feedback-button";
 
 export default function PromptInput() {
   const router = useRouter();
   const showToast = useShowToast();
   const { data: session } = useSession();
-
-  const { setPrompt } = usePromptStore()
+  const { setPrompt } = usePromptStore();
 
   const promptForm = useForm<z.infer<typeof PromptSchema>>({
     mode: "onSubmit",
     resolver: zodResolver(PromptSchema),
     defaultValues: {
       prompt: "",
+      topic: "",
     },
   });
 
@@ -36,6 +38,7 @@ export default function PromptInput() {
   const promptValue = watch("prompt");
 
   const startPracticeHandler = async (values: z.infer<typeof PromptSchema>) => {
+
     setPrompt(values.prompt)
     try {
       const response = await fetch(
@@ -48,6 +51,7 @@ export default function PromptInput() {
           body: JSON.stringify({
             roomName: `${session?.user.name}'s Room`,
             prompt: values.prompt,
+            topic: values.topic
           }),
           credentials: 'include',
         }
@@ -67,19 +71,20 @@ export default function PromptInput() {
     } catch (error) {
       showToast({
         title: "Error",
-        description: "Failed to start practice. Please try again.",
+        description: "Failed to start practice. Please try again later.",
         type: "error",
       });
       console.error("Error starting practice:", error);
     }
   };
 
-  const handlePromptTemplate = (prompt: string) => {
-    setValue("prompt",  prompt, { shouldDirty: true, shouldTouch: true });
+  const handlePromptTemplate = (values: z.infer<typeof PromptSchema>) => {
+    setValue("prompt",  values.prompt, { shouldDirty: true, shouldTouch: true });
+    setValue("topic", values.topic, { shouldDirty: true, shouldTouch: true })
   };
 
   return (
-    <div className="flex mt-[200px] justify-center min-h-screen p-4">
+    <div className="flex justify-center items-center min-h-[40.1rem] p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -101,10 +106,13 @@ export default function PromptInput() {
                       <AutosizeTextarea
                         {...field}
                         value={promptValue}
-                        onChange={(e) => setValue("prompt", e.target.value, { shouldDirty: true, shouldTouch: true })}
+                        onChange={(e) => {
+                          setValue("prompt", e.target.value, { shouldDirty: true, shouldTouch: true })
+                          setValue("topic", "custom", { shouldDirty: true, shouldTouch: true })
+                        }}
                         placeholder="Type your scenario here..."
                         maxHeight={200}
-                        className="w-full p-4 min-h-[100px] text-base resize-none overflow-hidden border-none bg-transparent"
+                        className="w-full p-4 min-h-[100px] text-base resize-none overflow-hidden border-none bg-transparent scrollbar overflow-y-scroll scrollbar-thumb-zinc-900 scrollbar-track-rounded-full scrollbar-track-transparent scrollbar-thumb-rounded-full"
                       />
                       <div className="mt-4 flex justify-end">
                         <Button
@@ -120,12 +128,12 @@ export default function PromptInput() {
                 </FormItem>
               )}
             />
-            <div className="mt-4 flex justify-evenly">
+            <div className="mt-4 grid grid-rows-2 sm:grid-cols-2 gap-2 md:grid-cols-4 md:grid-rows-1">
               {PromptTopic.map(({ topic, prompt }) => (
                 <TopicsButton
                   key={topic}
                   topic={topic}
-                  onClick={() => handlePromptTemplate(prompt)}
+                  onClick={() => handlePromptTemplate({prompt, topic})}
                 />
               ))}
             </div>

@@ -6,6 +6,8 @@ type RoomPayload = {
   roomName: string,
   username: string,
   userId: string,
+  prompt: string,
+  topic: string
   expiresAt: number
 }
 
@@ -37,16 +39,20 @@ export async function createRoomSession(
     userId,
     roomId,
     roomName,
-    username
+    username,
+    prompt,
+    topic
   } : {
     userId: string,
     roomId: string,
     roomName: string,
     username: string,
+    prompt: string
+    topic: string
   }
 ) {
   const expiresAt = Date.now() + 60 * 20 * 1000
-  const session = await encrypt({ userId, roomId, roomName, username , expiresAt})
+  const session = await encrypt({ userId, roomId, roomName, username ,prompt, topic, expiresAt})
   return session
 }
 

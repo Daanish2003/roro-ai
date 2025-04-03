@@ -1,22 +1,19 @@
 "use client"
 
-import VideoContainer from './video-container'
-import AiVoiceAgentContainer from './ai-voice-agent-container'
 import { useSocketStore } from '@/store/useSocketStore'
 import React, { useEffect } from 'react'
-import Join from './join'
-import Controller from './controller'
 import { useMediaStore } from '@/store/useMedia'
 import { useMediasoupStore } from '@/store/useMediasoupStore'
+import AiVoiceAgentContainer from './ai-voice-agent-container'
+import VideoContainer from './video-container'
+import Controller from './controller'
+import JoinButton from './join-button'
 
 
 export default function RoomContainer() {
-  const connect = useSocketStore((state) => state.connect)
-  const disconnect = useSocketStore((state) => state.disconnect)
-  const isConnected = useSocketStore((state) => state.isConnected)
+  const { connect, disconnect, isConnected} = useSocketStore()
+  const { remoteStream, joined} = useMediasoupStore()
   const getUserMedia = useMediaStore((state) => state.getUserMedia)
-  const remoteStream = useMediasoupStore((state) => state.remoteStream)
-  const joined = useMediasoupStore((state) => state.joined)
   const localVideoRef = React.useRef<HTMLVideoElement | null>(null)
   const remoteAudioRef = React.useRef<HTMLAudioElement | null>(null)
   
@@ -77,23 +74,18 @@ export default function RoomContainer() {
   }, [remoteStream]);
 
   return (
-    <div className="bg-card flex flex-col lg:flex-row gap-4 p-4 max-h-screen">
-      {/* left section */}
-      <div className={`${!joined && 'lg:w-3/4'} lg:w-full flex flex-col gap-4 shadow-inner`}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:h-[45rem]">
-          <div className="h-full">
-            <AiVoiceAgentContainer remoteAudioRef={remoteAudioRef}/>
-          </div>
-          <div className="h-full">
-            <VideoContainer localVideoRef={localVideoRef}/>
-          </div>
-        </div>
-        <div className="flex items-center justify-center p-4 border-2 rounded-2xl">
+    <>
+      <div className='flex flex-col items-center md:gap-x-2 mt-2 md:flex-row gap-y-2 mb-2'>
+         <AiVoiceAgentContainer remoteAudioRef={remoteAudioRef}/>
+         <VideoContainer localVideoRef={localVideoRef}/>
+      </div>
+      <div className="w-full flex items-center justify-center py-4 border-t">
+        { joined ? (
           <Controller />
+        ) : (
+          <JoinButton />
+        )}
       </div>
-      </div>
-      {/* right section */}
-      {!joined && (<Join/>)}
-    </div>
+    </>
   )
 }

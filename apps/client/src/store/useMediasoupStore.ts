@@ -1,8 +1,7 @@
 import { create } from "zustand"
-import { socket } from "../lib/socket"
 import * as mediasoupClient from 'mediasoup-client';
-
-
+import { useSocketStore } from "./useSocketStore";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 type MediasoupProducerState = {
     device: mediasoupClient.types.Device | null
@@ -17,12 +16,13 @@ type MediasoupProducerState = {
     remoteStream: MediaStream | null
 
     setDevice: () => Promise<mediasoupClient.types.Device>
-    joinRoom: (roomId: string, userId: string, username: string, prompt:string) => Promise<void>
+    joinRoom: (roomId: string, userId: string) => Promise<void>
     getDevice: () => Promise<mediasoupClient.types.Device>
     createSendTransport: (roomId: string) => Promise<void>
     startProducing: (localstream: MediaStream) => Promise<void>
     createRecvTransport: (roomId: string, device: mediasoupClient.types.Device) => Promise<{ success: boolean; error?: string }>;
-    startConsuming: (device: mediasoupClient.types.Device, roomId:string) => Promise<void>
+    startConsuming: (device: mediasoupClient.types.Device, roomId:string) => Promise<void>;
+    exitRoom: (roomId: string, router: AppRouterInstance) => Promise<void>
     
 }
 
@@ -42,10 +42,17 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
 
 
 
-    joinRoom: async(roomId, userId, username, prompt) => {
+    joinRoom: async(roomId, userId ) => {
+      const socket = useSocketStore.getState().socket;
+
+      if (!socket || !socket.connected) {
+          console.error("Socket is not connected. Cannot join room.");
+          set({ error: "Socket is not connected" });
+          return;
+      }
         try {
-          console.log("Emitting joinRoom with:", { roomId, userId, username, prompt });
-            const { routerRtpCap } = await socket.emitWithAck("joinRoom", { roomId, userId, username, prompt })
+          console.log("Emitting joinRoom with:", { roomId, userId });
+            const { routerRtpCap } = await socket.emitWithAck("joinRoom", { roomId, userId })
             
             set({ joined: true})
             set({ routerRtpCapabilities: routerRtpCap})
@@ -102,6 +109,13 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     },
 
     startConsuming: async (device, roomId) => {
+      const socket = useSocketStore.getState().socket;
+
+      if (!socket || !socket.connected) {
+          console.error("Socket is not connected. Cannot join room.");
+          set({ error: "Socket is not connected" });
+          return;
+      }
    
       const { recvTransport } = get();
       if (!recvTransport) {
@@ -167,6 +181,13 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     },
 
     createSendTransport: async(roomId) => {
+      const socket = useSocketStore.getState().socket; // Access the socket instance
+
+      if (!socket || !socket.connected) {
+          console.error("Socket is not connected. Cannot join room.");
+          set({ error: "Socket is not connected" });
+          return;
+      }
         try {
             const { getDevice } = get()
 
@@ -232,6 +253,12 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     },
 
     createRecvTransport: async (roomId, device) => {
+      const socket = useSocketStore.getState().socket;
+
+      if (!socket || !socket.connected) {
+          console.error("Socket is not connected. Cannot join room.");
+          set({ error: "Socket is not connected" });
+      }
           try {
               if (!socket || !socket.connected) {
                   throw new Error("AI socket is not connected");
@@ -322,7 +349,22 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
             console.error("Failed to get send Transport")
             throw error
         }
+    },
+
+    exitRoom: async (roomId: string, router: AppRouterInstance) => {
+      const socket = useSocketStore.getState().socket;
+
+      if (!socket || !socket.connected) {
+          console.error("Socket is not connected. Cannot join room.");
+          set({ error: "Socket is not connected" });
+      }
+      try {
+        socket?.emit('exit-room', { roomId })
+        router.replace('/practice')
+      } catch (error) {
+        console.error("Failed to exit room")
+        throw error
+      }
     }
-
-
 }))
+
