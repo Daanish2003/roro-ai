@@ -27,7 +27,7 @@ export class RTP extends BaseRTP {
         this.options = opts
     }
 
-    static async create(opts: Partial<RTPOptions> = {}): Promise<RTP> {
+    static create(opts: Partial<RTPOptions> = {}): RTP {
         const mergedOpts: RTPOptions = { ...defaultAudioOptions, ...opts };
         return new RTP(mergedOpts)
     }

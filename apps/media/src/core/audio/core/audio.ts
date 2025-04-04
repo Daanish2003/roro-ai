@@ -18,7 +18,7 @@ const defaultAudioOptions =  {
 export class Audio {
     private options: AudioOptions;
     private decoder: OpusDecoderWebWorker<16000>
-    private streams: AudioStream[] = []
+    private _stream: AudioStream | null = null
 
     constructor(opts: AudioOptions) {
         this.options = opts
@@ -43,7 +43,7 @@ export class Audio {
             this.decoder,
         )
 
-        this.streams.push(stream)
+        this._stream = stream
 
         return stream
 

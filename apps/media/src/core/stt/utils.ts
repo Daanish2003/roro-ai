@@ -12,7 +12,7 @@ export interface SpeechData {
 
 export interface SpeechEvent {
     type: SpeechEventType;
-    transcript: string
+    transcript?: string
   }
 
 export abstract class STT {

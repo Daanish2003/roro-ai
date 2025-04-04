@@ -124,11 +124,10 @@ export class STTStream extends BaseStream {
             if (data.channel && data.channel.alternatives.length > 0) {
                 const transcript = data.channel.alternatives[0].transcript;
                 if (data.is_final && data.speech_final && transcript.trim().length > 0) {
-                    console.log(transcript)
                   this.output.put({
                     type: SpeechEventType.FINAL_TRANSCRIPT,
                     transcript
-                  })
+                })
               }
             }
         });
@@ -144,6 +143,12 @@ export class STTStream extends BaseStream {
           console.log("STT Closed");
           this.cleanupConnection();
         });
+
+        this.connection.on(LiveTranscriptionEvents.UtteranceEnd, () => {
+            this.output.put({
+                type: SpeechEventType.END_OF_SPEECH,
+            })
+        })
     }
 
     public closeConnection(): void {

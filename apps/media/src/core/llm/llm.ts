@@ -114,6 +114,7 @@ export class LLMStream extends BaseStream {
     }
 
     public async sendMessage(userMessage: string) {
+        console.log(userMessage)
         try {
           await this.app.invoke({ messages: 
             {
