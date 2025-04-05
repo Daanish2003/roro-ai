@@ -11,7 +11,6 @@ export class UserInput extends EventEmitter {
     private sttStream: STTStream;
     private _consumerTrack: Consumer
     private _speaking: boolean = false;
-    private _transcript: string = ""
 
     constructor(vadStream: VADStream, sttStream: STTStream, audioStream: AudioStream, consumerTrack: Consumer) {
         super()
@@ -53,12 +52,7 @@ export class UserInput extends EventEmitter {
     private async sttStreamCo() {
         for await (const ev of this.sttStream) {
              if(ev.type === SpeechEventType.FINAL_TRANSCRIPT) {
-                this._transcript += ev.transcript
-             }
-
-             if(ev.type === SpeechEventType.END_OF_SPEECH) {
-                this.emit("END_OF_SPEECH_STT", this._transcript)
-                this._transcript = ""
+                this.emit("FINAL_TRANSCRIPT", ev.transcript)
              }
         }
     }

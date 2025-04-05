@@ -10,7 +10,6 @@ import { deleteRoomSchema } from '../schema/roomSchema.js';
 import { redis } from "@roro-ai/database/client";
 import { redisPub } from "../utils/redis.js";
 
-
 export const createRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
     try {
         const validatedFields = createRoomSchema.safeParse(req.body);
@@ -28,12 +27,14 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
           });
         }
 
+        console.log(data)
+
         const existingRoomCount = await getRoomCountService(data.session.userId);
 
-        if((existingRoomCount >= 3)) {
+        if((existingRoomCount >= 3) && data.user.role !== "admin") {
           return res.status(403).json({ error: 'Room limit reached (max 3 rooms)' });
         }
-    
+
         const { roomName, prompt, topic } = validatedFields.data;
 
         const room = await createRoomService(
@@ -264,7 +265,7 @@ export const deleteAllRoomHandler = asyncHandler(async(req: Request, res: Respon
 
         return res.status(200).json({
           success: success
-        })
+  })
         
   } catch (error) {
     console.error("Error deleting room:", error);

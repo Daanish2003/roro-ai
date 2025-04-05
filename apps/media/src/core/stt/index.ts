@@ -16,7 +16,6 @@ export interface STTOptions {
     filler_words: boolean,
     language: string,
     vad_events: boolean,
-    utterance_end_ms: number
     endpointing: number,
     no_delay: boolean,
     profanity_filter: boolean,
@@ -35,7 +34,6 @@ export const defaultSTTOptions: STTOptions = {
     filler_words: false,
     language: "en-US",
     vad_events: true,
-    utterance_end_ms: 1000,
     endpointing: 25,
     no_delay: true,
     profanity_filter: false,
@@ -123,7 +121,8 @@ export class STTStream extends BaseStream {
         this.connection.on(LiveTranscriptionEvents.Transcript, async (data) => {
             if (data.channel && data.channel.alternatives.length > 0) {
                 const transcript = data.channel.alternatives[0].transcript;
-                if (data.is_final && data.speech_final && transcript.trim().length > 0) {
+                if (data.is_final && transcript.trim().length > 0) {
+                    
                   this.output.put({
                     type: SpeechEventType.FINAL_TRANSCRIPT,
                     transcript
@@ -143,12 +142,6 @@ export class STTStream extends BaseStream {
           console.log("STT Closed");
           this.cleanupConnection();
         });
-
-        this.connection.on(LiveTranscriptionEvents.UtteranceEnd, () => {
-            this.output.put({
-                type: SpeechEventType.END_OF_SPEECH,
-            })
-        })
     }
 
     public closeConnection(): void {

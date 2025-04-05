@@ -5,6 +5,7 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { v4 as uuidv4 } from 'uuid';
 import { SystemPrompt } from "./prompt.js";
 import { AIMessageChunk } from '@langchain/core/messages';
+import { Future } from "../../utils/index.js";
 
 export interface LLMOptions {
     model: string;
@@ -55,6 +56,7 @@ export class LLMStream extends BaseStream {
     private prompt_template: ChatPromptTemplate
     private threadId: string
     private memory: MemorySaver
+    private future: Future | null = null
     constructor(llm: LLM, opts: LLMOptions, client: ChatGoogleGenerativeAI, prompt: string) {
         super(llm)
         this.options = opts
@@ -93,7 +95,8 @@ export class LLMStream extends BaseStream {
             this.output.put(buffer.trim());
             console.log(buffer.trim());
         }
-    
+
+        console.log(response)
         return {
             messages: response
         };
@@ -117,17 +120,21 @@ export class LLMStream extends BaseStream {
     }
 
     public async sendMessage(userMessage: string) {
-            console.log("userMessage", userMessage)
-            try {
-                await this.app.invoke({ messages: 
-                  {
+        try {
+            const output = await this.app.invoke({ messages: [
+                {
                     role: "user",
                     content: userMessage
-                  }
-                 }, { configurable: { thread_id: this.threadId}})
+                }
+            ]
+            }, { 
+                configurable: { 
+                    thread_id: this.threadId
+                }
+            })
       
-              } catch (error) {
-                console.error("llm response error:", error)
-              }
+        } catch (error) {
+            console.error("llm response error:", error)
+        }
     }
 }

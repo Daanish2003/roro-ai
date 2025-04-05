@@ -14,7 +14,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 
 export function AuthCard() {
-	const { socialSignInHandler, anonymousSignInHandler, loading} = useAuth()
+	const { socialSignInHandler, loading} = useAuth()
 	return (
 		<Card>
 			<CardHeader className="space-y-1">
@@ -42,24 +42,6 @@ export function AuthCard() {
 						Google
 					</Button>
 				</div>
-				<div className="relative">
-					<div className="absolute inset-0 flex items-center">
-						<span className="w-full border-t" />
-					</div>
-					<div className="relative flex justify-center text-xs uppercase">
-						<span className="bg-transparent px-2 text-muted-foreground">
-							Or continue as
-						</span>
-					</div>
-				</div>
-				<Button
-					variant="default"
-					disabled={loading}
-					onClick={() => anonymousSignInHandler()}
-				>
-					<User />
-					Guest
-				</Button>
 			</CardContent>
 		</Card>
 	);

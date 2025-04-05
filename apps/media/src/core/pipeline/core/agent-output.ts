@@ -25,6 +25,9 @@ export class AgentOutput extends EventEmitter {
 
     private async run() {
         await Promise.all([this.llmStreamCo(), this.ttsStreamCo(), this.rtpStreamCo()])
+        this.llmStream.close()
+        this.ttsStream.close()
+        this.rtpStream.close()
     }
 
     private async llmStreamCo() {

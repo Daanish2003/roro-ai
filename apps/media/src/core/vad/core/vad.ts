@@ -15,8 +15,8 @@ export interface VADOptions {
   }
   
   const defaultVADOptions: VADOptions = {
-    minSpeechDuration: 50,
-    minSilenceDuration: 750,
+    minSpeechDuration: 150,
+    minSilenceDuration: 500,
     activationThreshold: 0.5,
     sampleRate: 16000,
     forceCPU: true,
