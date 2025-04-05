@@ -64,10 +64,6 @@ export class AgentPipeline extends EventEmitter {
         )
     }
 
-    listener() {
-        
-    }
-
     closeStream() {
         const sttStream = this.stt.stream()
         const ttsStream = this.tts.stream()
@@ -87,7 +83,7 @@ export class AgentPipeline extends EventEmitter {
         this.rtp = RTP.create({
             channel: 1,
             sampleRate: 48000,
-            samplesPerChannel: 480,
+            samplesPerChannel: 960,
             ssrc: this.userInput.consumerTrack.rtpParameters.encodings?.[0]?.ssrc,
         })
 
@@ -104,6 +100,14 @@ export class AgentPipeline extends EventEmitter {
             } else {
                 console.log("Skipping transcript, agent is currently speaking.");
             }
+        })
+
+        this.userInput.on('START_OF_SPEECH', () => {
+            this.socket?.emit("START_OF_SPEECH")
+        })
+
+        this.userInput.on('END_OF_SPEECH', () => {
+            this.socket?.emit("END_OF_SPEECH")
         })
 
         return producerTrack.id

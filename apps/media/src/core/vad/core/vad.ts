@@ -9,7 +9,6 @@ import { VADEventType } from "../../../utils/event.js";
 export interface VADOptions {
     minSpeechDuration: number;
     minSilenceDuration: number;
-    prefixPaddingDuration: number;
     activationThreshold: number;
     sampleRate: SampleRate;
     forceCPU: boolean;
@@ -17,8 +16,7 @@ export interface VADOptions {
   
   const defaultVADOptions: VADOptions = {
     minSpeechDuration: 50,
-    minSilenceDuration: 250,
-    prefixPaddingDuration: 500,
+    minSilenceDuration: 750,
     activationThreshold: 0.5,
     sampleRate: 16000,
     forceCPU: true,
@@ -103,23 +101,21 @@ export class VADStream extends BaseStream {
 
         if(p > this.options.activationThreshold) {
           speechThresholdDuration += windowDuration;
-          silenceThresholdDuration = 0;
           if(!pubSpeaking && (speechThresholdDuration >= this.options.minSpeechDuration)) {
-            console.log("Allow")
             pubSpeaking = true
             this.output.put({
               type: VADEventType.START_OF_SPEECH
             })
+            silenceThresholdDuration = 0;
           }
         } else {
           silenceThresholdDuration += windowDuration
-          speechThresholdDuration = 0
           if(pubSpeaking && (silenceThresholdDuration > this.options.minSilenceDuration)) {
-            console.log("DisAllow")
             pubSpeaking = false
             this.output.put({
               type: VADEventType.END_OF_SPEECH
             })
+            speechThresholdDuration = 0
           }
         }
         inferenceFrames = []

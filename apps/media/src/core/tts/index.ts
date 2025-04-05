@@ -95,11 +95,11 @@ export class streamTTS extends BaseStreamTTS {
     private async sendText() {
         for await(const text of this.input) {
 
-            const textChunks = text.split(",").map(chunk => chunk.trim()).filter(Boolean);
+            const textChunks = text.split(/[,\.]/).map(chunk => chunk.trim()).filter(Boolean);
 
             for (const chunk of textChunks) {
                 this.future = new Future()
-                this.connection.sendText(chunk + ",")
+                this.connection.sendText(chunk)
                this.connection.flush()
                await this.future.await
             }

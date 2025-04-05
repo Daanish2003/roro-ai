@@ -5,8 +5,8 @@ import cookieParser from "cookie-parser"
 
 const room_router = Router()
 
-room_router.use(authMiddleware)
 room_router.use(cookieParser())
+room_router.use(authMiddleware)
 room_router.route("/create-room").post(createRoomHandler)
 room_router.route("/verify-access/:id").get(verifyRoomAccessHandler)
 room_router.route("/get-rooms/:id").get(getUserRoomHandler)

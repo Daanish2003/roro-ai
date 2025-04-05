@@ -11,6 +11,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     if (!session) {
       return res.status(401).json({ error: 'Middleware: Unauthorized' });
     }
+
+    req.session = session
     
     next();
   } catch (error) {

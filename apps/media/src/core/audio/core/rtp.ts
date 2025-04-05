@@ -46,13 +46,12 @@ export class RTP extends BaseRTP {
 
 export class RTPStream extends BaseStream {
     private options: RTPOptions
-    private task: Promise<void>
     private rtpSequenceNumber: number = 0;
     private rtpTimestamp: number = 0;
     constructor(audio: RTP, opts: RTPOptions){
         super(audio)
         this.options = opts
-        this.task = this.run()
+        this.run()
     }
 
     async run() {
