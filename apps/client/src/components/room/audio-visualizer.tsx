@@ -22,16 +22,13 @@ export default function AudioVisualizer({ audioRef }: AudioVisualizerProps) {
     const setupAudioAnalyser = () => {
       if (!audioRef.current) return;
 
-      // Create audio context
       audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       audioContextRef.current = audioContext;
 
-      // Create analyser
       analyser = audioContext.createAnalyser();
       analyser.fftSize = 32;
       analyserRef.current = analyser;
 
-      // Connect audio element to analyser
       if (audioRef.current.srcObject) {
         source = audioContext.createMediaStreamSource(audioRef.current.srcObject as MediaStream);
         source.connect(analyser);
@@ -59,31 +56,37 @@ export default function AudioVisualizer({ audioRef }: AudioVisualizerProps) {
 
       const width = canvas.width;
       const height = canvas.height;
-      const barWidth = width / 10;
-      const barSpacing = barWidth * 1.5;
-      const centerX = width / 2;
       const centerY = height / 2;
-      const minBarHeight = 10;
+
+      const baseSize = 50; 
+      const maxStretch = 150; 
+      const circleCount = 5;
+      const barSpacing = width / (circleCount + 1);
 
       const draw = () => {
         animationRef.current = requestAnimationFrame(draw);
-
+      
         analyser.getByteFrequencyData(dataArray);
         ctx.clearRect(0, 0, width, height);
-
-        const avgVolume = dataArray.reduce((sum, val) => sum + val, 0) / bufferLength;
-        const barHeight = Math.max((avgVolume / 255) * (height / 2), minBarHeight);
-
+      
         ctx.fillStyle = "hsl(142.1, 76.2%, 36.3%)";
-        ctx.lineJoin = "round";
-        ctx.lineCap = "round";
-
-        [-1, 0, 1].forEach((i) => {
-          const x = centerX + i * barSpacing - barWidth / 2;
+        ctx.shadowBlur = 0; 
+      
+        for (let i = 0; i < circleCount; i++) {
+          const volume = dataArray[i] ?? 0;
+          const volumeFactor = volume / 255;
+      
+          const stretch = volumeFactor * maxStretch;
+          const barSize = baseSize;
+          const totalHeight = barSize + stretch;
+          const x = barSpacing * (i + 1) - barSize / 2;
+          const y = centerY - totalHeight / 2;
+          const radius = barSize / 2;
+      
           ctx.beginPath();
-          ctx.roundRect(x, centerY - barHeight, barWidth, barHeight * 2, barWidth / 2);
+          ctx.roundRect(x, y, barSize, totalHeight, radius);
           ctx.fill();
-        });
+        }
       };
 
       draw();
@@ -127,5 +130,12 @@ export default function AudioVisualizer({ audioRef }: AudioVisualizerProps) {
     };
   }, [audioRef]);
 
-  return <canvas ref={canvasRef} width={300} height={200} className="w-full h-full" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      width={300}
+      height={250}
+      className="block mx-auto w-[300px] h-[250px]"
+    />
+  );
 }
