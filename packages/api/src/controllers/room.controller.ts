@@ -276,3 +276,18 @@ export const deleteAllRoomHandler = asyncHandler(async(req: Request, res: Respon
         });
   }
 })
+
+export const getRoomCountHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
+  try {
+    const count = await getRoomCountService(req.session?.user.id)
+    return res.status(200).json({
+      count: count
+    })
+  } catch (error) {
+    console.error("Error Getting room count:", error);
+    return res.status(500).json({
+      error: "Internal server error",
+      message: error instanceof Error ? error.message : "Unknown error occurred"
+    });
+  }
+})

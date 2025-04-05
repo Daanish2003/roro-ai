@@ -1,6 +1,6 @@
-# model-repo
+# Roro AI
 <p align="center">
-<img src="https://res.cloudinary.com/atapas/image/upload/v1632156569/demos/GitHub-Projects_tyxnkl.png" alt="name"/>
+<img src="./logo.png" alt="name"/>
 <p/>
 
 <h4 align="center">AI communication practice platform for everyone</h4>
