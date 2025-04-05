@@ -17,6 +17,7 @@ export interface STTOptions {
     language: string,
     vad_events: boolean,
     endpointing: number,
+    utterance_end_ms: number,
     no_delay: boolean,
     profanity_filter: boolean,
     dictation: boolean
@@ -35,6 +36,7 @@ export const defaultSTTOptions: STTOptions = {
     language: "en-US",
     vad_events: true,
     endpointing: 25,
+    utterance_end_ms: 1000,
     no_delay: true,
     profanity_filter: false,
     dictation: true
@@ -142,6 +144,12 @@ export class STTStream extends BaseStream {
           console.log("STT Closed");
           this.cleanupConnection();
         });
+
+        this.connection.on(LiveTranscriptionEvents.UtteranceEnd, () => {
+            this.output.put({
+                type: SpeechEventType.END_OF_SPEECH,
+            })
+        })
     }
 
     public closeConnection(): void {

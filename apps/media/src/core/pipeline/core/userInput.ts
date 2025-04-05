@@ -50,9 +50,16 @@ export class UserInput extends EventEmitter {
     }
 
     private async sttStreamCo() {
+        let transcript = ""
         for await (const ev of this.sttStream) {
              if(ev.type === SpeechEventType.FINAL_TRANSCRIPT) {
-                this.emit("FINAL_TRANSCRIPT", ev.transcript)
+                console.log(ev.transcript)
+                transcript += ev.transcript!
+             }
+
+             if(ev.type === SpeechEventType.END_OF_SPEECH) {
+                this.emit("END_OF_SPEECH_STT", transcript)
+                transcript = ""
              }
         }
     }
