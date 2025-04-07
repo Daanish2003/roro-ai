@@ -1,11 +1,10 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { LLM as BaseLLM, LLMStream as BaseStream } from "./utils.js"
-import { END, MemorySaver, MessagesAnnotation, START, StateGraph } from "@langchain/langgraph";
+import { v4 as uuidv4 } from "uuid";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { v4 as uuidv4 } from 'uuid';
+import { AIMessageChunk } from "@langchain/core/messages";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { MemorySaver, MessagesAnnotation, START, END, StateGraph } from "@langchain/langgraph";
 import { SystemPrompt } from "./prompt.js";
-import { AIMessageChunk } from '@langchain/core/messages';
-import { Future } from "../../utils/index.js";
+import { LLM as BaseLLM, LLMStream as BaseStream } from "./utils.js";
 
 export interface LLMOptions {
     model: string;
@@ -13,128 +12,127 @@ export interface LLMOptions {
 }
 
 const defaultLLMOptions: LLMOptions = {
-    model: 'gemini-2.0-flash',
+    model: "gemini-2.0-flash",
     apiKey: process.env.GEMINI_API_KEY,
-}
+};
 
 export class LLM extends BaseLLM {
-    private options: LLMOptions
-    private client: ChatGoogleGenerativeAI
-    private prompt: string
-    constructor(
-        prompt: string,
-        opts: Partial<LLMOptions> = defaultLLMOptions,
-    ) {
-        super();
-        this.options = {...defaultLLMOptions, ...opts};
-        this.prompt = prompt
+    private options: LLMOptions;
+    private client: ChatGoogleGenerativeAI;
+    private prompt: string;
 
-        if (this.options.apiKey === undefined) {
-            throw new Error('Gemini API key is required, whether as an argument or as $OPENAI_API_KEY');
+    constructor(prompt: string, opts: Partial<LLMOptions> = {}) {
+        super();
+        this.options = { ...defaultLLMOptions, ...opts };
+        this.prompt = prompt;
+
+        if (!this.options.apiKey) {
+            throw new Error("Gemini API key is required, either as an argument or via $GEMINI_API_KEY.");
         }
 
         this.client = new ChatGoogleGenerativeAI({
             model: this.options.model,
             temperature: 0.7,
             apiKey: this.options.apiKey,
-        })
+        });
     }
+
     chat(): LLMStream {
-        return new LLMStream(
-            this,
-            this.options,
-            this.client,
-            this.prompt
-        )   
+        return new LLMStream(this, this.options, this.client, this.prompt);
     }
 }
 
 export class LLMStream extends BaseStream {
-    private options: LLMOptions
-    private client: ChatGoogleGenerativeAI
+    private options: LLMOptions;
+    private client: ChatGoogleGenerativeAI;
+    private promptTemplate: ChatPromptTemplate;
+    private memory: MemorySaver;
+    private threadId: string;
     private app: any;
-    private prompt_template: ChatPromptTemplate
-    private threadId: string
-    private memory: MemorySaver
-    private future: Future | null = null
+    private task?: Promise<void>;
+    private aborted: boolean = false
+
     constructor(llm: LLM, opts: LLMOptions, client: ChatGoogleGenerativeAI, prompt: string) {
-        super(llm)
-        this.options = opts
-        this.client = client
-        this.memory = new MemorySaver()
-        this.app = this.initializeWorkflow()
-        this.prompt_template = this.initializeChatPromptTemplate(prompt)
-        this.threadId = uuidv4()
+        super(llm);
+        this.options = opts;
+        this.client = client;
+        this.memory = new MemorySaver();
+        this.promptTemplate = this.createPromptTemplate(prompt);
+        this.threadId = uuidv4();
+        this.app = this.initializeWorkflow();
+        this.startTask();
+    }
+
+    private startTask() {
+        this.task = (async () => {
+            for await (const userMessage of this.input) {
+                if (typeof userMessage === "symbol") continue;
+
+                try {
+                    await this.app.invoke({
+                        messages: [{ role: "user", content: userMessage }],
+                    }, {
+                        configurable: { thread_id: this.threadId }
+                    });
+                } catch (error) {
+                    console.error("LLM response error:", error);
+                }
+            }
+        })();
     }
 
     private async callModel(state: typeof MessagesAnnotation.State) {
-        const prompt = await this.prompt_template.invoke(state);
-        const stream = await this.client.stream(prompt);
-    
-        let buffer = "";
-        const response: AIMessageChunk[] = [];
-    
-        for await (const chunk of stream) {
-            response.push(chunk);
-            buffer += chunk.content;
+        try {
+            const prompt = await this.promptTemplate.invoke(state);
+            const stream = await this.client.stream(prompt);
 
-            const parts = buffer.split(/[,\.]/);
-    
-            for (let i = 0; i < parts.length - 1; i++) {
-                const chunkText = parts[i]!.trim();
-                if (chunkText) {
-                    this.output.put(chunkText);
-                    console.log(chunkText);
+            let buffer = "";
+            const response: AIMessageChunk[] = [];
+
+            for await (const chunk of stream) {
+                if(this.aborted) return
+                response.push(chunk);
+                buffer += chunk.content;
+
+                const sentences = buffer.split(".");
+                for (let i = 0; i < sentences.length - 1; i++) {
+                    if (this.aborted) return
+                    const sentence = sentences[i]?.trim();
+                    if (sentence) {
+                        this.output.put(sentence + ".");
+                    }
                 }
+                buffer = sentences[sentences.length - 1] || "";
             }
-    
-            buffer = parts[parts.length - 1]!;
-        }
-    
-        if (buffer.trim()) {
-            this.output.put(buffer.trim());
-            console.log(buffer.trim());
-        }
 
-        console.log(response)
-        return {
-            messages: response
-        };
+            if (buffer.trim() && !this.aborted) {
+                this.output.put(buffer.trim());
+            }
+
+            return { messages: response };
+        } catch (error) {
+            console.error("Error in callModel:", error);
+            return { messages: [] };
+        }
     }
 
-    private initializeChatPromptTemplate(prompt: string) {
-        return ChatPromptTemplate.fromMessages([[
-          "system",
-           SystemPrompt,
-        ],
-        ["user", prompt],
-        ["placeholder", "{messages}"]
-      ])
-      }
+    private createPromptTemplate(prompt: string) {
+        return ChatPromptTemplate.fromMessages([
+            ["system", SystemPrompt],
+            ["user", prompt],
+            ["placeholder", "{messages}"],
+        ]);
+    }
+
+    cancel() {
+        this.aborted = true
+    }
 
     private initializeWorkflow() {
-        const workflow = new StateGraph(MessagesAnnotation).addNode("model", this.callModel.bind(this)).addEdge(START, "model").addEdge("model", END)
-        const app = workflow.compile({ checkpointer: this.memory })
-    
-        return app
-    }
-
-    public async sendMessage(userMessage: string) {
-        try {
-            const output = await this.app.invoke({ messages: [
-                {
-                    role: "user",
-                    content: userMessage
-                }
-            ]
-            }, { 
-                configurable: { 
-                    thread_id: this.threadId
-                }
-            })
-      
-        } catch (error) {
-            console.error("llm response error:", error)
-        }
+        return new StateGraph(MessagesAnnotation)
+            .addNode("model", this.callModel.bind(this))
+            .addEdge(START, "model")
+            .addEdge("model", END)
+            .compile({ checkpointer: this.memory });
     }
 }

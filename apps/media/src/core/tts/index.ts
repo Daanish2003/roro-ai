@@ -43,65 +43,88 @@ export class streamTTS extends BaseStreamTTS {
     private options: TTSOptions
     private connection: SpeakLiveClient
     private audioBuffer: Buffer = Buffer.alloc(24000);
-    private future: Future |  null = null
-    constructor(tts: TTS, opts: TTSOptions, ws: SpeakLiveClient){
-        super(tts)
+    private future: Future | null = null;
+    private aborted: boolean = false
+
+    constructor(tts: TTS, opts: TTSOptions, ws: SpeakLiveClient) {
+        super(tts);
         this.options = opts;
         this.connection = ws;
         this.run();
     }
 
     private setupListener() {
-        this.connection.on(LiveTTSEvents.Open, () => {
-          console.log("Connection opened");
-        })
-    
-        this.connection.on(LiveTTSEvents.Close, () => {
-          console.log("Connection closed")
-        })
-    
-        this.connection.on(LiveTTSEvents.Error, (error) => {
-          console.log("Deepgram error", error)
-        })
-    
-        this.connection.on(LiveTTSEvents.Metadata, (data) => {
-          console.dir(data, { depth: null });
-        });
+        this.connection.on(LiveTTSEvents.Open, () => this.handleEvent(LiveTTSEvents.Open));
+        this.connection.on(LiveTTSEvents.Close, () => this.handleEvent(LiveTTSEvents.Close));
+        this.connection.on(LiveTTSEvents.Error, (err) => this.handleEvent(LiveTTSEvents.Error, err));
+        this.connection.on(LiveTTSEvents.Metadata, (data) => this.handleEvent(LiveTTSEvents.Metadata, data));
+        this.connection.on(LiveTTSEvents.Flushed, () => this.handleEvent(LiveTTSEvents.Flushed));
+        this.connection.on(LiveTTSEvents.Audio, (data) => this.handleEvent(LiveTTSEvents.Audio, data));
+    }
 
-        this.connection.on(LiveTTSEvents.Flushed, () => {
-            if (this.future && !this.future.done) {
-                this.future.resolve();
+    private handleEvent(eventType: string, data?: any) {
+        switch (eventType) {
+            case LiveTTSEvents.Open:
+                console.log("Connection opened");
+                break;
+
+            case LiveTTSEvents.Close:
+                console.log("Connection closed");
+                break;
+
+            case LiveTTSEvents.Error:
+                console.log("Deepgram error", data);
+                break;
+
+            case LiveTTSEvents.Metadata:
+                console.dir(data, { depth: null });
+                break;
+
+            case LiveTTSEvents.Flushed:
+                if (this.future && !this.future.done) {
+                    this.future.resolve();
+                }
+                break;
+
+            case LiveTTSEvents.Audio: {
+                const buffer = Buffer.from(data);
+                this.audioBuffer = Buffer.concat([this.audioBuffer, buffer]);
+
+                const chunkSize = 960 * 2;
+
+                while (this.audioBuffer.length >= chunkSize) {
+                    if(this.aborted) {
+                        this.audioBuffer = Buffer.alloc(24000)
+                    }
+                    const chunk = this.audioBuffer.subarray(0, chunkSize);
+                    this.output.put(chunk);
+                    this.audioBuffer = this.audioBuffer.subarray(chunkSize);
+                }
+                break;
             }
-        })
-    
-        this.connection.on(LiveTTSEvents.Audio, (data) => {
-            const buffer = Buffer.from(data);
-            this.audioBuffer = Buffer.concat([this.audioBuffer, buffer]);
 
-            const chunkSize = 960 * 2
-
-            while(this.audioBuffer.length >= chunkSize) {
-                const chunk = this.audioBuffer.subarray(0, chunkSize)
-                this.output.put(chunk)
-                this.audioBuffer = this.audioBuffer.subarray(chunkSize)
-            }
-        })
+            default:
+                console.warn("Unhandled event:", eventType);
+        }
     }
 
     private async run() {
-        await Promise.all([this.setupListener(), this.sendText()])
+        await Promise.all([this.sendText(), this.setupListener()])
     }
 
     private async sendText() {
-        for await(const text of this.input) {
+        for await (const text of this.input) {
+            if (typeof text === 'symbol') continue;
+            if(this.aborted) return
+            this.future = new Future();
+            this.connection.sendText(text);
+            this.connection.flush();
 
-            const textChunks = text.split(/[,\.]/).map(chunk => chunk.trim()).filter(Boolean);
-
-            for (const chunk of textChunks) {
-                this.future = new Future()
-                this.connection.sendText(chunk)
-               this.connection.flush()
-               await this.future.await
+            try {
+                await this.future.await;
+            } catch (err) {
+                console.error("Future rejected:", err);
+                break;
             }
         }
     }
@@ -110,5 +133,9 @@ export class streamTTS extends BaseStreamTTS {
         if (this.connection) {
             this.connection.requestClose();
         }
+    }
+
+    public cancel(): void {
+        this.aborted = true
     }
 }

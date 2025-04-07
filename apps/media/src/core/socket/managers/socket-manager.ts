@@ -4,9 +4,9 @@ import { server } from "../../../index.js";
 import { DtlsParameters, IceCandidate, IceParameters } from "mediasoup/node/lib/WebRtcTransportTypes.js";
 import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup/node/lib/rtpParametersTypes.js";
 import { roomManager } from "../../room/manager/room-manager.js";
-import { agentManager } from "../../pipeline/managers/agent-pipeline-manager.js";
 import { validateToken } from "../../../module/jwt.js";
 import { tryCatch } from "../../../utils/tryCatch.js";
+import { AgentPipeline } from "../../pipeline/core/agent-pipeline.js";
 
 export class SocketManager {
   private static instance: SocketManager;
@@ -184,18 +184,27 @@ export class SocketManager {
           rtpParameters,
           transport: room.mediaTransports.clientProducerTransport!,
         })
-
         const transport = await room.mediaTransports.createAgentTransport(room.router)
-        const agentId = room.agentId
-        const agent = agentManager.getPipeline(agentId)
+        const Ctrack = await room.mediaTracks.createAgentConsumerTrack({
+          transport: transport,
+          rtpCap: room.router.rtpCapabilities,
+          trackId: id,
+        })
 
-        if(!agent) {
-          throw new Error("Agent not Initailized")
-        }
+        const Ptrack = await room.mediaTracks.createAgentProducerTrack({
+          transport: room.mediaTransports.directTransport!,
+          listenerTrack: Ctrack
+        })
 
-        agent.setTransport(transport, socket)
+        const agent = new AgentPipeline(room.prompt, Ptrack)
+        room.addAgent(agent)
+        agent?.setSocket(socket)
 
-        agent.subscribeTrack(id, room.router.rtpCapabilities)
+        const agentStream = agent.stream()
+
+        Ctrack.on('rtp', (rtpPackets) => {
+          agentStream.pushStream(rtpPackets)
+        })
 
         callback({ id });
       }
@@ -224,19 +233,10 @@ export class SocketManager {
           throw new Error("ConsumeMediaRequest: Room not found")
         }
 
-        const agentId = room.agentId
-        const agent = agentManager.getPipeline(agentId)
-
-        if(!agent) {
-          throw new Error("Agent not Initailized")
-        }
-
-        const agentTrackId = await agent.publishTrack()
-
         const response = await room.mediaTracks.createClientConsumerTrack({
           rtpCap: rtpCapabilities,
           router: room.router,
-          trackId: agentTrackId,
+          trackId: room.mediaTracks.agentProducerTrack!.id,
           transport: room.mediaTransports.clientConsumerTransport!
         }) 
 
@@ -269,16 +269,8 @@ export class SocketManager {
         const room = roomManager.getRoom(roomId)
 
         if(room) {
-          const agent = agentManager.getPipeline(room.agentId)
-
-          if(agent) {
-            agent.mediaTracks.closeTrack()
-            agent.closeStream()
-          }
-
           room.mediaTracks.closeTrack()
           room.mediaTransports.closeTransport()
-          agentManager.removePipeline(room.agentId)
           roomManager.removeRoom(room.roomId)
         }
       }
@@ -292,16 +284,8 @@ export class SocketManager {
             const room = roomManager.getRoomBySocketId(socket.id)
 
             if(room) {
-              const agent = agentManager.getPipeline(room.agentId)
-
-              if(agent) {
-                agent.mediaTracks.closeTrack()
-                agent.closeStream()
-              }
-
               room.mediaTracks.closeTrack()
               room.mediaTransports.closeTransport()
-              agentManager.removePipeline(room.agentId)
               roomManager.removeRoom(room.roomId)
             }
 

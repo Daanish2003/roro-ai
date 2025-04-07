@@ -57,11 +57,11 @@ export abstract class AudioStream implements AsyncIterableIterator<AudioFrame>{
         return this.output.next()
     }
 
-    [Symbol.asyncIterator]():AudioStream {
+    [Symbol.asyncIterator](): AudioStream {
         return this
     }
-
 }
+
 export abstract class RTP {
   abstract stream(): RTPStream
 }

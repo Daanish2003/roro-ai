@@ -32,7 +32,7 @@ export class Audio {
         })
     }
 
-    static async create(opts: Partial<AudioOptions> = {}): Promise<Audio> {
+    static create(opts: Partial<AudioOptions> = {}): Audio {
         const mergedOpts: AudioOptions = { ...defaultAudioOptions, ...opts };
         return new Audio(mergedOpts)
     }
@@ -80,7 +80,7 @@ export class AudioStream extends BaseStream {
         try {
             const audioStream = this.clearRTPExtension(stream);
             const pcmData = await this.handleDecoding(audioStream);
-            const frame = new AudioFrame(pcmData, 16000, 1, 512);
+            const frame = new AudioFrame(pcmData, 16000, 1, 320);
             this.output.put(frame)
         } catch (error) {
             console.error("Failed to handle input stream:", error);

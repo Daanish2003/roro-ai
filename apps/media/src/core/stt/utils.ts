@@ -12,8 +12,8 @@ export interface SpeechData {
 
 export interface SpeechEvent {
     type: SpeechEventType;
-    transcript?: string
-  }
+    alternatives?: [SpeechData, ...SpeechData[]];
+}
 
 export abstract class STT {
     abstract stream(): STTStream

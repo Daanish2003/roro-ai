@@ -1,76 +1,147 @@
 import EventEmitter from "node:events";
-import { LLMStream } from "../../llm/llm.js";
-import { streamTTS } from "../../tts/index.js";
-import { RTPStream } from "../../audio/core/rtp.js";
+import { LLM } from "../../llm/llm.js";
+import { TTS } from "../../tts/index.js";
+import { CancellablePromise, gracefullyCancel } from "../../../utils/index.js";
+import { RTP } from "../../audio/core/rtp.js";
 import { Producer } from "mediasoup/node/lib/types.js";
 
 export class AgentOutput extends EventEmitter {
-    private llmStream: LLMStream
-    private ttsStream: streamTTS
-    private rtpStream: RTPStream
-    private _producerTrack: Producer
-    private _speaking: boolean = false
+    #llm: LLM;
+    #tts: TTS;
+    #rtp?: RTP
+    #producerTrack?: Producer
+    #llmTask?: CancellablePromise<void>;
+    #ttsTask?: CancellablePromise<void>;
+    #rtpTask?: CancellablePromise<void>;
+    #speaking: boolean = false;
+    #closed: boolean = false;
+    #isInterupting: boolean = false
 
-    constructor(llmStream: LLMStream, ttsStream: streamTTS, rtpStream: RTPStream, producerTrack: Producer) {
-        super()
-        this._producerTrack = producerTrack
-        this.llmStream = llmStream
-        this.ttsStream = ttsStream
-        this.rtpStream = rtpStream
-        this.producerTrack.on('listenererror', (data) => {
-            console.log(data)
+    constructor(llm: LLM, tts: TTS, producerTrack: Producer) {
+        super();
+        this.#llm = llm;
+        this.#tts = tts;
+        this.#producerTrack = producerTrack
+        this.#rtp = RTP.create({
+            channel: 1,
+            sampleRate: 48000,
+            samplesPerChannel: 960,
+            ssrc: this.#producerTrack!.rtpParameters.encodings![0]?.ssrc
         })
-        this.run()
     }
 
-    private async run() {
-        await Promise.all([this.llmStreamCo(), this.ttsStreamCo(), this.rtpStreamCo()])
-        this.llmStream.close()
-        this.ttsStream.close()
-        this.rtpStream.close()
-    }
+    run(text: string) {
+        if (this.#closed) throw new Error("AgentOutput is already closed");
 
-    private async llmStreamCo() {
-        for await (const text of this.llmStream) {
-            this.ttsStream.push(text)
-        }
-    }
+        const llmStream = this.#llm.chat();
+        const ttsStream = this.#tts.stream();
+        const rtpStream = this.#rtp!.stream()
 
-    private async ttsStreamCo() {
-        for await (const buffer of this.ttsStream) {
-            this.rtpStream.pushStream(buffer)
-        }
-    }
+        llmStream.push(text)
 
-    private async rtpStreamCo() {
-        const packetQueue: Buffer[] = [];
+        this.#llmTask = new CancellablePromise(async (resolve, _, onCancel) => {
+            let cancelled = false;
+            onCancel(() => { 
+                cancelled = true 
+                llmStream.cancel()
+                llmStream.flush()
+                llmStream.endInput()
+            });
+
+            for await (const text of llmStream) {
+                if (cancelled) break;
+                console.log(text)
+                ttsStream.push(text);
+                this.emit("AGENT_COMMITTED");
+            }
+
+            llmStream.close();
+            resolve();
+        });
+
+        this.#ttsTask = new CancellablePromise(async (resolve, _, onCancel) => {
+            let cancelled = false;
+            onCancel(() => { 
+                cancelled = true 
+                ttsStream.cancel()
+                ttsStream.flush()
+                ttsStream.endInput()
+            });
+
+            for await (const buffer of ttsStream) {
+                if (cancelled) break;
+                rtpStream?.pushStream(buffer)
+                this.emit("AGENT_START_SPEAKING")
+            }
+
+            ttsStream.close();
+            resolve();
+        });
+
+        this.#rtpTask = new CancellablePromise(async (resolve, _, onCancel) => {
+            let cancelled = false;
+            onCancel(() => { 
+                cancelled = true 
+                rtpStream.cancel()
+                rtpStream.flush()
+                rtpStream.endInput()
+            });
         
-        (async () => {
-            for await (const rtpPacket of this.rtpStream) {
-                packetQueue.push(rtpPacket);
-            }
-        })();
+            const packetQueue: Buffer[] = [];
+        
+            const reader = (async () => {
+                for await (const rtpPacket of rtpStream) {
+                    console.log(rtpPacket)
+                    if (cancelled) break;
+                    packetQueue.push(rtpPacket);
+                }
+            })();
+        
+            const interval = setInterval(() => {
+                if (cancelled) return;
+        
+                if (packetQueue.length > 0) {
+                    this.#speaking = true;
+                    const rtpPacket = packetQueue.shift();
+                    this.#producerTrack?.send(rtpPacket!);
+                } else {
+                    if(this.#speaking) {
+                        this.#speaking = false
+                        this.emit('AGENT_STOP_SPEAKING')
+                    }
+                }
+            }, 20);
+        
+            onCancel(() => {
+                clearInterval(interval);
+            });
+        
     
-        setInterval(() => {
-            if (packetQueue.length > 0) {
-                this._speaking = true
-                const rtpPacket = packetQueue.shift();
-                this.producerTrack?.send(rtpPacket!)
-            } else {
-                this._speaking = false
-            }
-        }, 20);
-    };
-
-    get speaking():boolean {
-        return this._speaking
+            await reader;
+            clearInterval(interval);
+            resolve();
+        });
+        
     }
 
-    get producerTrack() {
-        return this._producerTrack
-    }
+    async interrupt() {
+        if (this.#closed) return;
+        await Promise.all([
+            this.#llmTask ? gracefullyCancel(this.#llmTask) : undefined,
+            this.#ttsTask ? gracefullyCancel(this.#ttsTask) : undefined,
+            this.#rtpTask ? gracefullyCancel(this.#rtpTask) : undefined
+        ]);
+    
+        this.#llmTask = undefined;
+        this.#ttsTask = undefined;
+        this.#rtpTask = undefined;
 
-    get _llmStream() {
-        return this.llmStream
+        this.#speaking = false;
+    
+        this.emit("AGENT_INTERRUPTED");
+    }
+    
+    get isInterupting() {
+        return this.#isInterupting
     }
 }

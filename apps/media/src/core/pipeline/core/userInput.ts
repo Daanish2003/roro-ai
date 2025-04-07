@@ -1,71 +1,100 @@
 import EventEmitter from "node:events";
 import { SpeechEventType, VADEventType } from "../../../utils/event.js";
-import { AudioStream } from "../../audio/core/audio.js";
-import { STTStream } from "../../stt/index.js";
+import { CancellablePromise, gracefullyCancel } from "../../../utils/index.js";
+import { VAD } from "../../vad/core/vad.js";
+import { STT, STTStream } from "../../stt/index.js";
+import { AudioFrame } from "../../audio/audio-frame.js";
 import { VADStream } from "../../vad/core/vad.js";
-import { Consumer } from "mediasoup/node/lib/ConsumerTypes.js";
+
 
 export class UserInput extends EventEmitter {
-    private audioStream: AudioStream
-    private vadStream: VADStream
-    private sttStream: STTStream;
-    private _consumerTrack: Consumer
+    private vad: VAD;
+    private stt: STT;
     private _speaking: boolean = false;
+    private closed = false;
+    private task: CancellablePromise<void>
+    private vadStream: VADStream
+    private sttStream: STTStream
 
-    constructor(vadStream: VADStream, sttStream: STTStream, audioStream: AudioStream, consumerTrack: Consumer) {
+    constructor(vad: VAD, stt: STT) {
         super()
-        this._consumerTrack = consumerTrack
-        this.vadStream = vadStream
-        this.sttStream = sttStream
-        this.audioStream = audioStream
-        this._consumerTrack.on('rtp', async (rtpPackets) => {
-            audioStream.pushStream(rtpPackets)
-        })
-        this.run()
+        this.vad = vad
+        this.stt = stt
+        this.vadStream = this.vad.stream();
+        this.sttStream = this.stt.stream();
+        this.task = new CancellablePromise(async (resolve, __, onCancel) => {
+            let cancelled = false;
+
+            onCancel(() => {
+                cancelled = true
+            });
+
+            const vadLoop = async () => {
+                try {
+                    for await (const ev of this.vadStream) {
+                        if (cancelled) return;
+                        if (ev.type === VADEventType.START_OF_SPEECH) {
+                            this._speaking = true
+                            console.log("Start")
+                            this.emit("START_OF_SPEECH");
+                        }
+                        if (ev.type === VADEventType.END_OF_SPEECH) {
+                            this._speaking = false;
+                            this.emit("END_OF_SPEECH");
+                        }
+                    }
+                } catch (err) {
+                    console.error("VAD stream error:", err);
+                }
+            };
+
+            const sttLoop = async () => {
+                try {
+                    for await (const ev of this.sttStream) {
+                        if (cancelled) return;
+                        switch (ev.type) {
+                            case SpeechEventType.FINAL_TRANSCRIPT:
+                                this.emit("FINAL_TRANSCRIPT", ev);
+                                break
+                            case SpeechEventType.END_OF_SPEECH: 
+                                this.emit("END_OF_SPEECH_STT");
+                                break
+                            case SpeechEventType.SPEECH_STARTED:
+                                this.emit("START_OF_SPEECH_STT")
+                                break
+                            case SpeechEventType.INTERIM_TRANSCRIPT:
+                                this.emit("INTERIM_TRANSCRIPT", ev)
+                        }
+                    }
+                } catch (err) {
+                    console.error("STT stream error:", err);
+                }
+            };
+
+            await Promise.all([vadLoop(), sttLoop()])
+            this.vadStream.close()
+            this.sttStream.close()
+            resolve()
+        });
     }
 
-    private async run() {
-        await Promise.all([this.audioStreamCo(), this.vadStreamCo(), this.sttStreamCo()])
-        this.audioStream.close()
-        this.vadStream.close()
-        this.sttStream.close()
+    async push(frame: AudioFrame) {
+        if (this.closed) return;
+        this.vadStream.push(frame);
+        this.sttStream.push(frame);
     }
 
-    private async audioStreamCo() {
-        for await (const frame of this.audioStream) {
-            this.vadStream.push(frame)
-            this.sttStream.push(frame)
+    async close() {
+        if (this.closed) {
+            throw new Error("UserInput already closed")
         }
-    }
 
-    private async vadStreamCo() {
-        for await(const ev of this.vadStream) {
-            if(ev.type === VADEventType.START_OF_SPEECH) {
-                this.emit("START_OF_SPEECH")
-            }
-            if(ev.type === VADEventType.END_OF_SPEECH) {
-                this.emit("END_OF_SPEECH")
-            }
+        this.closed = true
+        this._speaking = false;
+
+        if(this.task) {
+            await gracefullyCancel(this.task)
         }
-    }
-
-    private async sttStreamCo() {
-        let transcript = ""
-        for await (const ev of this.sttStream) {
-             if(ev.type === SpeechEventType.FINAL_TRANSCRIPT) {
-                console.log(ev.transcript)
-                transcript += ev.transcript!
-             }
-
-             if(ev.type === SpeechEventType.END_OF_SPEECH) {
-                this.emit("END_OF_SPEECH_STT", transcript)
-                transcript = ""
-             }
-        }
-    }
-
-    get consumerTrack() {
-        return this._consumerTrack
     }
 
     get speaking(): boolean {

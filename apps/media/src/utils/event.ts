@@ -6,10 +6,9 @@ export enum AudioStreamEventType {
 
 export enum HumanInputEvent {
     START_OF_SPEECH,
-    VAD_INFERENCE_DONE,
     END_OF_SPEECH,
     INTERIM_TRANSCRIPT,
-    FINAL_TRANSCRIPTION
+    FINAL_TRANSCRIPTION,
 }
 
 
@@ -23,7 +22,7 @@ export enum SpeechEventType {
     SPEECH_STARTED,
     END_OF_SPEECH,
     FINAL_TRANSCRIPT,
-    INTERM_TRANSCRIPT,
+    INTERIM_TRANSCRIPT,
 }
 
 export enum LLMEventType {
