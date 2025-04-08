@@ -17,14 +17,20 @@ const defaultLLMOptions: LLMOptions = {
 };
 
 export class LLM extends BaseLLM {
+    private threadId: string;
     private options: LLMOptions;
     private client: ChatGoogleGenerativeAI;
     private prompt: string;
+    private promptTemplate: ChatPromptTemplate;
+    private memory: MemorySaver;
 
     constructor(prompt: string, opts: Partial<LLMOptions> = {}) {
         super();
         this.options = { ...defaultLLMOptions, ...opts };
         this.prompt = prompt;
+        this.memory = new MemorySaver();
+        this.promptTemplate = this.createPromptTemplate(prompt);
+        this.threadId = uuidv4();
 
         if (!this.options.apiKey) {
             throw new Error("Gemini API key is required, either as an argument or via $GEMINI_API_KEY.");
@@ -38,47 +44,47 @@ export class LLM extends BaseLLM {
     }
 
     chat(): LLMStream {
-        return new LLMStream(this, this.options, this.client, this.prompt);
+        return new LLMStream(this, this.options, this.client, this.memory, this.promptTemplate, this.threadId);
+    }
+
+    private createPromptTemplate(prompt: string) {
+        return ChatPromptTemplate.fromMessages([
+            ["system", SystemPrompt],
+            ["user", prompt],
+            ["placeholder", "{messages}"],
+        ]);
     }
 }
 
 export class LLMStream extends BaseStream {
     private options: LLMOptions;
     private client: ChatGoogleGenerativeAI;
-    private promptTemplate: ChatPromptTemplate;
-    private memory: MemorySaver;
     private threadId: string;
+    private memory: MemorySaver
+    private promptTemplate: ChatPromptTemplate
     private app: any;
     private task?: Promise<void>;
-    private aborted: boolean = false
 
-    constructor(llm: LLM, opts: LLMOptions, client: ChatGoogleGenerativeAI, prompt: string) {
+    constructor(llm: LLM, opts: LLMOptions, client: ChatGoogleGenerativeAI, memory: MemorySaver, promptTemplate: ChatPromptTemplate, threadId: string) {
         super(llm);
         this.options = opts;
         this.client = client;
-        this.memory = new MemorySaver();
-        this.promptTemplate = this.createPromptTemplate(prompt);
-        this.threadId = uuidv4();
+        this.threadId = threadId
+        this.memory = memory
+        this.promptTemplate = promptTemplate
         this.app = this.initializeWorkflow();
-        this.startTask();
     }
 
-    private startTask() {
-        this.task = (async () => {
-            for await (const userMessage of this.input) {
-                if (typeof userMessage === "symbol") continue;
-
-                try {
-                    await this.app.invoke({
-                        messages: [{ role: "user", content: userMessage }],
-                    }, {
-                        configurable: { thread_id: this.threadId }
-                    });
-                } catch (error) {
-                    console.error("LLM response error:", error);
-                }
-            }
-        })();
+    async sendChat(userMessage: string) {
+        try {
+            await this.app.invoke({
+                messages: [{ role: "user", content: userMessage }],
+            }, {
+                configurable: { thread_id: this.threadId }
+            });
+        } catch (error) {
+            console.error("LLM response error:", error);
+        }
     }
 
     private async callModel(state: typeof MessagesAnnotation.State) {
@@ -90,13 +96,11 @@ export class LLMStream extends BaseStream {
             const response: AIMessageChunk[] = [];
 
             for await (const chunk of stream) {
-                if(this.aborted) return
                 response.push(chunk);
                 buffer += chunk.content;
 
                 const sentences = buffer.split(".");
                 for (let i = 0; i < sentences.length - 1; i++) {
-                    if (this.aborted) return
                     const sentence = sentences[i]?.trim();
                     if (sentence) {
                         this.output.put(sentence + ".");
@@ -105,7 +109,7 @@ export class LLMStream extends BaseStream {
                 buffer = sentences[sentences.length - 1] || "";
             }
 
-            if (buffer.trim() && !this.aborted) {
+            if (buffer.trim()) {
                 this.output.put(buffer.trim());
             }
 
@@ -114,18 +118,6 @@ export class LLMStream extends BaseStream {
             console.error("Error in callModel:", error);
             return { messages: [] };
         }
-    }
-
-    private createPromptTemplate(prompt: string) {
-        return ChatPromptTemplate.fromMessages([
-            ["system", SystemPrompt],
-            ["user", prompt],
-            ["placeholder", "{messages}"],
-        ]);
-    }
-
-    cancel() {
-        this.aborted = true
     }
 
     private initializeWorkflow() {

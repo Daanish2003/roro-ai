@@ -48,7 +48,6 @@ export class RTPStream extends BaseStream {
     private options: RTPOptions
     private rtpSequenceNumber: number = 0;
     private rtpTimestamp: number = 0;
-    private aborted: boolean = false
     constructor(audio: RTP, opts: RTPOptions){
         super(audio)
         this.options = opts
@@ -61,8 +60,6 @@ export class RTPStream extends BaseStream {
                 continue
             }
 
-            if(this.aborted) return
-
             await this.handleOutputStream(buffer)
         }
     }
@@ -71,7 +68,6 @@ export class RTPStream extends BaseStream {
         try {
             const encodedPackets = encoder.encode(data)
             const rtpPackets = this.createRtpPacket(encodedPackets)
-            if(this.aborted) return
             this.output.put(rtpPackets)
         } catch (error) {
             console.error("Failed to handle output stream:", error);
@@ -94,9 +90,5 @@ export class RTPStream extends BaseStream {
         rtpPacket.serialize(arrayBuffer);
         const buffer = utils.arrayBufferToNodeBuffer(arrayBuffer)
         return buffer
-    }
-
-    cancel() {
-        this.aborted = true
     }
 }

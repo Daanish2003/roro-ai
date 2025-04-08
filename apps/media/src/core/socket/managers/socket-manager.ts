@@ -192,11 +192,13 @@ export class SocketManager {
         })
 
         const Ptrack = await room.mediaTracks.createAgentProducerTrack({
-          transport: room.mediaTransports.directTransport!,
+          transport,
           listenerTrack: Ctrack
         })
 
-        const agent = new AgentPipeline(room.prompt, Ptrack)
+        const ssrc = Ctrack.rtpParameters.encodings![0]!.ssrc!  
+
+        const agent = new AgentPipeline(room.prompt, Ptrack, ssrc)
         room.addAgent(agent)
         agent?.setSocket(socket)
 
@@ -205,7 +207,6 @@ export class SocketManager {
         Ctrack.on('rtp', (rtpPackets) => {
           agentStream.pushStream(rtpPackets)
         })
-
         callback({ id });
       }
     );

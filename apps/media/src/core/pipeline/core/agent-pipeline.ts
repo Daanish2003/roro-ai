@@ -19,20 +19,22 @@ export class AgentPipeline extends BaseAgentPipeline {
     public mediaTracks: AgentTrack;
     #prompt: string
     #audio: Audio
+    #llm: LLM
     #userInput: UserInput
     #audioStream: AudioStream
     #agentOutput: AgentOutput
     #producerTrack: Producer 
-    constructor(prompt: string, producerTrack: Producer) {
+    constructor(prompt: string, producerTrack: Producer, ssrc: number) {
         super()
         this.agentId = uuidv4();
         this.#prompt = prompt
         this.#producerTrack = producerTrack
         this.mediaTracks = new AgentTrack();
         this.#audio = Audio.create()
+        this.#llm = new LLM(this.#prompt)
         this.#audioStream = this.#audio.stream()
         this.#userInput = new UserInput(vad, STT.create())
-        this.#agentOutput = new AgentOutput(new LLM(this.#prompt), TTS.create(), this.#producerTrack)
+        this.#agentOutput = new AgentOutput(TTS.create(), this.#llm, this.#producerTrack, ssrc)
     }
 
     setSocket(socket: Socket){
@@ -48,6 +50,7 @@ export class AgentPipeline extends BaseAgentPipeline {
             this.#userInput,
             this.#audioStream,
             this.socket!,
+            this.#llm,
         )
     }
 }
@@ -67,8 +70,8 @@ export class AgentStream extends BaseAgentStream {
     #transcriptSegments: { text: string, start: number; end: number}[] = []
     #agentSpeaking: boolean = false
     #userSpeaking: boolean = false
-    #userCommitted: boolean = false
     #agentCommitted: boolean = false
+    #llm: LLM
 
 
     constructor(
@@ -79,6 +82,7 @@ export class AgentStream extends BaseAgentStream {
         userInput: UserInput,
         audioStream: AudioStream,
         socket: Socket,
+        llm: LLM,
     ) {
         super(agent)
         this.#audio = audio
@@ -87,6 +91,7 @@ export class AgentStream extends BaseAgentStream {
         this.#agentOutput = agentOutput
         this.#producerTrack = producerTrack
         this.#socket = socket
+        this.#llm = llm
         this.run()
     }
 
@@ -198,8 +203,8 @@ export class AgentStream extends BaseAgentStream {
         this.#backupTranscript = '';
         this.#transcriptBuffer = '';
         this.#transcriptSegments = [];
-    
-        this.#agentOutput.run(finalTranscript);
+
+        this.#agentOutput.agentReplyTask(finalTranscript)
     }
     
 
@@ -214,7 +219,6 @@ export class AgentStream extends BaseAgentStream {
             this.#endOfUtteranceTimer = null;
         }
 
-        await this.#agentOutput.interrupt()
-        
+        this.#agentOutput.interrupt()
     }
 }

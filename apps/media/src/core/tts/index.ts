@@ -44,7 +44,6 @@ export class streamTTS extends BaseStreamTTS {
     private connection: SpeakLiveClient
     private audioBuffer: Buffer = Buffer.alloc(24000);
     private future: Future | null = null;
-    private aborted: boolean = false
 
     constructor(tts: TTS, opts: TTSOptions, ws: SpeakLiveClient) {
         super(tts);
@@ -93,9 +92,6 @@ export class streamTTS extends BaseStreamTTS {
                 const chunkSize = 960 * 2;
 
                 while (this.audioBuffer.length >= chunkSize) {
-                    if(this.aborted) {
-                        this.audioBuffer = Buffer.alloc(24000)
-                    }
                     const chunk = this.audioBuffer.subarray(0, chunkSize);
                     this.output.put(chunk);
                     this.audioBuffer = this.audioBuffer.subarray(chunkSize);
@@ -115,7 +111,6 @@ export class streamTTS extends BaseStreamTTS {
     private async sendText() {
         for await (const text of this.input) {
             if (typeof text === 'symbol') continue;
-            if(this.aborted) return
             this.future = new Future();
             this.connection.sendText(text);
             this.connection.flush();
@@ -133,9 +128,5 @@ export class streamTTS extends BaseStreamTTS {
         if (this.connection) {
             this.connection.requestClose();
         }
-    }
-
-    public cancel(): void {
-        this.aborted = true
     }
 }

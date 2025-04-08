@@ -83,6 +83,12 @@ export class MediaTrack {
         consumer.close();
       });
 
+      consumer.on('score', (data) => {
+        console.log(data)
+      })
+
+      console.log(await consumer.getStats())
+
       const consumerParams = {
         producerId: trackId,
         id: consumer.id,
