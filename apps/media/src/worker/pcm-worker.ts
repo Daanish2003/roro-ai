@@ -20,9 +20,11 @@ const decoder = new OpusDecoderWebWorker({
 
 
 parentPort.on('message', async (message) => {
-    const buffer = Buffer.from(message)
-    const pcmdata = await decodeOpus(buffer)
-    parentPort!.postMessage(pcmdata)     
+    if(message !== undefined) {
+        const buffer = Buffer.from(message)
+        const pcmdata = await decodeOpus(buffer)
+        parentPort!.postMessage(pcmdata)
+    }     
 })
 
 function clearRTPExtension(rtpPackets: Buffer) {

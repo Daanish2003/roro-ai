@@ -22,6 +22,7 @@ export default function AudioVisualizer({ audioRef }: AudioVisualizerProps) {
     const setupAudioAnalyser = () => {
       if (!audioRef.current) return;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       audioContextRef.current = audioContext;
 

@@ -73,7 +73,6 @@ export class SocketManager {
       ) => {
         try {
           const response = await roomManager.joinRoom(roomId, userId, socket.id);
-          console.log(response)
           callback(response);
         } catch (error) {
           console.error("Error in joining room:", error);

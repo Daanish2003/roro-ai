@@ -9,7 +9,7 @@ export type SpeechSource = AsyncIterable<string> | string | Promise<string>;
 
 export class AgentOutput extends EventEmitter {
     #tts: TTS;
-    #rtp?: RTP;
+    #rtp: RTP;
     #llm: LLM;
     #producerTrack: Producer;
     #ttsTask?: CancellablePromise<void>;
@@ -60,8 +60,6 @@ export class AgentOutput extends EventEmitter {
         this.#ttsStream = this.#tts.stream();
         this.#rtpStream = this.#rtp!.stream();
 
-        this.#rtpStream.resume()
-
         const llmLoop = async () => {
             try {
                 for await (const text of this.#llmStream) {
@@ -103,7 +101,7 @@ export class AgentOutput extends EventEmitter {
                     this.#speaking = true;
                     const rtpPacket = packetQueue.shift();
                     if (rtpPacket) {
-
+                        console.log(rtpPacket)
                         this.#producerTrack.send(rtpPacket);
                     }
                 } else if (this.#speaking) {
