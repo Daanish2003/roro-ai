@@ -188,7 +188,7 @@ export class SocketManager {
         const Ctrack = await room.mediaTracks.createAgentConsumerTrack({
           transport: transport,
           rtpCap: room.router.rtpCapabilities,
-          trackId: id,
+          trackId: id
         })
 
         const Ptrack = await room.mediaTracks.createAgentProducerTrack({
@@ -202,10 +202,8 @@ export class SocketManager {
         room.addAgent(agent)
         agent?.setSocket(socket)
 
-        const agentStream = agent.stream()
-
         Ctrack.on('rtp', (rtpPackets) => {
-          agentStream.pushStream(rtpPackets)
+          agent.stream(rtpPackets)
         })
         callback({ id });
       }

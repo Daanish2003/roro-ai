@@ -24,9 +24,11 @@ export const useMediaStore = create<MediaState>((set, get) => ({
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
               audio: {
-                noiseSuppression: true,
-                autoGainControl: true,
-                echoCancellation: true,
+                //Don't use echo cancellation, noise suppression, or auto gain control
+                // It could cause problems when interrupting the agent speech
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false
               },
               video: true,
             });

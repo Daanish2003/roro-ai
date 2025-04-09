@@ -15,7 +15,7 @@ export interface VADOptions {
   }
   
   const defaultVADOptions: VADOptions = {
-    minSpeechDuration: 150,
+    minSpeechDuration: 50,
     minSilenceDuration: 250,
     activationThreshold: 0.5,
     sampleRate: 16000,
@@ -101,21 +101,21 @@ export class VADStream extends BaseStream {
 
         if(p > this.options.activationThreshold) {
           speechThresholdDuration += windowDuration;
+          silenceThresholdDuration = 0;
           if(!pubSpeaking && (speechThresholdDuration >= this.options.minSpeechDuration)) {
             pubSpeaking = true
             this.output.put({
               type: VADEventType.START_OF_SPEECH
             })
-            silenceThresholdDuration = 0;
           }
         } else {
           silenceThresholdDuration += windowDuration
+          speechThresholdDuration = 0
           if(pubSpeaking && (silenceThresholdDuration > this.options.minSilenceDuration)) {
             pubSpeaking = false
             this.output.put({
               type: VADEventType.END_OF_SPEECH
             })
-            speechThresholdDuration = 0
           }
         }
         inferenceFrames = []

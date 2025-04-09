@@ -1,6 +1,6 @@
 import EventEmitter from "node:events";
 import { TTS } from "../../tts/index.js";
-import { CancellablePromise, Future } from "../../../utils/index.js";
+import { CancellablePromise, Future, gracefullyCancel } from "../../../utils/index.js";
 import { RTP } from "../../audio/core/rtp.js";
 import { Producer } from "mediasoup/node/lib/types.js";
 import { LLM } from "../../llm/llm.js";
@@ -12,16 +12,14 @@ export class AgentOutput extends EventEmitter {
     #rtp?: RTP;
     #llm: LLM;
     #producerTrack: Producer;
-    #llmTask?: CancellablePromise<void>;
     #ttsTask?: CancellablePromise<void>;
     #rtpTask?: CancellablePromise<void>;
     #speaking: boolean = false;
     #closed: boolean = false;
-    #interrupted: boolean = false;
-
     #llmStream: ReturnType<LLM["chat"]>;
-    #ttsStream: ReturnType<TTS["stream"]>;
-    #rtpStream: ReturnType<RTP["stream"]>;
+    #ttsStream?: ReturnType<TTS["stream"]>;
+    #rtpStream?: ReturnType<RTP["stream"]>;
+    #interrupted = false
 
     constructor(tts: TTS, llm: LLM, producerTrack: Producer, ssrc: number) {
         super();
@@ -37,172 +35,78 @@ export class AgentOutput extends EventEmitter {
         });
 
         this.#llmStream = this.#llm.chat();
-        this.#ttsStream = this.#tts.stream();
-        this.#rtpStream = this.#rtp.stream();
     }
 
     async agentReplyTask(inputText: string) {
-        if (this.#closed || this.#interrupted) {
-            console.warn("AgentOutput is closed or interrupted, cannot start reply task.");
-            return;
-        }
+        if (this.#closed) throw new Error("AgentOutput is already closed");
 
         const future = new Future();
-        const packetQueue: Buffer[] = [];
 
-        try {
-            this.#llmStream.sendChat(inputText);
-        } catch (error) {
-            console.error("Failed to send chat input:", error);
-            future.reject(error as Error);
-            return future.await;
+        if(this.#interrupted) {
+            future.resolve()
         }
 
-        this.#llmTask = new CancellablePromise(async (resolve, reject, onCancel) => {
+        if (this.#ttsTask || this.#rtpTask) {
+            await this.interrupt();
+        }
+
+        this.#interrupted = false;
+
+        const packetQueue: Buffer[] = [];
+
+        console.log(this.#rtpTask)
+
+        this.#llmStream.sendChat(inputText);
+        this.#ttsStream = this.#tts.stream();
+        this.#rtpStream = this.#rtp!.stream();
+
+        this.#rtpStream.resume()
+
+        const llmLoop = async () => {
+            try {
+                for await (const text of this.#llmStream) {
+                    console.log(text)
+                    this.#ttsStream!.push(text);
+                }
+            } catch (err) {
+                future.reject(err as Error);
+            }
+        }
+
+        this.#ttsTask = new CancellablePromise(async (resolve, _, onCancel) => {
             let cancelled = false;
             onCancel(() => {
                 cancelled = true;
-                try {
-                    this.#llmStream.close();
-                } catch (error) {
-                    console.warn("Error closing LLM stream during cancellation:", error);
-                }
             });
 
             try {
-                for await (const output of this.#llmStream) {
-                    if (cancelled || this.#interrupted) break;
-                    console.log("🧠 LLM Output", output);
-                    try {
-                        if (!this.#interrupted) {
-                            this.#ttsStream.push(output);
-                        }
-                    } catch (error: any) {
-                        if (cancelled || this.#interrupted) {
-                            // Expected if interrupted or cancelled
-                            break;
-                        } else if (error.message === "Input is closed") {
-                            console.warn("TTS stream input closed unexpectedly during LLM output.");
-                            break;
-                        } else {
-                            console.error("Error pushing to TTS stream:", error);
-                            reject(error);
-                            return;
-                        }
-                    }
+                for await (const buffer of this.#ttsStream!) {
+                    if (cancelled) break;
+                    this.emit("AGENT_START_SPEAKING")
+                    this.#rtpStream!.pushStream(buffer);
                 }
             } catch (err) {
-                if (!cancelled && !this.#interrupted) {
-                    console.error("LLM stream error:", err);
-                    reject(err);
-                }
-            } finally {
-                try {
-                    if (!cancelled && !this.#interrupted) {
-                        this.#ttsStream.endInput();
-                    }
-                } catch (error: any) {
-                    if (error.message === "Input is closed") {
-                        console.warn("TTS stream input already closed.");
-                    } else if (!cancelled && !this.#interrupted) {
-                        console.error("Error ending TTS input:", error);
-                    }
-                }
-                resolve();
+                future.reject(err as Error);
             }
+
+            this.#rtpStream?.flush();
+            this.#ttsStream?.endInput();
+            resolve()
         });
 
-        this.#ttsTask = new CancellablePromise(async (resolve, reject, onCancel) => {
-            let cancelled = false;
-            onCancel(() => {
-                cancelled = true;
-                try {
-                    this.#ttsStream.close();
-                } catch (error) {
-                    console.warn("Error closing TTS stream during cancellation:", error);
-                }
-                try {
-                    if (!this.#interrupted) {
-                        this.#rtpStream.endInput();
-                    }
-                } catch (error: any) {
-                    if (error.message === "Input is closed") {
-                        console.warn("RTP stream input already closed during TTS processing.");
-                    } else if (!cancelled && !this.#interrupted) {
-                        console.error("Error ending RTP input:", error);
-                    }
-                }
-            });
-
-            try {
-                for await (const buffer of this.#ttsStream) {
-                    if (cancelled || this.#interrupted) break;
-                    try {
-                        if (!this.#interrupted) {
-                            this.#rtpStream.pushStream(buffer);
-                        }
-                    } catch (error: any) {
-                        if (cancelled || this.#interrupted) {
-                            // Expected if interrupted or cancelled
-                            break;
-                        } else if (error.message === "Input is closed") {
-                            console.warn("RTP stream input closed unexpectedly during TTS output.");
-                            break;
-                        } else {
-                            console.error("Error pushing to RTP stream:", error);
-                            reject(error);
-                            return;
-                        }
-                    }
-                }
-            } catch (err) {
-                if (!cancelled && !this.#interrupted) {
-                    console.error("TTS stream error:", err);
-                    reject(err);
-                }
-            } finally {
-                try {
-                    if (!cancelled && !this.#interrupted) {
-                        this.#rtpStream.endInput();
-                    }
-                } catch (error: any) {
-                    if (error.message === "Input is closed") {
-                        console.warn("RTP stream input already closed.");
-                    } else if (!cancelled && !this.#interrupted) {
-                        console.error("Error ending RTP input:", error);
-                    }
-                }
-                resolve();
-            }
-        });
-
-        this.#rtpTask = new CancellablePromise(async (resolve, reject, onCancel) => {
+        this.#rtpTask = new CancellablePromise(async (resolve, _, onCancel) => {
             let cancelled = false;
             const interval = setInterval(() => {
-                if (cancelled || this.#interrupted) {
-                    clearInterval(interval);
-                    packetQueue.length = 0;
-                    if (this.#speaking) {
-                        this.#speaking = false;
-                        this.emit("AGENT_STOP_SPEAKING");
-                    }
-                    return;
-                }
+                if (cancelled) return;
 
                 if (packetQueue.length > 0) {
                     this.#speaking = true;
                     const rtpPacket = packetQueue.shift();
-                    if (rtpPacket && !this.#interrupted) {
-                        try {
-                            this.#producerTrack.send(rtpPacket);
-                        } catch (error) {
-                            console.warn("Error sending RTP packet:", error);
-                        }
+                    if (rtpPacket) {
+
+                        this.#producerTrack.send(rtpPacket);
                     }
-                } else if (this.#speaking && 
-                          (this.#llmTask?.isCancelled || 
-                           this.#ttsTask?.isCancelled || 
-                           packetQueue.length === 0)) {
+                } else if (this.#speaking) {
                     this.#speaking = false;
                     this.emit("AGENT_STOP_SPEAKING");
                 }
@@ -211,135 +115,62 @@ export class AgentOutput extends EventEmitter {
             onCancel(() => {
                 cancelled = true;
                 clearInterval(interval);
-                packetQueue.length = 0;
-                try {
-                    this.#rtpStream.close();
-                } catch (error) {
-                    console.warn("Error closing RTP stream during cancellation:", error);
-                }
             });
 
             try {
-                for await (const rtpPacket of this.#rtpStream) {
-                    if (cancelled || this.#interrupted) break;
+                for await (const rtpPacket of this.#rtpStream!) {
+                    if (cancelled) break;
                     packetQueue.push(rtpPacket);
                 }
             } catch (err) {
-                if (!cancelled && !this.#interrupted) {
-                    console.error("RTP stream error:", err);
-                    reject(err);
-                }
-            } finally {
-                clearInterval(interval);
-                resolve();
+                future.reject(err as Error);
             }
+
+            clearInterval(interval);
+            packetQueue.length = 0
+            this.#rtpStream?.flush()
+            this.#rtpStream?.endInput()
+            resolve();
         });
 
         Promise.all([
-            this.#llmTask.catch(error => {
-                if (!this.#llmTask?.isCancelled && !this.#interrupted) {
-                    console.error("LLM Task failed:", error);
-                    future.reject(error);
-                } else {
-                    console.log("LLM Task cancelled or interrupted.");
-                }
-            }),
-            this.#ttsTask.catch(error => {
-                if (!this.#ttsTask?.isCancelled && !this.#interrupted) {
-                    console.error("TTS Task failed:", error);
-                    future.reject(error);
-                } else {
-                    console.log("TTS Task cancelled or interrupted.");
-                }
-            }),
-            this.#rtpTask.catch(error => {
-                if (!this.#rtpTask?.isCancelled && !this.#interrupted) {
-                    console.error("RTP Task failed:", error);
-                    future.reject(error);
-                } else {
-                    console.log("RTP Task cancelled or interrupted.");
-                }
-            }),
+            llmLoop(),
+            this.#ttsTask,
+            this.#rtpTask,
         ]).then(() => {
             if (!future.done) future.resolve();
+        }).catch((err) => {
+            future.reject(err);
         });
 
         return future.await;
     }
 
     async interrupt() {
-        if (this.#closed || this.#interrupted) {
-            console.warn("AgentOutput is already closed or interrupted, cannot interrupt again.");
-            return;
-        }
-        
         console.log("⚠️ Interrupting agent...");
-        this.#interrupted = true;
-        
-        // Cancel all tasks first before closing streams
-        if (this.#llmTask) this.#llmTask.cancel();
-        if (this.#ttsTask) this.#ttsTask.cancel();
-        if (this.#rtpTask) this.#rtpTask.cancel();
-        
-        // Close streams in correct order with proper error handling
-        try {
-            this.#llmStream.close();
-        } catch (error) {
-            console.warn("Error closing LLM stream during interrupt:", error);
-        }
-        
-        try {
-            this.#ttsStream.close();
-        } catch (error) {
-            console.warn("Error closing TTS stream during interrupt:", error);
-        }
-        
-        try {
-            this.#rtpStream.close();
-        } catch (error) {
-            console.warn("Error closing RTP stream during interrupt:", error);
-        }
-        
+        this.#interrupted = true
         this.emit("AGENT_INTERRUPTED");
-        this.#speaking = false;
+
+        if(this.#ttsTask) {
+            gracefullyCancel(this.#ttsTask)
+        }
+        
+        if(this.#rtpTask) {
+            gracefullyCancel(this.#rtpTask)
+        }
+
+        this.#ttsStream!.interrupt()
+        this.#rtpStream!.interrupt()
+
+        this.#ttsTask = undefined;
+        this.#rtpTask = undefined;
+        this.#ttsStream = undefined;
+        this.#rtpStream = undefined;
     }
 
     close() {
-        if (this.#closed) {
-            console.warn("AgentOutput is already closed.");
-            return;
-        }
-        
-        // If not interrupted yet, interrupt first to handle task cancellation
-        if (!this.#interrupted) {
-            this.interrupt();
-        }
-        
         this.#closed = true;
+        this.interrupt();
         this.removeAllListeners();
-    }
-    
-    // Helper to recreate streams for a new conversation if needed
-    recreateStreams() {
-        if (this.#closed) {
-            console.warn("Cannot recreate streams for closed AgentOutput.");
-            return false;
-        }
-        
-        if (this.#interrupted) {
-            try {
-                // Only recreate if previously interrupted but not closed
-                this.#llmStream = this.#llm.chat();
-                this.#ttsStream = this.#tts.stream();
-                this.#rtpStream = this.#rtp!.stream();
-                this.#interrupted = false;
-                return true;
-            } catch (error) {
-                console.error("Failed to recreate streams:", error);
-                return false;
-            }
-        }
-        
-        return true; // No need to recreate
     }
 }

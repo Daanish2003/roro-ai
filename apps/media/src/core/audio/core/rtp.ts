@@ -1,6 +1,10 @@
 import { RTPStream as BaseStream, RTP as BaseRTP } from "./utils.js"
-import { utils, packets } from "rtp.js";
-import { encoder } from "../audio-encoding.js";
+import { Worker } from "worker_threads"
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
 export interface RTPOptions {
@@ -21,10 +25,13 @@ const defaultAudioOptions: RTPOptions =  {
 export class RTP extends BaseRTP {
     private options: RTPOptions;
     private streams: RTPStream[] = []
+    private worker: Worker
 
     constructor(opts: RTPOptions) {
         super()
         this.options = opts
+        const workerPath = path.resolve(__dirname,"../../../worker/opus-worker.js");
+        this.worker = new Worker(workerPath);
     }
 
     static create(opts: Partial<RTPOptions> = {}): RTP {
@@ -35,6 +42,7 @@ export class RTP extends BaseRTP {
         const stream = new RTPStream(
             this,
             this.options,
+            this.worker
         )
 
         this.streams.push(stream)
@@ -46,49 +54,65 @@ export class RTP extends BaseRTP {
 
 export class RTPStream extends BaseStream {
     private options: RTPOptions
-    private rtpSequenceNumber: number = 0;
-    private rtpTimestamp: number = 0;
-    constructor(audio: RTP, opts: RTPOptions){
+    private interrupted: boolean = false
+    private worker: Worker;
+    constructor(audio: RTP, opts: RTPOptions, worker: Worker){
         super(audio)
         this.options = opts
+        this.worker = worker
+        this.worker.postMessage({
+            type: "config",
+            ssrc: this.options.ssrc,
+        });
+
+        this.worker.on("message", (message) => {
+            if (message.encoded) {
+                const buffer = Buffer.from(message.encoded)
+                this.output.put(buffer);
+            }
+            if (message.error) {
+                console.error("Encoding error from worker:", message.error);
+            }
+        });
+
         this.run()
     }
 
     async run() {
         for await(const buffer of this.input) {
+            if(this.interrupted) return
             if(typeof buffer === 'symbol') {
                 continue
             }
 
-            await this.handleOutputStream(buffer)
+            this.handleOutputStream(buffer);
         }
     }
 
-    async handleOutputStream(data: Buffer) {
+    handleOutputStream(data: Buffer) {
         try {
-            const encodedPackets = encoder.encode(data)
-            const rtpPackets = this.createRtpPacket(encodedPackets)
-            this.output.put(rtpPackets)
+            this.worker.postMessage({
+                type: "encode",
+                pcmBuffer: data,
+                samplesPerChannel: this.options.samplesPerChannel,
+            });
         } catch (error) {
-            console.error("Failed to handle output stream:", error);
+            console.error("Failed to send buffer to worker:", error);
         }
     }
 
-    private createRtpPacket(opusPayload: Buffer): Buffer {
-        const { RtpPacket } = packets;
-        const rtpPacket = new RtpPacket();
-        rtpPacket.setPayloadType(100);
-        rtpPacket.setSequenceNumber(this.rtpSequenceNumber++);
-        rtpPacket.setTimestamp(this.rtpTimestamp);
-        rtpPacket.enableOneByteExtensions()
-        this.rtpTimestamp += 960;
-        rtpPacket.setSsrc(this.options.ssrc);
-        const payloadDataView = new DataView(opusPayload.buffer, opusPayload.byteOffset, opusPayload.byteLength);
-        rtpPacket.setPayload(payloadDataView)
-        const packetLength = rtpPacket.getByteLength();
-        const arrayBuffer = new ArrayBuffer(packetLength);
-        rtpPacket.serialize(arrayBuffer);
-        const buffer = utils.arrayBufferToNodeBuffer(arrayBuffer)
-        return buffer
+    interrupt() {
+        if (!this.interrupted) {
+            this.interrupted = true;
+            this.worker.postMessage({ type: "interrupt" });
+        }
     }
+
+    resume() {
+        if (this.interrupted) {
+            this.interrupted = false;
+            this.worker.postMessage({ type: "resume" });
+        }
+    }
+
 }

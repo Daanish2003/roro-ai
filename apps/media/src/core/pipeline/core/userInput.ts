@@ -35,7 +35,6 @@ export class UserInput extends EventEmitter {
                         if (cancelled) return;
                         if (ev.type === VADEventType.START_OF_SPEECH) {
                             this._speaking = true
-                            console.log("Start")
                             this.emit("START_OF_SPEECH");
                         }
                         if (ev.type === VADEventType.END_OF_SPEECH) {

@@ -122,6 +122,7 @@ export class STTStream extends BaseStream {
         this.connection.on(LiveTranscriptionEvents.Metadata, (data) => this.handleEvent(LiveTranscriptionEvents.Metadata, data));
         this.connection.on(LiveTranscriptionEvents.Error, (err) => this.handleEvent(LiveTranscriptionEvents.Error, err));
         this.connection.on(LiveTranscriptionEvents.Close, () => this.handleEvent(LiveTranscriptionEvents.Close));
+        this.connection.on(LiveTranscriptionEvents.SpeechStarted, () => {console.log("Speech_Started")})
 
     }
 
