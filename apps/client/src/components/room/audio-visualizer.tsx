@@ -24,6 +24,10 @@ export default function AudioVisualizer({ audioRef }: AudioVisualizerProps) {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+      if(audioContext.state === 'suspended') {
+        console.log('suspended')
+      }
       audioContextRef.current = audioContext;
 
       analyser = audioContext.createAnalyser();

@@ -21,6 +21,8 @@ const defaultAudioOptions: RTPOptions =  {
 export class RTP extends BaseRTP {
     private options: RTPOptions;
     private streams: RTPStream[] = []
+    private rtpSequenceNumber: number = 0;
+    private rtpTimestamp: number = 0;
 
     constructor(opts: RTPOptions) {
         super()
@@ -31,6 +33,17 @@ export class RTP extends BaseRTP {
         const mergedOpts: RTPOptions = { ...defaultAudioOptions, ...opts };
         return new RTP(mergedOpts)
     }
+
+    getNextSequenceNumber(): number {
+        return this.rtpSequenceNumber++;
+    }
+
+    getNextTimestamp(): number {
+        const ts = this.rtpTimestamp;
+        this.rtpTimestamp += this.options.samplesPerChannel;
+        return ts;
+    }
+
     stream() {
         const stream = new RTPStream(
             this,
@@ -47,8 +60,6 @@ export class RTP extends BaseRTP {
 export class RTPStream extends BaseStream {
     private options: RTPOptions
     private task: Promise<void>
-    private rtpSequenceNumber: number = 0;
-    private rtpTimestamp: number = 0;
     private interrupted: boolean = false
     constructor(audio: RTP, opts: RTPOptions){
         super(audio)
@@ -82,10 +93,9 @@ export class RTPStream extends BaseStream {
         const { RtpPacket } = packets;
         const rtpPacket = new RtpPacket();
         rtpPacket.setPayloadType(100);
-        rtpPacket.setSequenceNumber(this.rtpSequenceNumber++);
-        rtpPacket.setTimestamp(this.rtpTimestamp);
+        rtpPacket.setSequenceNumber(this.audio.getNextSequenceNumber());
+        rtpPacket.setTimestamp(this.audio.getNextTimestamp());
         rtpPacket.enableOneByteExtensions()
-        this.rtpTimestamp += 960;
         rtpPacket.setSsrc(this.options.ssrc);
         const payloadDataView = new DataView(opusPayload.buffer, opusPayload.byteOffset, opusPayload.byteLength);
         rtpPacket.setPayload(payloadDataView)

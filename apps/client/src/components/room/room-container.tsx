@@ -61,15 +61,11 @@ export default function RoomContainer() {
     if (remoteAudioRef.current && audioTrack) {
       console.log('Setting up audio track:', audioTrack.label);
       const audioStream = new MediaStream([audioTrack]);
+      console.log(audioStream)
       remoteAudioRef.current.srcObject = audioStream;
       remoteAudioRef.current.volume = 1.0;
       remoteAudioRef.current.muted = false;
-      remoteAudioRef.current.play().catch((error) => {
-        console.error("Audio playback failed:", error);
-        document.addEventListener('click', () => {
-          remoteAudioRef.current?.play();
-        }, { once: true });
-      });
+      remoteAudioRef.current.autoplay = true
     }
   }, [remoteStream]);
 
