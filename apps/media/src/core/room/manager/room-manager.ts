@@ -1,9 +1,6 @@
-import { vad } from '../../../index.js';
 import { config } from '../../config/media-config.js';
 import { routerManager } from '../../mediasoup/managers/media-router-manager.js';
 import { mediasoupWorkerManager } from '../../mediasoup/managers/media-worker-manager.js';
-import { AgentPipeline } from '../../pipeline/core/agent-pipeline.js';
-import { agentManager } from '../../pipeline/managers/agent-pipeline-manager.js';
 import { Room } from '../classes/room.js'
 
 class RoomManager {
@@ -28,9 +25,7 @@ class RoomManager {
                   const worker = await mediasoupWorkerManager.getAvailableWorker()
                   const router = await worker.createRouter(config.mediasoup.router)
                   routerManager.addRouter(router)
-                  const agent = new AgentPipeline(vad ,prompt)
-                  agentManager.addPipeline(agent)
-                  const room= new Room(roomId, topic, userId, router, agent.agentId);
+                  const room= new Room(roomId, topic, userId, router, prompt);
                   this.rooms.set(room.roomId, room)
               } catch (error) {
                   throw new Error(`Room Manager Failed to create room: ${error}`)

@@ -159,3 +159,18 @@ export const deleteAllRoomService = async (
      }
 }
 
+export const getRoomCountService = async(userId: string) => {
+    try {
+        const count = await prisma.room.count({
+            where: {
+                userId
+            }
+        })
+
+        return count
+    } catch (error) {
+        console.log("Get Room Count Error:", error)
+        throw new Error("Failed to get room count")
+    }
+}
+

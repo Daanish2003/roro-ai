@@ -60,7 +60,6 @@ export const auth = betterAuth(
         secret: process.env.BETTER_AUTH_SECRET,
         trustedOrigins: ['http://localhost:3000', 'http://localhost:4000'],
         plugins: [
-          anonymous(), 
           oAuthProxy(), 
           admin(),
           bearer(),

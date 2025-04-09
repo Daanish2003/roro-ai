@@ -1,5 +1,5 @@
 import { createRoomSchema } from "../schema/roomSchema.js";
-import { createRoomService, deleteAllRoomService, deleteRoomService, getAllRoomsService, getRoomService } from "../services/room.service.js";
+import { createRoomService, deleteAllRoomService, deleteRoomService, getAllRoomsService, getRoomCountService, getRoomService } from "../services/room.service.js";
 import type { Request, Response } from 'express';
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { auth } from "../config/auth-config.js";
@@ -10,14 +10,15 @@ import { deleteRoomSchema } from '../schema/roomSchema.js';
 import { redis } from "@roro-ai/database/client";
 import { redisPub } from "../utils/redis.js";
 
-
 export const createRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
     try {
         const validatedFields = createRoomSchema.safeParse(req.body);
 
-        const data = await auth.api.getSession({
-          headers: fromNodeHeaders(req.headers)
-        })
+        if (!req.session) {
+          return res.status(401).json({ error: 'No session found' });
+        }
+
+        const data = req.session
     
         if (!validatedFields.success) {
           return res.status(400).json({
@@ -25,14 +26,22 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
             details: validatedFields.error.flatten()
           });
         }
-    
+
+        console.log(data)
+
+        const existingRoomCount = await getRoomCountService(data.session.userId);
+
+        if((existingRoomCount >= 3) && data.user.role !== "admin") {
+          return res.status(403).json({ error: 'Room limit reached (max 3 rooms)' });
+        }
+
         const { roomName, prompt, topic } = validatedFields.data;
 
         const room = await createRoomService(
           { 
-            userId: data?.session.userId as string, 
+            userId: data.session.userId, 
             roomName, 
-            username: data?.user.name as string,
+            username: data.user.name,
             prompt,
             topic
           });
@@ -256,7 +265,7 @@ export const deleteAllRoomHandler = asyncHandler(async(req: Request, res: Respon
 
         return res.status(200).json({
           success: success
-        })
+  })
         
   } catch (error) {
     console.error("Error deleting room:", error);
@@ -265,5 +274,20 @@ export const deleteAllRoomHandler = asyncHandler(async(req: Request, res: Respon
           error: "Internal server error",
           message: error instanceof Error ? error.message : "Unknown error occurred"
         });
+  }
+})
+
+export const getRoomCountHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
+  try {
+    const count = await getRoomCountService(req.session?.user.id)
+    return res.status(200).json({
+      count: count
+    })
+  } catch (error) {
+    console.error("Error Getting room count:", error);
+    return res.status(500).json({
+      error: "Internal server error",
+      message: error instanceof Error ? error.message : "Unknown error occurred"
+    });
   }
 })

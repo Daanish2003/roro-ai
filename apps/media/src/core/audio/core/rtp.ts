@@ -27,7 +27,7 @@ export class RTP extends BaseRTP {
         this.options = opts
     }
 
-    static async create(opts: Partial<RTPOptions> = {}): Promise<RTP> {
+    static create(opts: Partial<RTPOptions> = {}): RTP {
         const mergedOpts: RTPOptions = { ...defaultAudioOptions, ...opts };
         return new RTP(mergedOpts)
     }
@@ -49,6 +49,7 @@ export class RTPStream extends BaseStream {
     private task: Promise<void>
     private rtpSequenceNumber: number = 0;
     private rtpTimestamp: number = 0;
+    private interrupted: boolean = false
     constructor(audio: RTP, opts: RTPOptions){
         super(audio)
         this.options = opts
@@ -57,6 +58,7 @@ export class RTPStream extends BaseStream {
 
     async run() {
         for await(const buffer of this.input) {
+            if(this.interrupted) return
             if(typeof buffer === 'symbol') {
                 continue
             }
@@ -69,6 +71,7 @@ export class RTPStream extends BaseStream {
         try {
             const encodedPackets = encoder.encode(data)
             const rtpPackets = this.createRtpPacket(encodedPackets)
+            if(this.interrupted) return
             this.output.put(rtpPackets)
         } catch (error) {
             console.error("Failed to handle output stream:", error);
@@ -91,5 +94,9 @@ export class RTPStream extends BaseStream {
         rtpPacket.serialize(arrayBuffer);
         const buffer = utils.arrayBufferToNodeBuffer(arrayBuffer)
         return buffer
+    }
+
+    interrupt() {
+        this.interrupted = true;
     }
 }

@@ -4,6 +4,7 @@ import { AudioEnergyFilter } from '../../utils/index.js';
 import { AudioFrame } from "../audio/audio-frame.js";
 import { AudioByteStream } from "../audio/audio-byte-stream.js";
 import { SpeechEventType } from "../../utils/event.js";
+import { STTLanguages } from "../config/media-config.js";
 
 export interface STTOptions {
     model: string,
@@ -16,7 +17,6 @@ export interface STTOptions {
     filler_words: boolean,
     language: string,
     vad_events: boolean,
-    utterance_end_ms: number
     endpointing: number,
     no_delay: boolean,
     profanity_filter: boolean,
@@ -35,7 +35,6 @@ export const defaultSTTOptions: STTOptions = {
     filler_words: false,
     language: "en-US",
     vad_events: true,
-    utterance_end_ms: 1000,
     endpointing: 25,
     no_delay: true,
     profanity_filter: false,
@@ -73,17 +72,18 @@ export class STTStream extends BaseStream {
     private connection: ListenLiveClient
     private audioEnergyFilter: AudioEnergyFilter
     private keepAliveInterval: NodeJS.Timeout | null = null;
+    private _speaking: boolean = false
     constructor(stt: STT, opts: STTOptions, ws: ListenLiveClient) {
         super(stt)
         this.options = opts
         this.connection = ws
         this.audioEnergyFilter = new AudioEnergyFilter()
         this.run();
-        this.keepAlive()
     }
 
     private async run() {
-        await Promise.all([this.listeners(), this.sendAudio()])
+        await Promise.all([this.listeners(), this.sendAudio()]);
+        clearInterval(this.keepAliveInterval!);
     }
 
     private async sendAudio() {
@@ -117,34 +117,77 @@ export class STTStream extends BaseStream {
 
 
     private async listeners() {   
-        this.connection.on(LiveTranscriptionEvents.Open, () => {
-            console.log("STT connected");   
-        });     
-        this.connection.on(LiveTranscriptionEvents.Transcript, async (data) => {
-            if (data.channel && data.channel.alternatives.length > 0) {
-                const transcript = data.channel.alternatives[0].transcript;
-                if (data.is_final && data.speech_final && transcript.trim().length > 0) {
-                    console.log(transcript)
-                  this.output.put({
-                    type: SpeechEventType.FINAL_TRANSCRIPT,
-                    transcript
-                  })
+        this.connection.on(LiveTranscriptionEvents.Open, () => this.handleEvent(LiveTranscriptionEvents.Open));
+        this.connection.on(LiveTranscriptionEvents.Transcript, (data) => this.handleEvent(LiveTranscriptionEvents.Transcript, data));
+        this.connection.on(LiveTranscriptionEvents.Metadata, (data) => this.handleEvent(LiveTranscriptionEvents.Metadata, data));
+        this.connection.on(LiveTranscriptionEvents.Error, (err) => this.handleEvent(LiveTranscriptionEvents.Error, err));
+        this.connection.on(LiveTranscriptionEvents.Close, () => this.handleEvent(LiveTranscriptionEvents.Close));
+        this.connection.on(LiveTranscriptionEvents.SpeechStarted, () => {console.log("Speech_Started")})
+
+    }
+
+    private handleEvent (eventType: string, data?: any) {
+        switch (eventType) {
+          case LiveTranscriptionEvents.Open:
+            this.keepAlive()
+            console.log("STT connected");
+            break;
+      
+          case LiveTranscriptionEvents.Transcript: {
+            const isFinal = data.is_final
+            const isEndpoint = data.speech_final
+            const alternatives = liveTranscriptionToSpeechData(this.options.language!, data)
+
+            if(alternatives[0] && alternatives[0].text) {
+                if(!this._speaking) {
+                    this._speaking = true;
+                    this.output.put({ type: SpeechEventType.SPEECH_STARTED})
+                }
+
+                if (isFinal) {
+                    this.output.put({
+                      type: SpeechEventType.FINAL_TRANSCRIPT,
+                      alternatives: [alternatives[0], ...alternatives.slice(1)],
+                    });
+                  } else {
+                    this.output.put({
+                      type: SpeechEventType.INTERIM_TRANSCRIPT,
+                      alternatives: [alternatives[0], ...alternatives.slice(1)],
+                    });
+                  }
+              
+              if(isEndpoint && this._speaking) {
+                this._speaking = false;
+                this.output.put({
+                  type: SpeechEventType.END_OF_SPEECH
+                })
               }
             }
-        });
-        this.connection.on(LiveTranscriptionEvents.Metadata, (data) => {
-          console.log("Metadata:", data);
-        });
-    
-        this.connection.on(LiveTranscriptionEvents.Error, (err) => {
-          console.error("Deepgram Error:", err);
-        });
-    
-        this.connection.on(LiveTranscriptionEvents.Close, () => {
-          console.log("STT Closed");
-          this.cleanupConnection();
-        });
-    }
+            break;
+          }
+          case LiveTranscriptionEvents.Metadata:
+            console.log("Metadata:", data);
+            break;
+      
+          case LiveTranscriptionEvents.Error:
+            console.error("Deepgram Error:", data);
+            break;
+      
+          case LiveTranscriptionEvents.Close:
+            console.log("STT Closed");
+            this.cleanupConnection();
+            break;
+          case LiveTranscriptionEvents.SpeechStarted:
+            if (this._speaking) return;
+                this._speaking = true;
+                this.output.put({ type: SpeechEventType.SPEECH_STARTED });
+            break;
+            
+          default:
+            console.warn("Unhandled event:", eventType);
+        }
+    };
+      
 
     public closeConnection(): void {
         if (this.connection) {
@@ -165,7 +208,7 @@ export class STTStream extends BaseStream {
             clearInterval(this.keepAliveInterval);
           }
           this.keepAliveInterval = setInterval(() => {
-            if (this.connection.isConnected()) { 
+            if (this.connection.isConnected()) {
                 this.connection.keepAlive();
             } else {
                 this.cleanupConnection(); 
@@ -173,3 +216,18 @@ export class STTStream extends BaseStream {
         }, 3000);
     }
 }
+
+const liveTranscriptionToSpeechData = (
+    language: STTLanguages | string,
+    data: { [id: string]: any },
+  ) => {
+    const alts: any[] = data['channel']['alternatives'];
+  
+    return alts.map((alt) => ({
+      language,
+      startTime: alt['words'].length ? alt['words'][0]['start'] : 0,
+      endTime: alt['words'].length ? alt['words'][alt['words'].length - 1]['end'] : 0,
+      confidence: alt['confidence'],
+      text: alt['transcript'],
+    }));
+  };

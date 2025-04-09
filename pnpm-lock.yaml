@@ -9135,7 +9135,7 @@ snapshots:
 
   agent-base@6.0.2:
     dependencies:
-      debug: 4.4.0(supports-color@5.5.0)
+      debug: 4.4.0(supports-color@10.0.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -9550,7 +9550,7 @@ snapshots:
   cmake-js@7.3.0:
     dependencies:
       axios: 1.8.4(debug@4.4.0)
-      debug: 4.4.0(supports-color@5.5.0)
+      debug: 4.4.0(supports-color@10.0.0)
       fs-extra: 11.3.0
       lodash.isplainobject: 4.0.6
       memory-stream: 1.0.0
@@ -10511,7 +10511,7 @@ snapshots:
 
   follow-redirects@1.15.9(debug@4.4.0):
     optionalDependencies:
-      debug: 4.4.0(supports-color@5.5.0)
+      debug: 4.4.0(supports-color@10.0.0)
 
   for-each@0.3.5:
     dependencies:
@@ -10776,7 +10776,7 @@ snapshots:
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.4.0(supports-color@5.5.0)
+      debug: 4.4.0(supports-color@10.0.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -12131,7 +12131,7 @@ snapshots:
     dependencies:
       '@mapbox/node-pre-gyp': 1.0.11
       bindings: 1.5.0
-      debug: 4.4.0(supports-color@5.5.0)
+      debug: 4.4.0(supports-color@10.0.0)
       node-addon-api: 4.3.0
     transitivePeerDependencies:
       - encoding

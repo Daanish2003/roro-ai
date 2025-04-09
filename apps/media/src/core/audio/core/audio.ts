@@ -1,8 +1,11 @@
-import { OpusDecoderWebWorker } from "opus-decoder";
-import { AudioStream as BaseStream } from "./utils.js"
 import { AudioFrame } from "../audio-frame.js";
-import { packets, utils } from "rtp.js";
+import { Worker } from "worker_threads"
+import { fileURLToPath } from "url";
+import path from "node:path";
+import EventEmitter from "node:events";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 export interface AudioOptions {
     sampleRate: number,
     channel: number,
@@ -15,95 +18,36 @@ const defaultAudioOptions =  {
     samplesPerChannel: 512
 }
 
-export class Audio {
-    private options: AudioOptions;
-    private decoder: OpusDecoderWebWorker<16000>
-    private streams: AudioStream[] = []
 
-    constructor(opts: AudioOptions) {
-        this.options = opts
-        this.decoder = new OpusDecoderWebWorker({
-            sampleRate: 16000,
-            channels: 2,
-            streamCount: 1,
-            coupledStreamCount: 1,
-            forceStereo: false,
-            channelMappingTable: [0, 1],
-        })
-    }
-
-    static async create(opts: Partial<AudioOptions> = {}): Promise<Audio> {
-        const mergedOpts: AudioOptions = { ...defaultAudioOptions, ...opts };
-        return new Audio(mergedOpts)
-    }
-    stream() {
-        const stream = new AudioStream(
-            this,
-            this.options,
-            this.decoder,
-        )
-
-        this.streams.push(stream)
-
-        return stream
-
-    }
-}
-
-export class AudioStream extends BaseStream {
+export class AudioStream extends EventEmitter {
     private options: AudioOptions
-    private decoder: OpusDecoderWebWorker<16000>
-    private task: Promise<void>
-    constructor(audio: Audio, opts: AudioOptions, decoder: OpusDecoderWebWorker<16000>){
-        super(audio)
+    private worker: Worker
+    constructor(opts: AudioOptions = defaultAudioOptions){
+        super()
         this.options = opts
-        this.decoder = decoder
-        this.initDecoder();
-        this.task = this.run()
-    }
-
-    private async initDecoder() {
-        await this.decoder.ready;
-    }
-
-    async run() {
-        for await(const buffer of this.input) {
-            if(typeof buffer === 'symbol') {
-                continue
+        const workerPath = path.resolve(__dirname,"../../../worker/pcm-worker.js");
+        this.worker = new Worker(workerPath);
+        this.worker.on("message", (message) => {
+            if (message) {               
+               const data = message
+                const frame = new AudioFrame(data, 16000, 1, 512)
+                this.emit('FRAME', frame)
             }
-
-            await this.handleInputStream(buffer)
-        }
+            if (message.error) {
+                console.error("Encoding error from worker:", message.error);
+            }
+        });
     }
 
-    async handleInputStream(stream: Buffer) {
+    run(buffer: Buffer) {
+        this.handleInputStream(buffer)
+    }
+
+    handleInputStream(stream: Buffer) {
         try {
-            const audioStream = this.clearRTPExtension(stream);
-            const pcmData = await this.handleDecoding(audioStream);
-            const frame = new AudioFrame(pcmData, 16000, 1, 512);
-            this.output.put(frame)
+            this.worker.postMessage(stream)
         } catch (error) {
             console.error("Failed to handle input stream:", error);
         }
     }
-
-    private clearRTPExtension(rtpPackets: Buffer) {
-        const view = utils.nodeBufferToDataView(rtpPackets)
-        const { RtpPacket } = packets
-        const report = new RtpPacket(view)
-        report.clearExtensions()
-        const payload = report.getPayload()
-        const stream = utils.dataViewToNodeBuffer(payload)
-        return stream
-    }
-
-    private async handleDecoding(stream: Buffer) {
-        const audio = await this.decoder.decodeFrame(stream)
-
-        const fdata = audio.channelData[0]!
-        const int16Data = Int16Array.from(fdata.subarray(0, 512), (x) => x * 32767);
-
-        return int16Data;
-    }
-
 }

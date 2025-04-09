@@ -7,8 +7,8 @@ export abstract class LLM {
 
 export abstract class LLMStream implements AsyncIterableIterator<string> {
     protected output = new AsyncIterableQueue<string>();
-    closed: boolean = false
-    private llm: LLM
+    closed: boolean = false;
+    private llm: LLM;
     constructor(llm: LLM) {
         this.llm = llm
     }
@@ -17,6 +17,7 @@ export abstract class LLMStream implements AsyncIterableIterator<string> {
         this.output.close();
         this.closed = true
     }
+    
 
     next(): Promise<IteratorResult<string>> {
         return this.output.next()

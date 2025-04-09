@@ -1,177 +1,173 @@
 import { v4 as uuidv4 } from 'uuid';
-import { RtpCapabilities } from 'mediasoup/node/lib/rtpParametersTypes.js';
 import { AgentTrack } from './agent-track.js';
-import { DirectTransport } from 'mediasoup/node/lib/DirectTransportTypes.js';
-// import { DeepgramSTT } from './deepgramSTT.js';
-import { VAD } from '../../vad/core/vad.js';
-import { Audio } from '../../audio/core/audio.js';
+import { AudioStream } from '../../audio/core/audio.js';
+import { Socket } from 'socket.io';
+import { UserInput } from './userInput.js';
+import { AgentOutput } from './agent-output.js';
+import { vad } from '../../../index.js';
 import { STT } from '../../stt/index.js';
 import { LLM } from '../../llm/llm.js';
 import { TTS } from '../../tts/index.js';
-import { RTP } from '../../audio/core/rtp.js';
-import { Consumer } from 'mediasoup/node/lib/ConsumerTypes.js';
-import { DataProducer, Producer } from 'mediasoup/node/lib/types.js';
-import { Socket } from 'socket.io';
-import { VADEventType } from '../../../utils/event.js';
-
+import { Producer } from 'mediasoup/node/lib/types.js';
+import { SpeechEvent } from '../../stt/utils.js';
+import { AudioFrame } from '../../audio/audio-frame.js';
 
 export class AgentPipeline {
     public readonly agentId: string;
-    private _transport: DirectTransport | null = null;
-    private socket: Socket | null = null
+    private socket?: Socket;
     public mediaTracks: AgentTrack;
-    private consumerTrack : Consumer | null =null
-    private producerTrack : Producer | null = null
-    private audio: Audio | null = null
-    private rtp: RTP | null = null
-    private stt: STT
-    private llm: LLM
-    private vad: VAD
-    private tts: TTS
-    private lastTimestamp: number = -1;
+    #prompt: string;
+    #llm: LLM;
+    #tts: TTS;
+    #stt: STT;
+    #userInput: UserInput;
+    #audioStream: AudioStream;
+    #agentOutput: AgentOutput;
+    #producerTrack: Producer;
+    #endOfUtteranceTimer: NodeJS.Timeout | null = null;
+    #transcriptBuffer: string = '';
+    #interimText: string = '';
+    #backupTranscript: string = '';
+    #transcriptSegments: { text: string, start: number; end: number }[] = [];
+    #agentSpeaking: boolean = false;
+    #userSpeaking: boolean = false;
+    #agentCommitted: boolean = false;
 
-    constructor(vad: VAD, prompt: string) {
+    constructor(prompt: string, producerTrack: Producer, ssrc: number) {
         this.agentId = uuidv4();
-        this.vad = vad
+        this.#prompt = prompt;
+        this.#producerTrack = producerTrack;
         this.mediaTracks = new AgentTrack();
-        this.stt = STT.create();
-        this.llm = new LLM(prompt)
-        this.tts = TTS.create()
-        
+        this.#llm = new LLM(this.#prompt);
+        this.#audioStream = new AudioStream();
+        this.#stt = STT.create();
+        this.#userInput = new UserInput(vad, this.#stt);
+        this.#tts = TTS.create();
+        this.#agentOutput = new AgentOutput(this.#tts, this.#llm, this.#producerTrack, ssrc);
+
+        this.#setupListeners();
     }
 
-    setTransport(transport: DirectTransport, socket: Socket){
-        this._transport = transport
-        this.socket = socket
+    setSocket(socket: Socket) {
+        this.socket = socket;
     }
 
-    async subscribeTrack(trackId: string, rtpCap: RtpCapabilities) {
-        this.consumerTrack = await this.mediaTracks.createAgentConsumerTrack({
-            transport: this.transport!,
-            rtpCap: rtpCap,
-            trackId,
-        })
-
-        this.audio = await Audio.create({
-            channel: 1,
-            sampleRate: 16000,
-            samplesPerChannel: 512
-        })
-
-        this.rtp = await RTP.create({
-            channel: 1,
-            sampleRate: 48000,
-            samplesPerChannel: 480,
-            ssrc: this.consumerTrack.rtpParameters.encodings?.[0]?.ssrc,
-        })
-
-        if (!this._transport) {
-            throw new Error("Transport is required for producing data.");
-        }
-
-        const audioStream = this.audio.stream()
-        const vadStream = this.vad.stream()
-        const sttStream = this.stt.stream()
-        const llmStream = this.llm.chat()
-        const ttsStream = this.tts.stream()
-        const rtpStream = this.rtp.stream()
-
-        this.consumerTrack.on('rtp', async (rtpPackets) => {
-            audioStream.pushStream(rtpPackets)
-        })
-
-        async function audioStreamCo() {
-            for await (const frame of audioStream) {
-                vadStream.push(frame)
-                sttStream.push(frame)
-            }
-        }
-
-        const vadStreamCo = async () => {
-            for await(const ev of vadStream) {
-                if(ev.type === VADEventType.START_OF_SPEECH) {
-                    this.socket!.emit("START_OF_SPEECH")
-                }
-
-                if(ev.type === VADEventType.END_OF_SPEECH) {
-                    this.socket!.emit("END_OF_SPEECH")
-                }
-            }
-        }
-
-        async function sttStreamCo(){
-            for await (const ev of sttStream) {
-                const response = await llmStream.sendMessage(ev.transcript)
-                console.log(response)
-            }
-        }
-
-        async function llmStreamCo() {
-            for await (const text of llmStream) {
-                ttsStream.push(text)
-            }
-        }
-
-        async function ttsStreamCo(){
-            for await (const buffer of ttsStream) {
-                rtpStream.pushStream(buffer)
-            }
-        }
-
-        const rtpStreamCo = async () => {
-            const packetQueue: Buffer[] = [];
-            
-            (async () => {
-                for await (const rtpPacket of rtpStream) {
-                    packetQueue.push(rtpPacket);
-                }
-            })();
-        
-            setInterval(() => {
-                if (packetQueue.length > 0) {
-                    const rtpPacket = packetQueue.shift();
-                    this.producerTrack?.send(rtpPacket!)
-                }
-            }, 20);
-        };
-        
-        await Promise.all([audioStreamCo(), vadStreamCo(), sttStreamCo(), llmStreamCo(), ttsStreamCo(), rtpStreamCo()]);        
+    stream(buffer: Buffer) {
+        this.#audioStream.run(buffer)
     }
 
-    get transport() {
-        return this._transport
+    #setupListeners() {
+        this.#audioStream.on('FRAME', this.#onFrame);
+        this.#userInput.on('START_OF_SPEECH', this.#onUserStartSpeech);
+        this.#userInput.on('END_OF_SPEECH', this.#onUserStopSpeech);
+        this.#userInput.on('FINAL_TRANSCRIPT', this.#onFinalTranscript);
+        this.#userInput.on('INTERIM_TRANSCRIPT', this.#onInterimTranscript);
+        this.#agentOutput.on('AGENT_COMMITTED', this.#onAgentCommitted);
+        this.#agentOutput.on('AGENT_START_SPEAKING', this.#onAgentStartSpeaking);
+        this.#agentOutput.on('AGENT_STOP_SPEAKING', this.#onAgentStopSpeaking);
+        this.#agentOutput.on('AGENT_INTERRUPTED', this.#onAgentInterrupted);
     }
 
-    closeStream() {
-        const audioStream = this.audio!.stream()
-        const vadStream = this.vad.stream()
-        const sttStream = this.stt.stream()
-        const llmStream = this.llm.chat()
-        const ttsStream = this.tts.stream()
-        const rtpStream = this.rtp!.stream()
-
-        audioStream.close()
-        vadStream.close()
-        sttStream.close()
-        llmStream.close()
-        ttsStream.close()
-        rtpStream.close()
-        sttStream.closeConnection()
-        ttsStream.closeConnection()
+    #onFrame = async (frame: AudioFrame) => {
+        this.#userInput.push(frame)
     }
 
-    async publishTrack() {
-        this.producerTrack = await this.mediaTracks.createAgentProducerTrack({
-            transport: this.transport!,
-            listenerTrack: this.mediaTracks.agentConsumerTrack!,
-        })
 
-        this.producerTrack.on('listenererror', (data) => {
-            console.log(data)
-        })
+    #onUserStartSpeech = async () => {
+        this.socket?.emit('START_OF_SPEECH');
+        this.#userSpeaking = true;
 
-        return this.producerTrack.id
+        if (this.#agentSpeaking || this.#endOfUtteranceTimer) {
+            this.#agentSpeaking = false;
+            await this.#onInterrupt();
+        }
+    };
+
+    #onUserStopSpeech = () => {
+        this.socket?.emit('END_OF_SPEECH');
+        this.#userSpeaking = false;
+    };
+
+    #onFinalTranscript = (event: SpeechEvent) => {
+        const alt = event.alternatives?.[0];
+        if (!alt) return;
+
+        this.#transcriptBuffer += ' ' + alt.text;
+        this.#transcriptSegments.push({
+            text: alt.text,
+            start: alt.startTime,
+            end: alt.endTime,
+        });
+
+        this.#scheduleEndOfUtterance(1500);
+    };
+
+    #onInterimTranscript = (event: SpeechEvent) => {
+        const alt = event.alternatives?.[0];
+        if (!alt) return;
+
+        this.#interimText = alt.text;
+        if (this.#userSpeaking && this.#endOfUtteranceTimer) {
+            clearTimeout(this.#endOfUtteranceTimer);
+            this.#endOfUtteranceTimer = null;
+        }
+    };
+
+    #onAgentCommitted = () => {
+        this.#agentCommitted = true;
+    };
+
+    #onAgentStartSpeaking = () => {
+        this.#agentSpeaking = true;
+    };
+
+    #onAgentStopSpeaking = () => {
+        this.#agentCommitted = false;
+        this.#agentSpeaking = false;
+    };
+
+    #onAgentInterrupted = () => {
+        this.#agentSpeaking = false;
+        this.#agentCommitted = false;
+    };
+
+    #scheduleEndOfUtterance(delay: number) {
+        if (this.#endOfUtteranceTimer) {
+            clearTimeout(this.#endOfUtteranceTimer);
+            this.#endOfUtteranceTimer = null;
+        }
+
+        this.#endOfUtteranceTimer = setTimeout(() => {
+            this.#handleEndOfTurn();
+        }, delay);
     }
 
-    
+    #handleEndOfTurn() {
+        console.log('End of turn detected — trigger action');
+
+        let finalTranscript = this.#transcriptBuffer.trim();
+        if (this.#backupTranscript.length > 0) {
+            finalTranscript = (this.#backupTranscript + ' ' + finalTranscript).trim();
+        }
+
+        this.#backupTranscript = '';
+        this.#transcriptBuffer = '';
+        this.#transcriptSegments = [];
+
+        this.#agentOutput.agentReplyTask(finalTranscript);
+    }
+
+    #onInterrupt = async () => {
+        console.log('User interrupted, current transcript:', this.#transcriptBuffer);
+        this.#backupTranscript = this.#transcriptBuffer;
+        this.#transcriptBuffer = '';
+        this.#transcriptSegments = [];
+
+        if (this.#endOfUtteranceTimer) {
+            clearTimeout(this.#endOfUtteranceTimer);
+            this.#endOfUtteranceTimer = null;
+        }
+
+        this.#agentOutput.interrupt();
+    }
 }

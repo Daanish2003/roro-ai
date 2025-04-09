@@ -1,9 +1,10 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { LLM as BaseLLM, LLMStream as BaseStream } from "./utils.js"
-import { END, MemorySaver, MessagesAnnotation, START, StateGraph } from "@langchain/langgraph";
+import { v4 as uuidv4 } from "uuid";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { v4 as uuidv4 } from 'uuid';
+import { AIMessageChunk } from "@langchain/core/messages";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { MemorySaver, MessagesAnnotation, START, END, StateGraph } from "@langchain/langgraph";
 import { SystemPrompt } from "./prompt.js";
+import { LLM as BaseLLM, LLMStream as BaseStream } from "./utils.js";
 
 export interface LLMOptions {
     model: string;
@@ -11,119 +12,119 @@ export interface LLMOptions {
 }
 
 const defaultLLMOptions: LLMOptions = {
-    model: 'gemini-2.0-flash',
+    model: "gemini-2.0-flash",
     apiKey: process.env.GEMINI_API_KEY,
-}
+};
 
 export class LLM extends BaseLLM {
-    private options: LLMOptions
-    private client: ChatGoogleGenerativeAI
-    private prompt: string
-    constructor(
-        prompt: string,
-        opts: Partial<LLMOptions> = defaultLLMOptions,
-    ) {
-        super();
-        this.options = {...defaultLLMOptions, ...opts};
-        this.prompt = prompt
+    private threadId: string;
+    private options: LLMOptions;
+    private client: ChatGoogleGenerativeAI;
+    private prompt: string;
+    private promptTemplate: ChatPromptTemplate;
+    private memory: MemorySaver;
 
-        if (this.options.apiKey === undefined) {
-            throw new Error('Gemini API key is required, whether as an argument or as $OPENAI_API_KEY');
+    constructor(prompt: string, opts: Partial<LLMOptions> = {}) {
+        super();
+        this.options = { ...defaultLLMOptions, ...opts };
+        this.prompt = prompt;
+        this.memory = new MemorySaver();
+        this.promptTemplate = this.createPromptTemplate(prompt);
+        this.threadId = uuidv4();
+
+        if (!this.options.apiKey) {
+            throw new Error("Gemini API key is required, either as an argument or via $GEMINI_API_KEY.");
         }
 
         this.client = new ChatGoogleGenerativeAI({
             model: this.options.model,
             temperature: 0.7,
             apiKey: this.options.apiKey,
-        })
+        });
     }
+
     chat(): LLMStream {
-        return new LLMStream(
-            this,
-            this.options,
-            this.client,
-            this.prompt
-        )   
+        return new LLMStream(this, this.options, this.client, this.memory, this.promptTemplate, this.threadId);
+    }
+
+    private createPromptTemplate(prompt: string) {
+        return ChatPromptTemplate.fromMessages([
+            ["system", SystemPrompt],
+            ["user", prompt],
+            ["placeholder", "{messages}"],
+        ]);
     }
 }
 
 export class LLMStream extends BaseStream {
-    private options: LLMOptions
-    private client: ChatGoogleGenerativeAI
+    private options: LLMOptions;
+    private client: ChatGoogleGenerativeAI;
+    private threadId: string;
+    private memory: MemorySaver
+    private promptTemplate: ChatPromptTemplate
     private app: any;
-    private prompt_template: ChatPromptTemplate
-    private threadId: string
-    constructor(llm: LLM, opts: LLMOptions, client: ChatGoogleGenerativeAI, prompt: string) {
-        super(llm)
-        this.options = opts
-        this.client = client
-        this.app = this.initializeWorkflow()
-        this.prompt_template = this.initializeChatPromptTemplate(prompt)
-        this.threadId = uuidv4()
+    private task?: Promise<void>;
+
+    constructor(llm: LLM, opts: LLMOptions, client: ChatGoogleGenerativeAI, memory: MemorySaver, promptTemplate: ChatPromptTemplate, threadId: string) {
+        super(llm);
+        this.options = opts;
+        this.client = client;
+        this.threadId = threadId
+        this.memory = memory
+        this.promptTemplate = promptTemplate
+        this.app = this.initializeWorkflow();
+    }
+
+    async sendChat(userMessage: string) {
+        try {
+            await this.app.invoke({
+                messages: [{ role: "user", content: userMessage }],
+            }, {
+                configurable: { thread_id: this.threadId }
+            });
+        } catch (error) {
+            console.error("LLM response error:", error);
+        }
     }
 
     private async callModel(state: typeof MessagesAnnotation.State) {
-        const prompt = await this.prompt_template.invoke(state)
-        const stream = await this.client.stream(prompt)
+        try {
+            const prompt = await this.promptTemplate.invoke(state);
+            const stream = await this.client.stream(prompt);
 
-        let buffer = "";
-        const response: string[] = []
+            let buffer = "";
+            const response: AIMessageChunk[] = [];
 
-        for await (const chunk of stream) {
-            buffer += chunk.content;
+            for await (const chunk of stream) {
+                response.push(chunk);
+                buffer += chunk.content;
 
-            const parts = buffer.split(",");
-
-            for (let i = 0; i < parts.length - 1; i++) {
-                const chunkText = parts[i]!;
-                this.output.put(chunkText)
-                response.push(chunkText)
-                console.log(chunkText)
+                const sentences = buffer.split(".");
+                for (let i = 0; i < sentences.length - 1; i++) {
+                    const sentence = sentences[i]?.trim();
+                    if (sentence) {
+                        this.output.put(sentence + ".");
+                    }
+                }
+                buffer = sentences[sentences.length - 1] || "";
             }
 
-            buffer = parts[parts.length - 1]!;
-        }
+            if (buffer.trim()) {
+                this.output.put(buffer.trim());
+            }
 
-        if (buffer.trim()) {
-            this.output.put(buffer);
-            response.push(buffer);
-            console.log(buffer)
-        }
-    
-        return {
-          messages: response
+            return { messages: response };
+        } catch (error) {
+            console.error("Error in callModel:", error);
+            return { messages: [] };
         }
     }
-
-    private initializeChatPromptTemplate(prompt: string) {
-        return ChatPromptTemplate.fromMessages([[
-          "system",
-           SystemPrompt,
-        ],
-        ["user", prompt],
-        ["placeholder", "{messages}"]
-      ])
-      }
 
     private initializeWorkflow() {
-        const memory = new MemorySaver()
-        const workflow = new StateGraph(MessagesAnnotation).addNode("model", this.callModel.bind(this)).addEdge(START, "model").addEdge("model", END)
-        const app = workflow.compile({ checkpointer: memory })
-    
-        return app
+        return new StateGraph(MessagesAnnotation)
+            .addNode("model", this.callModel.bind(this))
+            .addEdge(START, "model")
+            .addEdge("model", END)
+            .compile({ checkpointer: this.memory });
     }
-
-    public async sendMessage(userMessage: string) {
-        try {
-          await this.app.invoke({ messages: 
-            {
-              role: "user",
-              content: userMessage
-            }
-           }, { configurable: { thread_id: this.threadId}})
-
-        } catch (error) {
-          console.error("llm response error:", error)
-        }
-      }
 }

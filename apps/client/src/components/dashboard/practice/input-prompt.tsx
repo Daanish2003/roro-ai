@@ -1,87 +1,33 @@
 "use client";
 
 import { motion } from "motion/react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
-import { useForm } from "react-hook-form";
-import type { z } from "zod";
+import React, { useEffect, useState } from "react";
 import { Button } from "@roro-ai/ui/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@roro-ai/ui/components/ui/form";
-import { useSession } from "@/features/auth/auth-client";
-import { PromptSchema } from "@/zod/prompt-schema";
-import { useRouter } from "next/navigation";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, CircleAlert } from "lucide-react";
 import TopicsButton from './topics-button';
-import useShowToast from '@/hooks/use-show-toast';
 import { PromptTopic } from "@/lib/prompt-contant";
-import { AutosizeTextarea } from "./autosize-textarea"; // Import the updated component
-import { usePromptStore } from "@/store/usePrompt";
-import HistoryButton from "../history-button";
-import FeedbackButton from "../feedback-button";
+import { AutosizeTextarea } from "./autosize-textarea";
+import usePrompt from "@/hooks/use-prompt";
+import { useSession } from "@/features/auth/auth-client";
 
 export default function PromptInput() {
-  const router = useRouter();
-  const showToast = useShowToast();
-  const { data: session } = useSession();
-  const { setPrompt } = usePromptStore();
+  const { data } = useSession()
+  const [roomCount, setRoomCount] = useState<number>(0);
+  const { startPracticeHandler, promptValue, setValue, handlePromptTemplate, promptForm, getRoomCount } = usePrompt();
 
-  const promptForm = useForm<z.infer<typeof PromptSchema>>({
-    mode: "onSubmit",
-    resolver: zodResolver(PromptSchema),
-    defaultValues: {
-      prompt: "",
-      topic: "",
-    },
-  });
-
-  const { watch, setValue } = promptForm;
-  const promptValue = watch("prompt");
-
-  const startPracticeHandler = async (values: z.infer<typeof PromptSchema>) => {
-
-    setPrompt(values.prompt)
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/rooms/create-room`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            roomName: `${session?.user.name}'s Room`,
-            prompt: values.prompt,
-            topic: values.topic
-          }),
-          credentials: 'include',
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        showToast({
-          title: "Something went wrong",
-          description: data.message || "Failed to start session",
-          type: "error",
-        });
+  useEffect(() => {
+    const getCount = async () => {
+      try {
+        const data = await getRoomCount();
+        setRoomCount(data.count);
+      } catch (error) {
+        console.error("Failed to fetch room count:", error);
       }
+    };
 
-      router.replace(`/room/${data.roomId}`);
-    } catch (error) {
-      showToast({
-        title: "Error",
-        description: "Failed to start practice. Please try again later.",
-        type: "error",
-      });
-      console.error("Error starting practice:", error);
-    }
-  };
-
-  const handlePromptTemplate = (values: z.infer<typeof PromptSchema>) => {
-    setValue("prompt",  values.prompt, { shouldDirty: true, shouldTouch: true });
-    setValue("topic", values.topic, { shouldDirty: true, shouldTouch: true })
-  };
+    getCount()
+  }, [getRoomCount])
 
   return (
     <div className="flex justify-center items-center min-h-[40.1rem] p-4">
@@ -114,9 +60,16 @@ export default function PromptInput() {
                         maxHeight={200}
                         className="w-full p-4 min-h-[100px] text-base resize-none overflow-hidden border-none bg-transparent scrollbar overflow-y-scroll scrollbar-thumb-zinc-900 scrollbar-track-rounded-full scrollbar-track-transparent scrollbar-thumb-rounded-full"
                       />
-                      <div className="mt-4 flex justify-end">
+                      <div className="mt-4 flex justify-end items-center gap-2">
+                        <span
+                        className="flex gap-1 text-muted-foreground text-xs font-semibold"
+                        >
+                          <CircleAlert className="w-4 h-4"/>
+                          Total Session {roomCount}/3
+                        </span>
                         <Button
                           type="submit"
+                          disabled = {(roomCount >= 3) && data?.user.role === 'user'}
                           className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 flex items-center space-x-2 focus:ring-2 focus:ring-green-400 focus:ring-offset-2 dark:focus:ring-offset-green-800"
                         >
                           <span>Start Practice</span>
