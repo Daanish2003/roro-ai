@@ -54,8 +54,6 @@ export class AgentOutput extends EventEmitter {
 
         const packetQueue: Buffer[] = [];
 
-        console.log(this.#rtpTask)
-
         this.#llmStream.sendChat(inputText);
         this.#ttsStream = this.#tts.stream();
         this.#rtpStream = this.#rtp!.stream();
@@ -157,8 +155,13 @@ export class AgentOutput extends EventEmitter {
             gracefullyCancel(this.#rtpTask)
         }
 
-        this.#ttsStream!.interrupt()
-        this.#rtpStream!.interrupt()
+        if(this.#rtpStream) {
+            this.#rtpStream.interrupt()
+        }
+
+        if(this.#ttsStream) {
+            this.#ttsStream.interrupt()
+        }
 
         this.#ttsTask = undefined;
         this.#rtpTask = undefined;

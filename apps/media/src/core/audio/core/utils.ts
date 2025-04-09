@@ -2,6 +2,8 @@ import { AsyncIterableQueue } from "../../../utils/index.js";
 
 export abstract class RTP {
   abstract stream(): RTPStream
+  abstract getNextSequenceNumber(): number
+  abstract getNextTimestamp(): number
 }
 
 export abstract class RTPStream implements AsyncIterableIterator<Buffer>{
