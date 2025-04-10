@@ -101,3 +101,29 @@ export const deleteFeedbackService = async ({ feedbackId}: {feedbackId: string})
        throw new Error("Failed to create feedback")  
     }
 }
+
+export const getFeedbackCount = async ({ userId }: { userId: string}) => {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+    try {
+        const feedbackCount = await prisma.feedback.count({
+            where: {
+              userId,
+              createdAt: {
+                gte: startOfDay,
+                lte: endOfDay,
+              },
+            },
+          });
+
+          console.log(feedbackCount)
+
+          return feedbackCount
+    } catch (error) {
+        console.log("Get Feedback count Error:", error)
+       throw new Error("Failed to get feedback count")  
+    }
+}

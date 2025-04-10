@@ -75,6 +75,55 @@
   }
 }
 
+@layer components {
+  .gsi-material-button {
+    @apply select-none appearance-none bg-[#131314] border border-[#8e918f] rounded box-border text-[#e3e3e3] cursor-pointer font-['Roboto',_Arial,_sans-serif] text-sm h-10 tracking-[0.25px] outline-none overflow-hidden px-3 relative text-center transition-all align-middle whitespace-nowrap w-auto max-w-[400px] min-w-min;
+  }
+
+  .gsi-material-button .gsi-material-button-icon {
+    @apply h-5 mr-3 min-w-[20px] w-5;
+  }
+
+  .gsi-material-button .gsi-material-button-content-wrapper {
+    @apply flex flex-row flex-nowrap items-center justify-between h-full relative w-full;
+  }
+
+  .gsi-material-button .gsi-material-button-contents {
+    @apply grow font-medium overflow-hidden text-ellipsis align-top;
+  }
+
+  .gsi-material-button .gsi-material-button-state {
+    @apply transition-opacity duration-200 opacity-0 absolute inset-0;
+  }
+
+  .gsi-material-button:disabled {
+    @apply cursor-default bg-[#13131461] border-[#8e918f1f];
+  }
+
+  .gsi-material-button:disabled .gsi-material-button-state {
+    @apply bg-[#e3e3e31f];
+  }
+
+  .gsi-material-button:disabled .gsi-material-button-contents,
+  .gsi-material-button:disabled .gsi-material-button-icon {
+    @apply opacity-40;
+  }
+
+  .gsi-material-button:not(:disabled):active .gsi-material-button-state,
+  .gsi-material-button:not(:disabled):focus .gsi-material-button-state {
+    @apply bg-white opacity-[12%];
+  }
+
+  .gsi-material-button:not(:disabled):hover {
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  }
+
+  .gsi-material-button:not(:disabled):hover .gsi-material-button-state {
+    @apply bg-white opacity-[8%];
+  }
+}
+
+
 
 @layer base {
   * {
