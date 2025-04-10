@@ -1,6 +1,6 @@
 import { auth } from "../config/auth-config.js";
 import { FeedbackSchema } from "../schema/feedbackSchema.js";
-import { createFeedbackService, deleteAllFeedbackService, deleteFeedbackService, getAllFeedbackService, getFeedbackService } from "../services/feedback.service.js";
+import { createFeedbackService, deleteAllFeedbackService, deleteFeedbackService, getAllFeedbackService, getFeedbackCount, getFeedbackService } from "../services/feedback.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { fromNodeHeaders } from "better-auth/node";
 import { Request, Response } from "express";
@@ -13,6 +13,10 @@ export const createFeedbackHandler = asyncHandler(async(req: Request, res: Respo
             headers: fromNodeHeaders(req.headers)
         })
 
+        if(!data) {
+            return res.status(400).json({ error: "Not Authorized "})
+        }
+
         if(!validatedFields.success) {
             return res.status(400).json({
                 error: "Invalid fields",
@@ -21,6 +25,15 @@ export const createFeedbackHandler = asyncHandler(async(req: Request, res: Respo
         }
 
         const { feedbackType, subject, issue, details } = validatedFields.data
+
+        const feedbackCount = await getFeedbackCount({ userId: data.user.id })
+
+        if (feedbackCount >= 3) {
+            return res.status(429).json({
+                error: "Daily feedback limit reached",
+                message: "You can only submit up to 3 feedback items per day.",
+            })
+        }
 
         const response = await createFeedbackService(
             { 
@@ -135,4 +148,20 @@ export const deleteFeedbackHandler = asyncHandler(async(req: Request, res: Respo
           message: error instanceof Error ? error.message : "Unknown error occurred"
         });
     }
+})
+
+export const getFeedbackCountHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
+    const data = await auth.api.getSession({
+        headers: fromNodeHeaders(req.headers)
+    })
+
+    if(!data) {
+        return res.status(400).json({ error: "Not Authorized "})
+    }
+
+    const count = await getFeedbackCount({ userId: data.user.id})
+
+    return res.status(200).json({
+        count
+    })
 })
