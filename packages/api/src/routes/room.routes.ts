@@ -3,7 +3,7 @@ import { authMiddleware } from "../middleware/auth.middleware.js"
 import { Router } from "express"
 import cookieParser from "cookie-parser"
 
-const room_router = Router()
+const room_router: Router = Router()
 
 room_router.use(cookieParser())
 room_router.use(authMiddleware)

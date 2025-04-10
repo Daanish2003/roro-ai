@@ -45,6 +45,7 @@ export class AudioStream extends EventEmitter {
 
     handleInputStream(stream: Buffer) {
         try {
+            if(stream === undefined) return
             this.worker.postMessage(stream)
         } catch (error) {
             console.error("Failed to handle input stream:", error);

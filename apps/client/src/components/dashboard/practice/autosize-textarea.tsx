@@ -81,7 +81,7 @@ export const AutosizeTextarea = React.forwardRef<AutosizeTextAreaRef, AutosizeTe
     React.useEffect(() => {
       if (value !== undefined) {
         setInternalValue(value);
-        setTriggerAutoSize(value);
+        setTriggerAutoSize(value as React.SetStateAction<string>);
       }
     }, [value]);
 
