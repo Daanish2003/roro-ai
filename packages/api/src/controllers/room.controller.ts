@@ -14,11 +14,13 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
     try {
         const validatedFields = createRoomSchema.safeParse(req.body);
 
-        if (!req.session) {
-          return res.status(401).json({ error: 'No session found' });
-        }
+        const data = await auth.api.getSession({
+          headers: fromNodeHeaders(req.headers),
+        });
 
-        const data = req.session
+        if(!data) {
+          return res.status(400).json({ error: "Not Authenticated"})
+        }      
     
         if (!validatedFields.success) {
           return res.status(400).json({
@@ -26,8 +28,6 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
             details: validatedFields.error.flatten()
           });
         }
-
-        console.log(data)
 
         const existingRoomCount = await getRoomCountService(data.session.userId);
 
@@ -279,7 +279,15 @@ export const deleteAllRoomHandler = asyncHandler(async(req: Request, res: Respon
 
 export const getRoomCountHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
   try {
-    const count = await getRoomCountService(req.session?.user.id)
+    const data = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+
+    if(!data) {
+      return res.status(400).json({ error: "Not Authenticated"})
+    } 
+
+    const count = await getRoomCountService(data.user.id)
     return res.status(200).json({
       count: count
     })

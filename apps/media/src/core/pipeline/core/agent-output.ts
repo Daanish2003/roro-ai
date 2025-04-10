@@ -61,6 +61,7 @@ export class AgentOutput extends EventEmitter {
         const llmLoop = async () => {
             try {
                 for await (const text of this.#llmStream) {
+                    if(this.#interrupted) return
                     this.#ttsStream!.push(text);
                 }
             } catch (err) {
@@ -78,6 +79,7 @@ export class AgentOutput extends EventEmitter {
                 for await (const buffer of this.#ttsStream!) {
                     if (cancelled) break;
                     this.emit("AGENT_START_SPEAKING")
+                    if(this.#interrupted) return
                     this.#rtpStream!.pushStream(buffer);
                 }
             } catch (err) {
@@ -98,6 +100,7 @@ export class AgentOutput extends EventEmitter {
                     this.#speaking = true;
                     const rtpPacket = packetQueue.shift();
                     if (rtpPacket) {
+                        if(this.#interrupted) return
                         this.#producerTrack.send(rtpPacket);
                     }
                 } else if (this.#speaking) {

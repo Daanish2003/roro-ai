@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Application } from 'express';
 import cors from "cors"
 import "dotenv/config.js"
 import room_router from './routes/room.routes.js';
@@ -8,7 +8,7 @@ import { redis } from '@roro-ai/database/client';
 import { redisPub } from './utils/redis.js';
 import { auth } from './config/auth-config.js';
 
-const app = express();
+const app: Application = express();
 
 const initRedis = async () => {
     try {
@@ -23,7 +23,7 @@ const initRedis = async () => {
 initRedis();
 
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
     exposedHeaders: [

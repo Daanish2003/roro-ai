@@ -1,6 +1,4 @@
 "use client";
-
-import { User } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
 import { FaGoogle } from "react-icons/fa";
 import { Button } from "@roro-ai/ui/components/ui/button";

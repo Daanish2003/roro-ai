@@ -82,7 +82,7 @@ export const getAllFeedbacksHandler = asyncHandler(async(req: Request, res: Resp
 
 export const getFeedbackHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
     try {
-        const feedbackId = req.params.id
+        const feedbackId = req.params.id as string
         const feedback = await getFeedbackService({feedbackId})
 
         return res.status(200).json({
@@ -120,7 +120,7 @@ export const deleteAllFeedbacksHandler = asyncHandler(async(req: Request, res: R
 
 export const deleteFeedbackHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
     try {
-        const feedbackId = req.params.id
+        const feedbackId = req.params.id as string
         const response = await deleteFeedbackService({feedbackId})
 
         return res.status(200).json({

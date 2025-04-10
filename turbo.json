@@ -19,10 +19,8 @@
     "REDIS_URL",
     "REDIS_TLS",
     "DEEPGRAM_API_KEY",
-    "GROQ_API_KEY",
     "GEMINI_API_KEY",
-    "ELEVENLABS_API_KEY",
-    "MONGO_DATABASE_URL"
+    "FRONTEND_URL"
   ],
   "tasks": {
     "build": {
@@ -44,6 +42,10 @@
       "cache": false
     },
     "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "start": {
       "cache": false,
       "persistent": true
     },

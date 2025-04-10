@@ -5,10 +5,11 @@
   "main": "index.js",
   "type": "module",
   "exports": {
-    "./app": "./src/index.ts"
+    "./app": "./dist/index.js"
   },
   "scripts": {
-    "lint": "eslint src max-warnings 0 "
+    "lint": "eslint src max-warnings 0 ",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
