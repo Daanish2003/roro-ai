@@ -31,7 +31,6 @@ export class AgentPipeline {
     #transcriptSegments: { text: string, start: number; end: number }[] = [];
     #agentSpeaking: boolean = false;
     #userSpeaking: boolean = false;
-    #agentCommitted: boolean = false;
 
     constructor(prompt: string, producerTrack: Producer, ssrc: number) {
         this.agentId = uuidv4();
@@ -58,20 +57,24 @@ export class AgentPipeline {
 
     #setupListeners() {
         this.#audioStream.on('FRAME', this.#onFrame);
+        this.#userInput.on('STT_CONNECTED', this.#onSTTConnected);
         this.#userInput.on('START_OF_SPEECH', this.#onUserStartSpeech);
         this.#userInput.on('END_OF_SPEECH', this.#onUserStopSpeech);
         this.#userInput.on('FINAL_TRANSCRIPT', this.#onFinalTranscript);
         this.#userInput.on('INTERIM_TRANSCRIPT', this.#onInterimTranscript);
-        this.#agentOutput.on('AGENT_COMMITTED', this.#onAgentCommitted);
         this.#agentOutput.on('AGENT_START_SPEAKING', this.#onAgentStartSpeaking);
         this.#agentOutput.on('AGENT_STOP_SPEAKING', this.#onAgentStopSpeaking);
         this.#agentOutput.on('AGENT_INTERRUPTED', this.#onAgentInterrupted);
+
     }
 
     #onFrame = async (frame: AudioFrame) => {
         this.#userInput.push(frame)
     }
 
+    #onSTTConnected = async () => {
+        this.socket?.emit('STT_CONNECTED')
+    }
 
     #onUserStartSpeech = async () => {
         this.socket?.emit('START_OF_SPEECH');
@@ -113,22 +116,17 @@ export class AgentPipeline {
         }
     };
 
-    #onAgentCommitted = () => {
-        this.#agentCommitted = true;
-    };
 
     #onAgentStartSpeaking = () => {
         this.#agentSpeaking = true;
     };
 
     #onAgentStopSpeaking = () => {
-        this.#agentCommitted = false;
         this.#agentSpeaking = false;
     };
 
     #onAgentInterrupted = () => {
         this.#agentSpeaking = false;
-        this.#agentCommitted = false;
     };
 
     #scheduleEndOfUtterance(delay: number) {
@@ -169,5 +167,10 @@ export class AgentPipeline {
         }
 
         this.#agentOutput.interrupt();
+    }
+
+    closeStream() {
+        this.#userInput.close()
+        this.#agentOutput.close()
     }
 }

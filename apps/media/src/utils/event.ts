@@ -19,6 +19,7 @@ export enum VADEventType {
 }
 
 export enum SpeechEventType {
+    CONNECTED,
     SPEECH_STARTED,
     END_OF_SPEECH,
     FINAL_TRANSCRIPT,

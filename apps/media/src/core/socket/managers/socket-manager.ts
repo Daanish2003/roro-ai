@@ -267,6 +267,7 @@ export class SocketManager {
         const room = roomManager.getRoom(roomId)
 
         if(room) {
+          room.agent?.closeStream()
           room.mediaTracks.closeTrack()
           room.mediaTransports.closeTransport()
           roomManager.removeRoom(room.roomId)
@@ -282,6 +283,7 @@ export class SocketManager {
             const room = roomManager.getRoomBySocketId(socket.id)
 
             if(room) {
+              room.agent?.closeStream()
               room.mediaTracks.closeTrack()
               room.mediaTransports.closeTransport()
               roomManager.removeRoom(room.roomId)

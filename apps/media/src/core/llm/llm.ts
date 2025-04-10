@@ -12,7 +12,7 @@ export interface LLMOptions {
 }
 
 const defaultLLMOptions: LLMOptions = {
-    model: "gemini-2.0-flash",
+    model: "gemini-2.0-flash-lite",
     apiKey: process.env.GEMINI_API_KEY,
 };
 
