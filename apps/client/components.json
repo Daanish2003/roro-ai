@@ -11,7 +11,7 @@
     },
     "iconLibrary": "lucide",
     "aliases": {
-      "components": "@/components",
+      "components": "../components",
       "hooks": "@/hooks",
       "lib": "@/lib",
       "utils": "@roro-ai/ui/lib/utils",

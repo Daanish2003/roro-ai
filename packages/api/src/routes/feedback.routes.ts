@@ -4,7 +4,7 @@ import { adminMiddleware } from "../middleware/admin.middleware.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { Router } from "express";
 
-const feedback_router = Router()
+const feedback_router: Router = Router()
 
 feedback_router.use(authMiddleware)
 feedback_router.route("/create-feedback").post(createFeedbackHandler)

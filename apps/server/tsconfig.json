@@ -7,7 +7,11 @@
     "paths": {
         "@roro-ai/database" : ["@roro-ai/database/src/*"]
     },
-    "noEmit": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     

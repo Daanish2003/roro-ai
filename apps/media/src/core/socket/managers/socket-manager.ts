@@ -17,7 +17,7 @@ export class SocketManager {
     this.connections = new Map();
     this.io = new Server(httpServer, {
       cors: {
-        origin: "http://localhost:3000",
+        origin: process.env.FRONTEND_URL,
         methods: ["GET", "POST"],
         credentials: true,
         allowedHeaders: ["content-Type"],
