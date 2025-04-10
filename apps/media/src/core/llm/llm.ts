@@ -76,6 +76,7 @@ export class LLMStream extends BaseStream {
     }
 
     async sendChat(userMessage: string) {
+        console.log(userMessage)
         try {
             await this.app.invoke({
                 messages: [{ role: "user", content: userMessage }],
