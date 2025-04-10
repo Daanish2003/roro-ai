@@ -47,7 +47,7 @@ export class AgentOutput extends EventEmitter {
         }
 
         if (this.#ttsTask || this.#rtpTask) {
-            await this.interrupt();
+            await this.reset();
         }
 
         this.#interrupted = false;
@@ -61,7 +61,6 @@ export class AgentOutput extends EventEmitter {
         const llmLoop = async () => {
             try {
                 for await (const text of this.#llmStream) {
-                    console.log(text)
                     this.#ttsStream!.push(text);
                 }
             } catch (err) {
@@ -99,7 +98,6 @@ export class AgentOutput extends EventEmitter {
                     this.#speaking = true;
                     const rtpPacket = packetQueue.shift();
                     if (rtpPacket) {
-                        console.log(rtpPacket)
                         this.#producerTrack.send(rtpPacket);
                     }
                 } else if (this.#speaking) {
@@ -142,11 +140,7 @@ export class AgentOutput extends EventEmitter {
         return future.await;
     }
 
-    async interrupt() {
-        console.log("⚠️ Interrupting agent...");
-        this.#interrupted = true
-        this.emit("AGENT_INTERRUPTED");
-
+    async reset() {
         if(this.#ttsTask) {
             gracefullyCancel(this.#ttsTask)
         }
@@ -167,6 +161,14 @@ export class AgentOutput extends EventEmitter {
         this.#rtpTask = undefined;
         this.#ttsStream = undefined;
         this.#rtpStream = undefined;
+    }
+
+    async interrupt() {
+        console.log("⚠️ Interrupting agent...");
+        this.#interrupted = true
+        this.emit("AGENT_INTERRUPTED");
+
+        this.reset()
     }
 
     close() {

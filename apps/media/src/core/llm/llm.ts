@@ -12,7 +12,7 @@ export interface LLMOptions {
 }
 
 const defaultLLMOptions: LLMOptions = {
-    model: "gemini-2.0-flash",
+    model: "gemini-2.0-flash-lite",
     apiKey: process.env.GEMINI_API_KEY,
 };
 
@@ -76,7 +76,6 @@ export class LLMStream extends BaseStream {
     }
 
     async sendChat(userMessage: string) {
-        console.log(userMessage)
         try {
             await this.app.invoke({
                 messages: [{ role: "user", content: userMessage }],
