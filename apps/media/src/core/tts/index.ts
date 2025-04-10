@@ -65,7 +65,6 @@ export class streamTTS extends BaseStreamTTS {
     private handleEvent(eventType: string, data?: any) {
         switch (eventType) {
             case LiveTTSEvents.Open:
-                console.log("Connection opened");
                 break;
 
             case LiveTTSEvents.Close:

@@ -52,6 +52,9 @@ export class UserInput extends EventEmitter {
                     for await (const ev of this.sttStream) {
                         if (cancelled) return;
                         switch (ev.type) {
+                            case SpeechEventType.CONNECTED:
+                                this.emit("STT_CONNECTED")
+                                break
                             case SpeechEventType.FINAL_TRANSCRIPT:
                                 this.emit("FINAL_TRANSCRIPT", ev);
                                 break
@@ -88,6 +91,7 @@ export class UserInput extends EventEmitter {
             throw new Error("UserInput already closed")
         }
 
+        this.sttStream.closeConnection()
         this.closed = true
         this._speaking = false;
 

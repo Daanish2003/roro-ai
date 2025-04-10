@@ -171,6 +171,7 @@ export class AgentOutput extends EventEmitter {
 
     close() {
         this.#closed = true;
+        this.#ttsStream?.closeConnection()
         this.interrupt();
         this.removeAllListeners();
     }

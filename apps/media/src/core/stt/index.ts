@@ -130,7 +130,7 @@ export class STTStream extends BaseStream {
         switch (eventType) {
           case LiveTranscriptionEvents.Open:
             this.keepAlive()
-            console.log("STT connected");
+            this.output.put({ type: SpeechEventType.CONNECTED})
             break;
       
           case LiveTranscriptionEvents.Transcript: {
