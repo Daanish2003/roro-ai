@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { AIMessageChunk } from "@langchain/core/messages";
+import { AIMessage, AIMessageChunk, HumanMessage } from "@langchain/core/messages";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { MemorySaver, MessagesAnnotation, START, END, StateGraph } from "@langchain/langgraph";
 import { SystemPrompt } from "./prompt.js";
@@ -64,6 +64,7 @@ export class LLMStream extends BaseStream {
     private promptTemplate: ChatPromptTemplate
     private app: any;
     private task?: Promise<void>;
+    private interrupted: boolean = false
 
     constructor(llm: LLM, opts: LLMOptions, client: ChatGoogleGenerativeAI, memory: MemorySaver, promptTemplate: ChatPromptTemplate, threadId: string) {
         super(llm);
@@ -76,13 +77,18 @@ export class LLMStream extends BaseStream {
     }
 
     async sendChat(userMessage: string) {
-        console.log(userMessage)
+        const trimmed = userMessage?.trim();
+        if (this.interrupted || !trimmed) return;
         try {
-            await this.app.invoke({
-                messages: [{ role: "user", content: userMessage }],
-            }, {
-                configurable: { thread_id: this.threadId }
-            });
+            if(userMessage.length > 0) {
+                await this.app.invoke({
+                    messages: [new HumanMessage(userMessage)],
+                }, {
+                    configurable: { thread_id: this.threadId }
+                });
+            } else {
+                console.log("userMessage:", userMessage)
+            }
         } catch (error) {
             console.error("LLM response error:", error);
         }
@@ -90,20 +96,22 @@ export class LLMStream extends BaseStream {
 
     private async callModel(state: typeof MessagesAnnotation.State) {
         try {
+            console.log(state.messages)
             const prompt = await this.promptTemplate.invoke(state);
             const stream = await this.client.stream(prompt);
 
             let buffer = "";
-            const response: AIMessageChunk[] = [];
+            const chunks: AIMessageChunk[] = [];
 
             for await (const chunk of stream) {
-                response.push(chunk);
+                chunks.push(chunk);
                 buffer += chunk.content;
 
                 const sentences = buffer.split(".");
                 for (let i = 0; i < sentences.length - 1; i++) {
                     const sentence = sentences[i]?.trim();
                     if (sentence) {
+                        if(this.interrupted) return
                         this.output.put(sentence + ".");
                     }
                 }
@@ -111,10 +119,15 @@ export class LLMStream extends BaseStream {
             }
 
             if (buffer.trim()) {
+                if(this.interrupted) return
                 this.output.put(buffer.trim());
             }
 
-            return { messages: response };
+            const fullResponse = new AIMessage({
+                content: chunks.map(chunk => chunk.content).join(""),
+              });
+
+            return { messages: [fullResponse] };
         } catch (error) {
             console.error("Error in callModel:", error);
             return { messages: [] };
@@ -127,5 +140,9 @@ export class LLMStream extends BaseStream {
             .addEdge(START, "model")
             .addEdge("model", END)
             .compile({ checkpointer: this.memory });
+    }
+
+    interrupt() {
+        this.interrupted = true
     }
 }
