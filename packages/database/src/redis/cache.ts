@@ -43,7 +43,7 @@ class RedisClient {
   public async disconnect(): Promise<void> {
     if (this.isConnected) {
       try {
-        await this.client.quit(); // Graceful disconnect in ioredis
+        await this.client.quit();
       } catch (error) {
         console.error('Failed to disconnect from Redis:', error);
         throw error;
