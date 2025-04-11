@@ -44,7 +44,7 @@ class RedisPublisher {
   public async disconnect(): Promise<void> {
     if (this.isConnected) {
       try {
-        await this.publisher.quit(); // graceful disconnect in ioredis
+        await this.publisher.quit();
       } catch (error) {
         console.error('Failed to disconnect from Redis:', error);
         throw error;
