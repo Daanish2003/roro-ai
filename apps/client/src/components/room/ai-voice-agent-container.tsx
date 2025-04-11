@@ -30,7 +30,7 @@ export default function AiVoiceAgentContainer({ remoteAudioRef }: AiVoiceAgentCo
 
   
   return (
-    <div className="border rounded-2xl lg:h-[40rem] lg:w-1/2 h-[18rem] w-[28rem] md:h-[40rem] md:w-1/2 flex flex-col">
+    <div className="border rounded-2xl lg:h-[36rem] lg:w-1/2 h-[18rem] w-[28rem] md:h-[40rem] md:w-1/2 flex flex-col">
       {(!ready && joined) && (
         <h1 className="text-primary font-medium">Connecting...</h1>
       )}

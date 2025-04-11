@@ -16,9 +16,10 @@ export class AgentOutput extends EventEmitter {
     #rtpTask?: CancellablePromise<void>;
     #speaking: boolean = false;
     #closed: boolean = false;
-    #llmStream: ReturnType<LLM["chat"]>;
+    #llmStream?: ReturnType<LLM["chat"]>;
     #ttsStream?: ReturnType<TTS["stream"]>;
     #rtpStream?: ReturnType<RTP["stream"]>;
+    #llmTask?: CancellablePromise<void>;
     #interrupted = false
 
     constructor(tts: TTS, llm: LLM, producerTrack: Producer, ssrc: number) {
@@ -33,8 +34,6 @@ export class AgentOutput extends EventEmitter {
             samplesPerChannel: 960,
             ssrc
         });
-
-        this.#llmStream = this.#llm.chat();
     }
 
     async agentReplyTask(inputText: string) {
@@ -46,7 +45,7 @@ export class AgentOutput extends EventEmitter {
             future.resolve()
         }
 
-        if (this.#ttsTask || this.#rtpTask) {
+        if (this.#ttsTask || this.#rtpTask || this.#llmTask) {
             await this.reset();
         }
 
@@ -54,20 +53,28 @@ export class AgentOutput extends EventEmitter {
 
         const packetQueue: Buffer[] = [];
 
-        this.#llmStream.sendChat(inputText);
+        this.#llmStream = this.#llm.chat();
         this.#ttsStream = this.#tts.stream();
         this.#rtpStream = this.#rtp!.stream();
+        this.#llmStream.sendChat(inputText)
 
-        const llmLoop = async () => {
+        this.#llmTask = new CancellablePromise(async (resolve, _, onCancel) => {
+            let cancelled = false;
+            onCancel(() => {
+                cancelled = true;
+            });
+        
             try {
-                for await (const text of this.#llmStream) {
-                    if(this.#interrupted) return
+                for await (const text of this.#llmStream!) {
+                    if (cancelled || this.#interrupted) break;
                     this.#ttsStream!.push(text);
                 }
             } catch (err) {
                 future.reject(err as Error);
             }
-        }
+
+            resolve();
+        });
 
         this.#ttsTask = new CancellablePromise(async (resolve, _, onCancel) => {
             let cancelled = false;
@@ -86,7 +93,7 @@ export class AgentOutput extends EventEmitter {
                 future.reject(err as Error);
             }
 
-            this.#rtpStream?.flush();
+            this.#ttsStream?.flush();
             this.#ttsStream?.endInput();
             resolve()
         });
@@ -131,7 +138,7 @@ export class AgentOutput extends EventEmitter {
         });
 
         Promise.all([
-            llmLoop(),
+            this.#llmTask,
             this.#ttsTask,
             this.#rtpTask,
         ]).then(() => {
@@ -144,6 +151,21 @@ export class AgentOutput extends EventEmitter {
     }
 
     async reset() {
+        if(this.#llmStream) {
+            this.#llmStream.interrupt()
+        }
+        if(this.#ttsStream) {
+            this.#ttsStream.interrupt()
+        }
+
+        if(this.#rtpStream) {
+            this.#rtpStream.interrupt()
+        }
+
+        if(this.#llmTask) {
+            gracefullyCancel(this.#llmTask)
+        }
+
         if(this.#ttsTask) {
             gracefullyCancel(this.#ttsTask)
         }
@@ -152,16 +174,10 @@ export class AgentOutput extends EventEmitter {
             gracefullyCancel(this.#rtpTask)
         }
 
-        if(this.#rtpStream) {
-            this.#rtpStream.interrupt()
-        }
-
-        if(this.#ttsStream) {
-            this.#ttsStream.interrupt()
-        }
-
+        this.#llmTask = undefined;
         this.#ttsTask = undefined;
         this.#rtpTask = undefined;
+        this.#llmStream = undefined;
         this.#ttsStream = undefined;
         this.#rtpStream = undefined;
     }
