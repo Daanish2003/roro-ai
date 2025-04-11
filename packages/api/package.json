@@ -5,7 +5,8 @@
   "main": "index.js",
   "type": "module",
   "exports": {
-    "./app": "./dist/index.js"
+    "./app": "./dist/index.js",
+    "./utils": "./dist/utils/redis.js"
   },
   "scripts": {
     "lint": "eslint src max-warnings 0 ",
