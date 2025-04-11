@@ -5,7 +5,6 @@ import room_router from './routes/room.routes.js';
 import feedback_router from './routes/feedback.routes.js';
 import { toNodeHandler } from 'better-auth/node';
 import { redis } from '@roro-ai/database/client';
-import { redisPub } from './utils/redis.js';
 import { auth } from './config/auth-config.js';
 
 const app: Application = express();
@@ -13,7 +12,6 @@ const app: Application = express();
 const initRedis = async () => {
     try {
         await redis.connect();
-        await redisPub.connect()
     } catch (error) {
         console.error('Failed to initialize Redis:', error);
         process.exit(1);
