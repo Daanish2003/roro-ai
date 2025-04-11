@@ -86,8 +86,6 @@ export class LLMStream extends BaseStream {
                 }, {
                     configurable: { thread_id: this.threadId }
                 });
-            } else {
-                console.log("userMessage:", userMessage)
             }
         } catch (error) {
             console.error("LLM response error:", error);
@@ -96,7 +94,6 @@ export class LLMStream extends BaseStream {
 
     private async callModel(state: typeof MessagesAnnotation.State) {
         try {
-            console.log(state.messages)
             const prompt = await this.promptTemplate.invoke(state);
             const stream = await this.client.stream(prompt);
 

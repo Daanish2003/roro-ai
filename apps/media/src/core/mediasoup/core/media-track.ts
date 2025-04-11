@@ -84,8 +84,6 @@ export class MediaTrack {
       });
 
 
-      console.log(await consumer.getStats())
-
       const consumerParams = {
         producerId: trackId,
         id: consumer.id,
