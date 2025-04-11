@@ -1,51 +1,56 @@
-import { createClient, RedisClientType } from 'redis';
-import "dotenv/config";
+import { Redis } from 'ioredis';
+import 'dotenv/config';
 import { roomManager } from '../core/room/manager/room-manager.js';
 
 class RedisSubscriber {
-    private static instance: RedisSubscriber;
-    private subscriber: RedisClientType;
+  private static instance: RedisSubscriber;
+  private subscriber: Redis;
 
-    private constructor() {
-        this.subscriber = createClient({ url: process.env.REDIS_URL });
-        this.setupEventHandlers();
+  private constructor() {
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) {
+      throw new Error("REDIS_URL is not defined in environment variables");
     }
 
-    private setupEventHandlers(): void {
-        this.subscriber.on('error', (err) => console.error('Redis Subscriber Error:', err));
-        this.subscriber.on('connect', () => console.log('Redis Subscriber Connected'));
-    }
+    this.subscriber = new Redis(redisUrl);
 
-    public static getInstance(): RedisSubscriber {
-        if (!RedisSubscriber.instance) {
-            RedisSubscriber.instance = new RedisSubscriber();
-        }
-        return RedisSubscriber.instance;
-    }
+    this.setupEventHandlers();
+  }
 
-    public async connect(): Promise<void> {
-        await this.subscriber.connect();
-    }
+  private setupEventHandlers(): void {
+    this.subscriber.on('error', (err) => console.error('Redis Subscriber Error:', err));
+    this.subscriber.on('connect', () => console.log('Redis Subscriber Connected'));
+    this.subscriber.on('message', (channel, message) => {
+      this.listener(message, channel);
+    });
+  }
 
-    private async listener(message: string, channel: string) {
-      if(channel === "createRoom") {
-        const data = JSON.parse(message)
-        console.log(data)
+  public static getInstance(): RedisSubscriber {
+    if (!RedisSubscriber.instance) {
+      RedisSubscriber.instance = new RedisSubscriber();
+    }
+    return RedisSubscriber.instance;
+  }
+
+  private async listener(message: string, channel: string) {
+    if (channel === 'createRoom') {
+      try {
+        const data = JSON.parse(message);
         await roomManager.createRoom(
-            data.id,
-            data.topic,
-            data.prompt,
-            data.userId
-        )
+          data.id,
+          data.topic,
+          data.prompt,
+          data.userId
+        );
+      } catch (err) {
+        console.error('Failed to handle createRoom message:', err);
       }
     }
+  }
 
-    public async subscribe(channel: string): Promise<void> {
-        await this.subscriber.subscribe(channel, (message) => {
-            this.listener(message, channel)
-        })
-        };
-    }
-
+  public async subscribe(channel: string): Promise<void> {
+    await this.subscriber.subscribe(channel);
+  }
+}
 
 export const redisSub = RedisSubscriber.getInstance();
