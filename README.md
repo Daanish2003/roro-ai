@@ -52,7 +52,7 @@ Here is a quick demo of the app. We hope you enjoy it.
 
 Liked it? Please give a ⭐️ to <b>Roro AI Repo</b>.
 
-# 💻 Use Model Repo
+# 💻 Use Roro AI
 Please access `Roro AI` using the URL:
 
 > https://github.com/Daanish2003/roro-ai

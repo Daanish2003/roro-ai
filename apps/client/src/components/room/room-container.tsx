@@ -8,6 +8,8 @@ import AiVoiceAgentContainer from './ai-voice-agent-container'
 import VideoContainer from './video-container'
 import Controller from './controller'
 import JoinButton from './join-button'
+import Logo from '../landing-page/logo'
+import CountdownTimer from '@/lib/timer'
 
 
 export default function RoomContainer() {
@@ -69,8 +71,13 @@ export default function RoomContainer() {
     }
   }, [remoteStream]);
 
+
   return (
     <>
+      <div className='h-16 border-b items-center flex px-4 justify-between'>
+        <Logo />
+        <CountdownTimer />
+      </div>
       <div className='flex flex-col items-center md:gap-x-2 mt-2 md:flex-row gap-y-2 mb-2'>
          <AiVoiceAgentContainer remoteAudioRef={remoteAudioRef}/>
          <VideoContainer localVideoRef={localVideoRef}/>
