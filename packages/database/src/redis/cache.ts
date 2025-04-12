@@ -82,6 +82,15 @@ class RedisClient {
     }
   }
 
+  public async publish(channel: string, message: string): Promise<void> {
+    try {
+      await this.client.publish(channel, message);
+    } catch (error) {
+      console.error('Failed to publish message to Redis:', error);
+      throw error;
+    }
+  }
+
   public getClient(): Redis {
     return this.client;
   }

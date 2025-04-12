@@ -81,7 +81,7 @@ export default function PromptInput() {
                 </FormItem>
               )}
             />
-            <div className="mt-4 grid grid-rows-2 sm:grid-cols-2 gap-2 md:grid-cols-4 md:grid-rows-1">
+            <div className="mt-4 grid grid-rows-2 sm:grid-cols-2 gap-2 lg:grid-cols-4 md:grid-cols-2 md:grid-rows-1">
               {PromptTopic.map(({ topic, prompt }) => (
                 <TopicsButton
                   key={topic}

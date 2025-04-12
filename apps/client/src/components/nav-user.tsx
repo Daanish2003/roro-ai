@@ -46,7 +46,7 @@ function NavUser() {
               size="lg"
               className="data-[state=open]:bg-transparent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-5 w-5 rounded-lg">
+              <Avatar className="h-5 w-5 rounded-sm">
                 <AvatarImage src={session.user.image as string} alt={session.user.name} />
                 <AvatarFallback className="rounded-lg">CN</AvatarFallback>
               </Avatar>
