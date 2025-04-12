@@ -12,7 +12,23 @@ class RedisClient {
       throw new Error('REDIS_URL is not defined');
     }
 
-    this.client = new Redis(redisUrl);
+    this.client = new Redis(redisUrl, {
+      keepAlive: 5000,
+      connectTimeout: 10000,
+      maxRetriesPerRequest: null,
+      retryStrategy: (times) => {
+        const maxDelay = 5000;
+        const initialDelay = 50;
+        const maxRetries = 10
+
+        if (times > maxRetries) {
+          return undefined;
+        }
+
+        const delay = Math.min(initialDelay * Math.pow(2, times), maxDelay);
+        return delay
+      }
+    });
     this.setupEventHandlers();
   }
 
