@@ -4,6 +4,7 @@ import { Redis } from "ioredis";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin, bearer, jwt, oAuthProxy } from "better-auth/plugins";
+import { redis } from '@roro-ai/database/client';
 
 export const auth = betterAuth({
     appName: "Roro",
@@ -37,24 +38,22 @@ export const auth = betterAuth({
     },
     secondaryStorage: {
         get: async (key) => {
-            const redis = new Redis(process.env.REDIS_URL!);
             const value = await redis.get(key);
-            await redis.quit();
             return value ? value : null;
         },
         set: async (key, value, ttl) => {
-          const redis = new Redis(process.env.REDIS_URL!);
+          const redis = new Redis(process.env.REDIS_URL!, {
+            
+          });
             if (ttl) {
                 await redis.set(key, value, 'EX', ttl);
             } else {
                 await redis.set(key, value);
             }
-            await redis.quit();
         },
         delete: async (key) => {
           const redis = new Redis(process.env.REDIS_URL!);
             await redis.del(key);
-            await redis.quit();
         },
     },
     account: {
