@@ -49,10 +49,10 @@ export default function Account() {
       }
     }
 
-    const deteleAccoount = async () => {
+    const deteleAccount = async () => {
       try {
         await deleteUser({
-          callbackURL: "http://localhost:3000/auth/login",
+          callbackURL: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/auth/login`,
         })
       } catch (error) {
         console.error("Failed to delete user", error)
@@ -148,7 +148,7 @@ export default function Account() {
                           No
                         </Button>
                         <Button
-                        onClick={deteleAccoount}
+                        onClick={deteleAccount}
                         >
                           Yes
                         </Button>
