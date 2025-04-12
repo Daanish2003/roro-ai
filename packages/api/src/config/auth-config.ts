@@ -58,15 +58,15 @@ export const auth = betterAuth(
           },
         },
         secret: process.env.BETTER_AUTH_SECRET,
-        trustedOrigins: ['http://localhost:3000', 'http://localhost:4000'],
+        trustedOrigins: [ process.env.FRONTEND_URL!, process.env.NEXT_PUBLIC_BACKEND_URL!],
         plugins: [
           oAuthProxy(), 
           admin(),
           bearer(),
           jwt({
             jwt:{
-              issuer: "http://localhost:4000",
-              audience: "http://localhost:5000",
+              issuer: process.env.FRONTEND_URL,
+              audience: process.env.NEXT_PUBLIC_MEDIA_URL,
               expirationTime: "1h"
             }
           }) 
