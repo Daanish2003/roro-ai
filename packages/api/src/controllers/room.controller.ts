@@ -7,7 +7,6 @@ import { fromNodeHeaders } from "better-auth/node";
 import { createRoomSession, verifyRoomSession } from "../utils/jwt.js";
 import { v4 as uuidv4} from "uuid"
 import { deleteRoomSchema } from '../schema/roomSchema.js';
-import { redis } from "@roro-ai/database/client";
 import { Redis } from "ioredis";
 
 export const createRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
