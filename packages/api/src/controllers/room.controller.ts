@@ -8,7 +8,6 @@ import { createRoomSession, verifyRoomSession } from "../utils/jwt.js";
 import { v4 as uuidv4} from "uuid"
 import { deleteRoomSchema } from '../schema/roomSchema.js';
 import { redis } from "@roro-ai/database/client";
-import { redisPub } from "../utils/redis.js";
 
 export const createRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
     try {
@@ -37,6 +36,8 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
 
         const { roomName, prompt, topic } = validatedFields.data;
 
+        console.log("user", data.user.id)
+
         const room = await createRoomService(
           { 
             userId: data.session.userId, 
@@ -45,6 +46,7 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
             prompt,
             topic
           });
+
 
         const room_session = await createRoomSession({
           userId: room.userId,
@@ -59,7 +61,7 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
 
         await redis.set(`room_session:${sessionId}`, room_session, 20 * 60)
 
-        await redisPub.publish('createRoom', JSON.stringify(room))
+        await redis.publish('createRoom', JSON.stringify(room))
 
 
         res.status(200).cookie('room_session', sessionId, {
