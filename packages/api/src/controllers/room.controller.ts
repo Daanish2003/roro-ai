@@ -8,6 +8,7 @@ import { createRoomSession, verifyRoomSession } from "../utils/jwt.js";
 import { v4 as uuidv4} from "uuid"
 import { deleteRoomSchema } from '../schema/roomSchema.js';
 import { redis } from "@roro-ai/database/client";
+import { Redis } from "ioredis";
 
 export const createRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
     try {
@@ -36,7 +37,7 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
 
         const { roomName, prompt, topic } = validatedFields.data;
 
-        console.log("user", data.user.id)
+        
 
         const room = await createRoomService(
           { 
@@ -57,11 +58,15 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
           prompt: room.prompt
         })
 
-        const sessionId = uuidv4()
+        const sessionId = uuidv4();
 
-        await redis.set(`room_session:${sessionId}`, room_session, 20 * 60)
+        const redis = new Redis(process.env.REDIS_URL!);
+
+        await redis.set(`room_session:${sessionId}`, room_session, 'EX', 20*60)
 
         await redis.publish('createRoom', JSON.stringify(room))
+
+        await redis.quit()
 
 
         res.status(200).cookie('room_session', sessionId, {
@@ -98,8 +103,11 @@ export const verifyRoomAccessHandler = asyncHandler(async(req: Request, res:Resp
 
     const roomSessionId = req.cookies.room_session;
 
+    const redis = new Redis(process.env.REDIS_URL!);
 
     const roomSessionToken = await redis.get(`room_session:${roomSessionId}`);
+
+    await redis.quit()
 
 
     if(!roomSessionToken) {
