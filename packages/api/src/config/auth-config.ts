@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import { prisma } from "@roro-ai/database/client";
-import { Redis } from "ioredis";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin, bearer, jwt, oAuthProxy } from "better-auth/plugins";
@@ -42,17 +41,13 @@ export const auth = betterAuth({
             return value ? value : null;
         },
         set: async (key, value, ttl) => {
-          const redis = new Redis(process.env.REDIS_URL!, {
-            
-          });
             if (ttl) {
-                await redis.set(key, value, 'EX', ttl);
+                await redis.set(key, value, ttl);
             } else {
                 await redis.set(key, value);
             }
         },
         delete: async (key) => {
-          const redis = new Redis(process.env.REDIS_URL!);
             await redis.del(key);
         },
     },
