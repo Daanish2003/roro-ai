@@ -9,13 +9,8 @@ export default function LogoutButton() {
     const router = useRouter()
     const logoutHandler = async () => {
         try {
-            await signOut({
-                fetchOptions: {
-                    onSuccess: () => {
-                        router.push("/auth/login")
-                    }
-                }
-            })
+            await signOut()
+            router.push('/auth/login')
         } catch (error) {
             console.log("Logout Error", error)
         }
@@ -23,7 +18,7 @@ export default function LogoutButton() {
   return (
         <Button onClick={logoutHandler} className='bg-transparent text-white text-sm font-normal px-2 m-0 w-full content-start hover:bg-secondary/90 justify-start gap-2'>
         <LogOut />
-        Logout
+            Logout
         </Button>
   )
 }

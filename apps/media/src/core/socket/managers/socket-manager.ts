@@ -29,6 +29,8 @@ export class SocketManager {
 
       const { error } = await tryCatch(validateToken(token))
 
+      console.log(error)
+
       if(error) {
         next(error)
       }
