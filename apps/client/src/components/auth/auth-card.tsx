@@ -10,7 +10,6 @@ import GoogleButton from './google-button';
 import GithubButton from "./github-button";
 
 export function AuthCard() {
-	
 	return (
 		<Card>
 			<CardHeader className="space-y-1">
