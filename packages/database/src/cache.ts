@@ -8,10 +8,19 @@ class RedisClient {
   private isConnected: boolean = false;
   private constructor() {
     const redisUrl = process.env.REDIS_URL;
-    if (!redisUrl) {
+    const username = process.env.REDIS_USER;
+    const password = process.env.REDIS_PASSWORD;
+    const port = process.env.REDIS_PORT
+
+    if (!redisUrl || !username || !password || !port) {
       throw new Error('REDIS_URL is not defined');
     }
-    this.client = new Redis(redisUrl);
+    this.client = new Redis({
+      username,
+      password,
+      host: redisUrl,
+      port: Number(port),
+    });
     this.setupEventHandlers();
   }
   private setupEventHandlers(): void {
