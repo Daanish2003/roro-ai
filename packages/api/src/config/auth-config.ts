@@ -18,7 +18,7 @@ export const auth = betterAuth({
     },
     advanced: {
         crossSubDomainCookies: {
-            enabled: true,
+            enabled: process.env.NODE_ENV === "production" ? true : false,
             domain: ".roro-ai.com",
         },
     },
@@ -67,7 +67,8 @@ export const auth = betterAuth({
     secret: process.env.BETTER_AUTH_SECRET,
     trustedOrigins: [
         process.env.FRONTEND_URL!,
-        process.env.NEXT_PUBLIC_BACKEND_URL!
+        process.env.NEXT_PUBLIC_BACKEND_URL!,
+        process.env.NEXT_PUBLIC_MEDIA_URL!
     ],
     plugins: [
         oAuthProxy(),
@@ -75,7 +76,7 @@ export const auth = betterAuth({
         bearer(),
         jwt({
             jwt: {
-                issuer: process.env.FRONTEND_URL,
+                issuer: process.env.NEXT_PUBLIC_BACKEND_URL!,
                 audience: process.env.NEXT_PUBLIC_MEDIA_URL,
                 expirationTime: "1h",
             },
