@@ -16,6 +16,12 @@ export const auth = betterAuth({
             enabled: true,
         },
     },
+    advanced: {
+        crossSubDomainCookies: {
+            enabled: true,
+            domain: ".roro-ai.com",
+        },
+    },
     socialProviders: {
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID as string,
@@ -76,3 +82,4 @@ export const auth = betterAuth({
         }),
     ],
 });
+
