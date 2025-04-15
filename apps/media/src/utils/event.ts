@@ -24,6 +24,7 @@ export enum SpeechEventType {
     END_OF_SPEECH,
     FINAL_TRANSCRIPT,
     INTERIM_TRANSCRIPT,
+    DISCONNECTED,
 }
 
 export enum LLMEventType {

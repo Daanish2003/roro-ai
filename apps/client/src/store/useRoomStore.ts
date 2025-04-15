@@ -35,6 +35,7 @@ export const useRoomStore = create<RoomState>(() => ({
     exitHandler: (router: AppRouterInstance) => {
         const { stopUserMedia } = useMediaStore.getState()
         stopUserMedia()
+        useMediasoupStore.setState({ joined: false })
         router.replace("/practice")
       }
 
