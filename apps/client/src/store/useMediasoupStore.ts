@@ -2,6 +2,7 @@ import { create } from "zustand"
 import * as mediasoupClient from 'mediasoup-client';
 import { useSocketStore } from "./useSocketStore";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { useMediaStore } from "./useMedia";
 
 type MediasoupProducerState = {
     device: mediasoupClient.types.Device | null
@@ -353,6 +354,7 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
 
     exitRoom: async (roomId: string, router: AppRouterInstance) => {
       const socket = useSocketStore.getState().socket;
+      const stopUserMedia = useMediaStore.getState().stopUserMedia
 
       if (!socket || !socket.connected) {
           console.error("Socket is not connected. Cannot join room.");
@@ -360,6 +362,7 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
       }
       try {
         socket?.emit('exit-room', { roomId })
+        stopUserMedia()
         router.replace('/practice')
       } catch (error) {
         console.error("Failed to exit room")

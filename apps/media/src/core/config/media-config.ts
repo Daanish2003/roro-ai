@@ -1,4 +1,3 @@
-import { PlainTransportOptions } from "mediasoup/node/lib/PlainTransportTypes.js"
 import type { RouterOptions } from "mediasoup/node/lib/RouterTypes.js"
 import type { WebRtcTransportOptions } from "mediasoup/node/lib/WebRtcTransportTypes.js"
 import type { WorkerSettings } from "mediasoup/node/lib/WorkerTypes.js"
@@ -7,8 +6,8 @@ import type { WorkerSettings } from "mediasoup/node/lib/WorkerTypes.js"
 export const config: Config = {
     mediasoup: {
         worker: {
-            rtcMinPort: 10000,
-            rtcMaxPort: 11000,
+            rtcMinPort: 40000,
+            rtcMaxPort: 41000,
             logLevel: 'warn',
             logTags: ['info', 'ice', 'dtls', 'rtp', 'srtp', 'rtcp']
         },
@@ -26,11 +25,13 @@ export const config: Config = {
             listenInfos: [
                 {
                     protocol: 'udp',
-                    ip: '127.0.0.1',
+                    ip: '0.0.0.0',
+                    announcedAddress: process.env.TRANSPORT_ADDRESS
                 },
                 {
                     protocol: 'tcp',
-                    ip: '127.0.0.1',
+                    ip: '0.0.0.0',
+                    announcedAddress: process.env.TRANSPORT_ADDRESS
                 },
 
             ],
@@ -38,15 +39,6 @@ export const config: Config = {
             enableTcp: true,
             preferUdp: true,
         },
-        plainTransport: {
-            listenInfo: 
-                {
-                    protocol: 'udp',
-                    ip: '127.0.0.1',
-                },
-            rtcpMux: false,
-            comedia: false,
-        }
     }
 }
 
@@ -55,7 +47,6 @@ export type Config = {
         worker: WorkerSettings,
         router: RouterOptions,
         webRtcTransport: WebRtcTransportOptions,
-        plainTransport: PlainTransportOptions
     }
 }
 

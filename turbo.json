@@ -20,7 +20,8 @@
     "REDIS_TLS",
     "DEEPGRAM_API_KEY",
     "GEMINI_API_KEY",
-    "FRONTEND_URL"
+    "FRONTEND_URL",
+    "TRANSPORT_ADDRESS"
   ],
   "tasks": {
     "build": {

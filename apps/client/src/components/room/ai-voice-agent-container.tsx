@@ -31,18 +31,16 @@ export default function AiVoiceAgentContainer({ remoteAudioRef }: AiVoiceAgentCo
   
   return (
     <div className="border rounded-2xl lg:h-[32rem] lg:w-1/2 h-[16rem] w-[28rem] md:h-[32rem] md:w-1/2 flex flex-col">
-      {(!ready && joined) && (
-        <h1 className="text-primary font-medium">Connecting...</h1>
-      )}
       <audio ref={remoteAudioRef} autoPlay   className="hidden" />
       <div className="flex-1 flex items-center justify-center p-4 flex-col">
         <div className="w-full h-52 flex items-center justify-center">
            <AudioVisualizer audioRef={remoteAudioRef} />
         </div>
-        {listening ? (
+        {(!ready && joined) && (
+        <h1 className="text-primary font-medium">Connecting...</h1>
+      )}
+        {listening && (
           <h1 className="text-primary font-medium">Listening...</h1>
-        ) : (
-          <h1></h1>
         )}
       </div>
     </div>

@@ -10,6 +10,7 @@ type MediaState = {
     
     getUserMedia: () => Promise<void>
     getLocalStream: () => MediaStream,
+    stopUserMedia: () => void
 }
 
 export const useMediaStore = create<MediaState>((set, get) => ({
@@ -54,7 +55,9 @@ export const useMediaStore = create<MediaState>((set, get) => ({
     stopUserMedia: () => {
         const { localStream } = get();
         if (localStream) {
-          localStream.getTracks().forEach((track) => track.stop());
+          localStream.getTracks().forEach(async (track) => track.stop());
+          const videoEl = document.querySelector('video');
+        if (videoEl) videoEl.srcObject = null;
           set({ localStream: null });
           console.log("Local media stream stopped.");
         }
