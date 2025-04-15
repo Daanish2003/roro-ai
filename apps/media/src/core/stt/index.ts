@@ -176,6 +176,7 @@ export class STTStream extends BaseStream {
           case LiveTranscriptionEvents.Close:
             console.log("STT Closed");
             this.cleanupConnection();
+            this.output.put({ type : SpeechEventType.DISCONNECTED })
             break;
           case LiveTranscriptionEvents.SpeechStarted:
             if (this._speaking) return;

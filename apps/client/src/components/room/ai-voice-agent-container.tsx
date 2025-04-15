@@ -26,7 +26,9 @@ export default function AiVoiceAgentContainer({ remoteAudioRef }: AiVoiceAgentCo
     setReady(true)
   })
 
-
+  socket?.on('STT_DISCONNECTED', () => {
+    setReady(false)
+  })
 
   
   return (

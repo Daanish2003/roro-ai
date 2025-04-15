@@ -363,6 +363,7 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
       try {
         socket?.emit('exit-room', { roomId })
         stopUserMedia()
+        useMediasoupStore.setState({ joined: false })
         router.replace('/practice')
       } catch (error) {
         console.error("Failed to exit room")

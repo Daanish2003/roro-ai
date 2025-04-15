@@ -52,6 +52,9 @@ export class UserInput extends EventEmitter {
                     for await (const ev of this.sttStream) {
                         if (cancelled) return;
                         switch (ev.type) {
+                            case SpeechEventType.DISCONNECTED:
+                                this.emit("STT_DISCONNECTED")
+                                break
                             case SpeechEventType.CONNECTED:
                                 this.emit("STT_CONNECTED")
                                 break
