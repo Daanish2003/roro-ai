@@ -63,8 +63,8 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
 
         await redis.publish('createRoom', JSON.stringify(room))
 
-
         res.status(200).cookie('room_session', sessionId, {
+          domain: '.roro-ai.com',
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           expires: new Date(Date.now() + 60 * 20 * 1000),
