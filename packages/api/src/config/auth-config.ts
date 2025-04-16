@@ -4,6 +4,9 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin, bearer, jwt, oAuthProxy } from "better-auth/plugins";
 import { redis } from '@roro-ai/database/client';
+import { Resend } from 'resend';
+
+export const resend = new Resend(process.env.RESEND_API_KEY)
 
 export const auth = betterAuth({
     appName: "Roro",
@@ -33,6 +36,33 @@ export const auth = betterAuth({
             clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
             redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/callback/github`,
         },
+    },
+    emailAndPassword: {
+        enabled: true,
+        autoSignIn: true,
+        minPasswordLength: 8,
+        maxPasswordLength: 20,
+        requireEmailVerification: true,
+        sendResetPassword: async ({ user, url}) => {
+            await resend.emails.send({
+                from: "Acme <onboarding@resend.dev>",
+                to: user.email,
+                subject: "Reset your password",
+                html: `Click the link to reset your password: ${url}`,
+              });
+        }
+    },
+    emailVerification: {
+        sendOnSignUp: true,
+        autoSignInAfterVerification: true,
+        sendVerificationEmail: async ({ user, url}) => {
+            await resend.emails.send({
+                from: "Acme <onboarding@resend.dev>",
+                to: user.email,
+                subject: "Email Verification Roro AI",
+                html: `Click the link to verify your email: ${url}`
+              });
+        }
     },
     session: {
         cookieCache: {

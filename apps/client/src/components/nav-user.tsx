@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import Profile from "./dashboard/profile";
 import SettingsButton from "./dashboard/setting-button";
-import LogoutButton from "./auth/logout-button";
+import LogoutButton from "../features/auth/components/logout-button";
 
 function NavUser() {
   const { isMobile } = useSidebar();

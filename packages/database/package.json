@@ -11,13 +11,13 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx src/seed.ts",
-    "dev": "tsup src/* --watch",
+    "dev": "tsup src/* --watch", 
     "format": "prisma format",
     "generate": "prisma generate",
     "lint": "eslint src --max-warnings 0",
-    "prebuild": "pnpm run generate",
+    "prebuild": "pnpm run generate", 
     "studio": "prisma studio",
-    "build": "rm -rf ./dist && tsc"
+    "build": "rimraf ./dist && tsc"
   },
   "dependencies": {
     "@prisma/client": "latest",

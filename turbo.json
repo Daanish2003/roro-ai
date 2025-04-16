@@ -21,13 +21,37 @@
     "DEEPGRAM_API_KEY",
     "GEMINI_API_KEY",
     "FRONTEND_URL",
-    "TRANSPORT_ADDRESS"
+    "TRANSPORT_ADDRESS",
+    "RESEND_API_KEY"
   ],
   "tasks": {
     "build": {
       "dependsOn": ["^build", "db:migrate:deploy"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "prisma/schema.prisma"],
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+    },
+    "start": {
+      "cache": false,
+      "persistent": true,
+      "inputs": [".env*"]
+    },
+    "generate": {
+      "dependsOn": ["^generate"],
+      "cache": true,
+      "outputs": ["generated/**"]
+    },
+    "lint": {
+      "cache": false,
+      "outputs": []
     },
     "db:migrate:dev": {
       "cache": false,
@@ -41,19 +65,6 @@
     },
     "db:seed": {
       "cache": false
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true
-    },
-    "start": {
-      "cache": false,
-      "persistent": true
-    },
-    "generate": {
-      "dependsOn": ["^generate"],
-      "cache": false
-    },
-    "lint": {}
+    }
   }
 }
