@@ -1,11 +1,16 @@
 {
   "name": "@roro-ai/typescript-config",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "license": "MIT",
   "publishConfig": {
     "access": "public"
   },
+  "files": [
+    "react-library.json",
+    "base.json",
+    "nextjs.json"
+  ],
   "devDependencies": {
     "@roro-ai/eslint-config": "workspace:*"
   }
