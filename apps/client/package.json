@@ -34,6 +34,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
     "react-scan": "^0.3.3",
+    "simplex-noise": "^4.0.3",
     "socket.io-client": "^4.8.1",
     "sonner": "^1.7.3",
     "tailwind-merge": "^2.6.0",

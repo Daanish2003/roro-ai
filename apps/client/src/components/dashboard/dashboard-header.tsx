@@ -46,8 +46,6 @@ export default function DashboardHeader() {
 
       <div className="flex items-center gap-2 ml-auto">
         <GithubStarButton />
-        <Separator orientation="vertical" className="h-4" />
-        <Logo />
       </div>
     </header>
   )

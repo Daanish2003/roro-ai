@@ -195,7 +195,7 @@ export default function FeedbackForm({ setSubmitted }: { setSubmitted: Dispatch<
             </Card>
             <Button 
             type='submit'
-            className='text-white'>
+            className='rounded-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 transition-all duration-300 shadow-lg shadow-green-500/20'>
               <FaPaperPlane />
               Submit Feedback
             </Button>

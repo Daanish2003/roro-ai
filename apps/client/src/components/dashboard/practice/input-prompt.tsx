@@ -70,7 +70,7 @@ export default function PromptInput() {
                         <Button
                           type="submit"
                           disabled = {(roomCount >= 3) && data?.user.role === 'user'}
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 flex items-center space-x-2 focus:ring-2 focus:ring-green-400 focus:ring-offset-2 dark:focus:ring-offset-green-800"
+                          className="rounded-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 transition-all duration-300 shadow-lg shadow-green-500/20"
                         >
                           <span>Start Practice</span>
                           <ArrowUpRight className="w-4 h-4" />

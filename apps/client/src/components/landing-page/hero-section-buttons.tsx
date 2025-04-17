@@ -6,23 +6,25 @@ import { ArrowRight, Star } from 'lucide-react'
 
 export default function HeroSectionButtons() {
     return (
-        <div className='flex items-center gap-x-4'>
+        <div className='flex flex-wrap justify-center gap-4'>
             <Button
                 asChild
                 size={"lg"}
+                className='rounded-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 transition-all duration-300 shadow-lg shadow-green-500/20'
             >
                 <Link
-                    href={"/auth/login"}
+                    href={"/auth/signup"}
                     className='font-semibold'
                 >
                     Get Started
-                    <ArrowRight />
+                    <ArrowRight className='h-4 w-4'/>
                 </Link>
             </Button>
             <Button
                 asChild
                 size={"lg"}
                 variant={"outline"}
+                className='rounded-full'
             >
                 <Link
                 href={"https://githhub.com/Daanish2003/roro-ai"}

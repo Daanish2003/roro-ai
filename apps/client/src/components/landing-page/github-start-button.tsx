@@ -6,9 +6,9 @@ import { FaGithub } from "react-icons/fa"
 const SplitButton = () => {
   return (
     <Button
-    variant={"outline"}
+    variant={"ghost"}
     size={"icon"}
-    className="border-primary"
+    className="border-primary rounded-full border border-gray-600"
     asChild
     >
         <Link
