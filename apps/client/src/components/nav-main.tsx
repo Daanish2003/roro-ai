@@ -1,6 +1,6 @@
 "use client"
 
-import type { LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 
 
 import {
@@ -9,9 +9,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@roro-ai/ui/components/ui/sidebar"
-import Link from "next/link"
 import React from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 
 export function NavMain({
@@ -23,7 +22,7 @@ export function NavMain({
     icon?: LucideIcon
   }[]
 }) {
-
+  const router = useRouter()
   const pathname = usePathname()
 
   return (
@@ -33,12 +32,10 @@ export function NavMain({
           const isActive = pathname === item.url
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={isActive} size={"lg"}>
-                <Link href={item.url} className="h-[34]">
-                  {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
-                  {item.title}
-                </Link>
-              </SidebarMenuButton>
+              <SidebarMenuButton tooltip={item.title} isActive={isActive} onClick={() => {router.push(item.url)}}>
+                  {item.icon && <item.icon />}
+                  <span>{item.title}</span>
+                </SidebarMenuButton>
             </SidebarMenuItem>
           )
         })}
