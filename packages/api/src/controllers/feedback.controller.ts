@@ -112,7 +112,7 @@ export const getFeedbackHandler = asyncHandler(async(req: Request, res: Response
     }
 })
 
-export const deleteAllFeedbacksHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
+export const deleteAllFeedbacksHandler = asyncHandler(async(_req: Request, res: Response): Promise<any> => {
     try {
 
         const feedbacks = await deleteAllFeedbackService()

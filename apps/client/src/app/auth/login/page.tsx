@@ -1,10 +1,11 @@
-import { AuthCard } from '@/features/auth/components/auth-card'
+
+import LoginForm from '@/features/auth/components/login-form'
 import React from 'react'
 
-export default function AuthPage() {
+export default function LoginPage() {
   return (
     <>
-    <AuthCard />
+      <LoginForm />
     </>
   )
 }

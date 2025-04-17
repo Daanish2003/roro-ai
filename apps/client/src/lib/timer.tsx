@@ -3,7 +3,7 @@ import { useMediasoupStore } from '@/store/useMediasoupStore';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
-const CountdownTimer: React.FC = () => {
+const CountdownTimer = () => {
   const [timeLeft, setTimeLeft] = useState(20 * 60);
   const { joined } = useMediasoupStore()
   const timerRef = useRef<NodeJS.Timeout | null>(null);

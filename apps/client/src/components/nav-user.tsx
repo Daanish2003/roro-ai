@@ -47,8 +47,16 @@ function NavUser() {
               className="data-[state=open]:bg-transparent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-5 w-5 rounded-sm">
-                <AvatarImage src={session.user.image as string} alt={session.user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                {session.user.image ? (
+                  <>
+                  <AvatarImage src={session.user.image} alt={session.user.name} />
+                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  </>
+                ) : (
+                  <div className="rounded-sm bg-primary p-1 items-center justify-center flex mr-4 text-black">
+                    <h1 className="">{session.user.name[0].toUpperCase()}</h1>
+                  </div>
+                )}
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{session.user.name}</span>
