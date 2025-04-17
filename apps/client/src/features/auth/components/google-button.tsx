@@ -5,7 +5,7 @@ export default function GoogleButton() {
     const { socialSignInHandler , loading} = useAuth()
   return (
     <button 
-       className="gsi-material-button"
+       className="gsi-material-button bg-transparent border-primary w-full"
        disabled={loading}
        onClick={() => socialSignInHandler("google")}
        >

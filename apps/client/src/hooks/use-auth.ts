@@ -3,15 +3,17 @@
 import { forgetPassword, resetPassword, signIn, signUp } from "@/features/auth/auth-client";
 import { ForgotPasswordSchema, LoginFormSchema, ResetPasswordSchema, SignUpFormSchema } from "@/zod/auth-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 export const useAuth = () => {
-    const router = useRouter()
+    const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [sentResetPasswordLink, setSentResetPasswordLink] = useState<boolean>(false);
+    const [sentEmailVerificationLink, setSentEmailVerificationLink] = useState<boolean>(false)
 
     const signupForm = useForm<z.infer<typeof SignUpFormSchema>>({
         resolver: zodResolver(SignUpFormSchema),
@@ -46,9 +48,15 @@ export const useAuth = () => {
     })
 
     async function resetPasswordHandler(values: z.infer<typeof ResetPasswordSchema>){
+        const token = new URLSearchParams(window.location.search).get("token");
+
+        if(!token) {
+            return
+        }
         try {
             await resetPassword({
                 newPassword: values.password,
+                token
             }, {
                 onResponse: () => {
                     setLoading(false)
@@ -108,6 +116,7 @@ export const useAuth = () => {
                           onClick: () => console.log("Undo"),
                         },
                     })
+                    setSentResetPasswordLink(true)
                   },
                   onError: (ctx) => {
                     toast("Failed to reset password", {
@@ -147,8 +156,8 @@ export const useAuth = () => {
                     setLoading(true)
                 },
                 onSuccess: () => {
-                    toast("Account created", {
-                        description: "You have created account successfully",
+                    toast("Email Verification Link", {
+                        description: `Email verification link successfully send to ${values.email}`,
                         action: {
                           label: "Undo",
                           onClick: () => console.log("Undo"),
@@ -280,5 +289,9 @@ export const useAuth = () => {
         socialSignInHandler,
         forgotPasswordHandler,
         loading,
+        sentResetPasswordLink,
+        sentEmailVerificationLink,
+        setSentResetPasswordLink,
+        setSentEmailVerificationLink
     }
 }

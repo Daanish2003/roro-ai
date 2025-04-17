@@ -5,7 +5,7 @@ import { FaGithub } from 'react-icons/fa'
 export default function GithubButton() {
     const { socialSignInHandler, loading} = useAuth()
   return (
-    <button className="gsi-material-button" 
+    <button className="gsi-material-button bg-transparent border-primary w-full" 
     onClick={() => socialSignInHandler("github")} 
     disabled={loading}>
       <div className="gsi-material-button-state"></div>
