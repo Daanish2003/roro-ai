@@ -13,7 +13,7 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
-    baseURL: process.env.BETTER_AUTH_URL,
+    baseURL: process.env.BETTER_AUTH_URL!,
     user: {
         deleteUser: {
             enabled: true,
@@ -94,7 +94,7 @@ export const auth = betterAuth({
             trustedProviders: ["github", "google"],
         },
     },
-    secret: process.env.BETTER_AUTH_SECRET,
+    secret: process.env.BETTER_AUTH_SECRET!,
     trustedOrigins: [
         process.env.FRONTEND_URL!,
         process.env.NEXT_PUBLIC_BACKEND_URL!,
@@ -107,7 +107,7 @@ export const auth = betterAuth({
         jwt({
             jwt: {
                 issuer: process.env.NEXT_PUBLIC_BACKEND_URL!,
-                audience: process.env.NEXT_PUBLIC_MEDIA_URL,
+                audience: process.env.NEXT_PUBLIC_MEDIA_URL!,
                 expirationTime: "1h",
             },
         }),

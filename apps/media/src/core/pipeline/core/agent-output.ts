@@ -67,7 +67,8 @@ export class AgentOutput extends EventEmitter {
             try {
                 for await (const text of this.#llmStream!) {
                     if (cancelled || this.#interrupted) break;
-                    this.#ttsStream!.push(text);
+                    console.log(text)
+                    // this.#ttsStream!.push(text);
                 }
             } catch (err) {
                 future.reject(err as Error);
@@ -173,13 +174,6 @@ export class AgentOutput extends EventEmitter {
         if(this.#rtpTask) {
             gracefullyCancel(this.#rtpTask)
         }
-
-        this.#llmTask = undefined;
-        this.#ttsTask = undefined;
-        this.#rtpTask = undefined;
-        this.#llmStream = undefined;
-        this.#ttsStream = undefined;
-        this.#rtpStream = undefined;
     }
 
     async interrupt() {
@@ -195,5 +189,7 @@ export class AgentOutput extends EventEmitter {
         this.#ttsStream?.closeConnection()
         this.interrupt();
         this.removeAllListeners();
+
+        return this.#llm.threadId
     }
 }

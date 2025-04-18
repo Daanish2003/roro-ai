@@ -270,14 +270,10 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
               if (!clientTransportParams || !clientTransportParams.dtlsParameters) {
                   throw new Error("Invalid transport parameters received");
               }
-      
-              console.log("🚚 client transport params", clientTransportParams.dtlsParameters);
+    
       
               const transport = device.createRecvTransport(clientTransportParams);
     
-              console.log("🚚 Transport Consumer:", transport)
-      
-              console.log("🚚 Consumer transport", transport);
       
               transport.on('connectionstatechange', (state) => {
                   console.log('Consumer transport connection state change:', state);
@@ -361,10 +357,12 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
           set({ error: "Socket is not connected" });
       }
       try {
-        socket?.emit('exit-room', { roomId })
+        const response = await socket?.emitWithAck('exit-room', { roomId })
         stopUserMedia()
         useMediasoupStore.setState({ joined: false })
-        router.replace('/practice')
+        if(response) {
+          router.replace(`/ai-feedback/${response.threadId}`)
+        }
       } catch (error) {
         console.error("Failed to exit room")
         throw error
