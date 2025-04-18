@@ -178,6 +178,9 @@ importers:
       '@langchain/langgraph':
         specifier: ^0.2.49
         version: 0.2.55(@langchain/core@0.3.42(openai@4.87.3(ws@8.18.1)(zod@3.24.2)))(react@19.0.0)
+      '@langchain/langgraph-checkpoint-mongodb':
+        specifier: ^0.0.6
+        version: 0.0.6(@langchain/core@0.3.42(openai@4.87.3(ws@8.18.1)(zod@3.24.2)))(@langchain/langgraph-checkpoint@0.0.16(@langchain/core@0.3.42(openai@4.87.3(ws@8.18.1)(zod@3.24.2))))
       '@roro-ai/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -452,7 +455,7 @@ importers:
         specifier: ^5.6.1
         version: 5.6.1
       mongodb:
-        specifier: ^6.13.1
+        specifier: ^6.14.2
         version: 6.14.2
       redis:
         specifier: ^4.7.0
@@ -1491,6 +1494,13 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       '@langchain/core': '>=0.2.21 <0.4.0'
+
+  '@langchain/langgraph-checkpoint-mongodb@0.0.6':
+    resolution: {integrity: sha512-kwU4Op5dtZQ1Yu1mu2y355VvQrIoh44180E1GJjLzNvNgp7/ORX6kX92f2GoGq3xdQjMdm44Etjr/ymAXYU8fA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@langchain/core': '>=0.2.31 <0.4.0'
+      '@langchain/langgraph-checkpoint': ~0.0.15
 
   '@langchain/langgraph-checkpoint@0.0.16':
     resolution: {integrity: sha512-B50l7w9o9353drHsdsD01vhQrCJw0eqvYeXid7oKeoj1Yye+qY90r97xuhiflaYCZHM5VEo2oaizs8oknerZsQ==}
@@ -7149,6 +7159,20 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - ws
+
+  '@langchain/langgraph-checkpoint-mongodb@0.0.6(@langchain/core@0.3.42(openai@4.87.3(ws@8.18.1)(zod@3.24.2)))(@langchain/langgraph-checkpoint@0.0.16(@langchain/core@0.3.42(openai@4.87.3(ws@8.18.1)(zod@3.24.2))))':
+    dependencies:
+      '@langchain/core': 0.3.42(openai@4.87.3(ws@8.18.1)(zod@3.24.2))
+      '@langchain/langgraph-checkpoint': 0.0.16(@langchain/core@0.3.42(openai@4.87.3(ws@8.18.1)(zod@3.24.2)))
+      mongodb: 6.14.2
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-providers'
+      - '@mongodb-js/zstd'
+      - gcp-metadata
+      - kerberos
+      - mongodb-client-encryption
+      - snappy
+      - socks
 
   '@langchain/langgraph-checkpoint@0.0.16(@langchain/core@0.3.42(openai@4.87.3(ws@8.18.1)(zod@3.24.2)))':
     dependencies:
