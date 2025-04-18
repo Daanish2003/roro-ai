@@ -1,10 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { AIMessage, AIMessageChunk, HumanMessage } from "@langchain/core/messages";
+import { AIMessage, AIMessageChunk, HumanMessage, RemoveMessage } from "@langchain/core/messages";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { MemorySaver, MessagesAnnotation, START, END, StateGraph } from "@langchain/langgraph";
+import { START, END, StateGraph, Annotation, MessagesAnnotation } from "@langchain/langgraph";
 import { SystemPrompt } from "./prompt.js";
 import { LLM as BaseLLM, LLMStream as BaseStream } from "./utils.js";
+import { mongoClient } from '@roro-ai/database/client';
+import { MongoDBSaver } from  "@langchain/langgraph-checkpoint-mongodb"
+import { ChatGroq } from "@langchain/groq";
 
 export interface LLMOptions {
     model: string;
@@ -13,7 +16,7 @@ export interface LLMOptions {
 
 const defaultLLMOptions: LLMOptions = {
     model: "gemini-2.0-flash-lite",
-    apiKey: process.env.GEMINI_API_KEY,
+    apiKey: process.env.GEMINI_API_KEY!,
 };
 
 export class LLM extends BaseLLM {
@@ -22,13 +25,19 @@ export class LLM extends BaseLLM {
     private client: ChatGoogleGenerativeAI;
     private prompt: string;
     private promptTemplate: ChatPromptTemplate;
-    private memory: MemorySaver;
+    private memory: MongoDBSaver;
 
     constructor(prompt: string, opts: Partial<LLMOptions> = {}) {
         super();
         this.options = { ...defaultLLMOptions, ...opts };
         this.prompt = prompt;
-        this.memory = new MemorySaver();
+        this.memory = new MongoDBSaver({
+            client: mongoClient.client,
+            dbName: 'chatHistory',
+            checkpointCollectionName: 'checkpoints',
+            checkpointWritesCollectionName: 'checkpoint_writes'
+
+        });
         this.promptTemplate = this.createPromptTemplate(prompt);
         this.threadId = uuidv4();
 
@@ -60,13 +69,13 @@ export class LLMStream extends BaseStream {
     private options: LLMOptions;
     private client: ChatGoogleGenerativeAI;
     private threadId: string;
-    private memory: MemorySaver
+    private memory: MongoDBSaver;
     private promptTemplate: ChatPromptTemplate
     private app: any;
     private task?: Promise<void>;
     private interrupted: boolean = false
 
-    constructor(llm: LLM, opts: LLMOptions, client: ChatGoogleGenerativeAI, memory: MemorySaver, promptTemplate: ChatPromptTemplate, threadId: string) {
+    constructor(llm: LLM, opts: LLMOptions, client: ChatGoogleGenerativeAI, memory: MongoDBSaver, promptTemplate: ChatPromptTemplate, threadId: string) {
         super(llm);
         this.options = opts;
         this.client = client;
@@ -92,7 +101,7 @@ export class LLMStream extends BaseStream {
         }
     }
 
-    private async callModel(state: typeof MessagesAnnotation.State) {
+    private async callModel(state: typeof GraphAnnotation.State) {
         try {
             const prompt = await this.promptTemplate.invoke(state);
             const stream = await this.client.stream(prompt);
@@ -132,7 +141,7 @@ export class LLMStream extends BaseStream {
     }
 
     private initializeWorkflow() {
-        return new StateGraph(MessagesAnnotation)
+        return new StateGraph(GraphAnnotation)
             .addNode("model", this.callModel.bind(this))
             .addEdge(START, "model")
             .addEdge("model", END)
@@ -143,3 +152,13 @@ export class LLMStream extends BaseStream {
         this.interrupted = true
     }
 }
+
+
+export const GraphAnnotation = Annotation.Root({
+    ...MessagesAnnotation.spec,
+    summary: Annotation<string>({
+      reducer: (_, action) => action,
+      default: () => "",
+    })
+  })
+

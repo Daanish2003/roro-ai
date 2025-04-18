@@ -21,6 +21,8 @@
     "DEEPGRAM_API_KEY",
     "GEMINI_API_KEY",
     "FRONTEND_URL",
+    "MONGO_DB_URL",
+    "GROQ_API_KEY",
     "TRANSPORT_ADDRESS",
     "RESEND_API_KEY"
   ],
