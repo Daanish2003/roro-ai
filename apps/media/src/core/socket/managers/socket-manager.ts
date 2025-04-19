@@ -265,17 +265,14 @@ export class SocketManager {
       "exit-room",
       async(
         {roomId} : {roomId: string},
-        callback: ({ threadId }: { threadId: string }) => void
       ) => {
         const room = roomManager.getRoom(roomId)
 
         if(room) {
-          const id = room.agent?.closeStream()
+          room.agent?.closeStream()
           room.mediaTracks.closeTrack()
           room.mediaTransports.closeTransport()
           roomManager.removeRoom(room.roomId)
-
-          callback({ threadId: id!})
         }
       }
     )

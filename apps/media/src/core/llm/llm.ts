@@ -8,17 +8,28 @@ import { LLM as BaseLLM, LLMStream as BaseStream } from "./utils.js";
 import { mongoClient } from '@roro-ai/database/client';
 import { MongoDBSaver } from  "@langchain/langgraph-checkpoint-mongodb"
 
+export interface LLMOptions {
+    model: string;
+    apiKey?: string;
+}
+
+const defaultLLMOptions: LLMOptions = {
+    model: "gemini-2.0-flash-lite",
+    apiKey: process.env.GEMINI_API_KEY,
+};
 
 
 export class LLM extends BaseLLM {
-    #threadId: string;
+    private threadId: string;
+    private options: LLMOptions;
     private client: ChatGoogleGenerativeAI;
     private prompt: string;
     private promptTemplate: ChatPromptTemplate;
     private memory: MongoDBSaver;
 
-    constructor(prompt: string) {
+    constructor(prompt: string, opts: Partial<LLMOptions> = {}) {
         super();
+        this.options = { ...defaultLLMOptions, ...opts };
         this.prompt = prompt;
         this.memory = new MongoDBSaver({
             client: mongoClient.client,
@@ -32,14 +43,14 @@ export class LLM extends BaseLLM {
 
 
         this.client = new ChatGoogleGenerativeAI({
-            model: "gemini-2.0-flash-lite",
+            model: this.options.model,
             temperature: 0.7,
-            apiKey: process.env.GEMINI_API_KEY!,
+            apiKey: this.options.apiKey,
         });
     }
 
     chat(): LLMStream {
-        return new LLMStream(this, this.client, this.memory, this.promptTemplate, this.#threadId);
+        return new LLMStream(this, this.options, this.client, this.memory, this.promptTemplate, this.threadId);
     }
 
     private createPromptTemplate(prompt: string) {
@@ -48,10 +59,6 @@ export class LLM extends BaseLLM {
             ["user", prompt],
             ["placeholder", "{messages}"],
         ]);
-    }
-
-    get threadId() {
-        return this.#threadId
     }
 }
 
@@ -144,3 +151,5 @@ export class LLMStream extends BaseStream {
     interrupt() {
         this.interrupted = true
     }
+
+}

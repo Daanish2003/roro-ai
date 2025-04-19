@@ -188,7 +188,5 @@ export class AgentOutput extends EventEmitter {
         this.#ttsStream?.closeConnection()
         this.interrupt();
         this.removeAllListeners();
-
-        return this.#llm.threadId
     }
 }
