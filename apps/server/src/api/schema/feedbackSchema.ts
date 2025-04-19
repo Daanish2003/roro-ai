@@ -8,7 +8,7 @@ export const FeedbackSchema = z.object({
     feedbackType: FeedbackTypeEnum,
     subject: z.string().min(1).max(30),
     details: z.string().min(1),
-    issue: IssueCategoryEnum.optional()
+    issue: IssueCategoryEnum.optional().nullable()
 }) 
 
 export type FeedbackFormValues = z.infer<typeof FeedbackSchema>;

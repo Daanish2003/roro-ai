@@ -17,7 +17,7 @@ export const createFeedbackService = async ({
                 subject,
                 details,
                 feedbackType ,
-                issue,
+                issue: issue ?? null,
                 username
             }
         })
