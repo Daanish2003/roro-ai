@@ -69,7 +69,7 @@ export default function PromptInput() {
                         </span>
                         <Button
                           type="submit"
-                          disabled = {(roomCount >= 3) && data?.user.role === 'user' || loading}
+                          disabled = {!promptValue.trim() || ((roomCount >= 3) && data?.user.role === 'user') || loading}
                           className="rounded-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 transition-all duration-300 shadow-lg shadow-green-500/20"
                         >
                           {loading ? (
