@@ -3,14 +3,13 @@
 import { motion } from "motion/react";
 import React, { useEffect, useState } from "react";
 import { Button } from "@roro-ai/ui/components/ui/button";
-import { Form, FormControl, FormField, FormItem } from "@roro-ai/ui/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@roro-ai/ui/components/ui/form";
 import { ArrowUpRight, CircleAlert } from "lucide-react";
 import TopicsButton from './topics-button';
 import { PromptTopic } from "@/lib/prompt-contant";
 import { AutosizeTextarea } from "./autosize-textarea";
 import usePrompt from "@/hooks/use-prompt";
 import { useSession } from "@/features/auth/auth-client";
-import Loader from "@/components/global/loader";
 
 export default function PromptInput() {
   const { data } = useSession()
@@ -74,7 +73,7 @@ export default function PromptInput() {
                           className="rounded-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 transition-all duration-300 shadow-lg shadow-green-500/20"
                         >
                           {loading ? (
-                            <Loader />
+                             <span>loading...</span>
                           ): (
                             <span>Start Practice</span>
                           )}
@@ -84,6 +83,7 @@ export default function PromptInput() {
                       </div>
                     </div>
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
