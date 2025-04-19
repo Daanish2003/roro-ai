@@ -68,7 +68,7 @@ export class AgentOutput extends EventEmitter {
                 for await (const text of this.#llmStream!) {
                     if (cancelled || this.#interrupted) break;
                     console.log(text)
-                    // this.#ttsStream!.push(text);
+                    this.#ttsStream!.push(text);
                 }
             } catch (err) {
                 future.reject(err as Error);
@@ -88,6 +88,7 @@ export class AgentOutput extends EventEmitter {
                     if (cancelled) break;
                     this.emit("AGENT_START_SPEAKING")
                     if(this.#interrupted) return
+                    console.log(buffer)
                     this.#rtpStream!.pushStream(buffer);
                 }
             } catch (err) {
@@ -109,6 +110,7 @@ export class AgentOutput extends EventEmitter {
                     const rtpPacket = packetQueue.shift();
                     if (rtpPacket) {
                         if(this.#interrupted) return
+                        console.log("packet", rtpPacket)
                         this.#producerTrack.send(rtpPacket);
                     }
                 } else if (this.#speaking) {
@@ -189,7 +191,5 @@ export class AgentOutput extends EventEmitter {
         this.#ttsStream?.closeConnection()
         this.interrupt();
         this.removeAllListeners();
-
-        return this.#llm.threadId
     }
 }

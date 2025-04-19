@@ -357,12 +357,10 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
           set({ error: "Socket is not connected" });
       }
       try {
-        const response = await socket?.emitWithAck('exit-room', { roomId })
+        socket?.emit('exit-room', { roomId })
         stopUserMedia()
         useMediasoupStore.setState({ joined: false })
-        if(response) {
-          router.replace(`/ai-feedback/${response.threadId}`)
-        }
+        router.replace('/practice')
       } catch (error) {
         console.error("Failed to exit room")
         throw error

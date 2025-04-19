@@ -3,7 +3,7 @@ import { usePromptStore } from '@/store/usePrompt';
 import { PromptSchema } from '@/zod/prompt-schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -12,9 +12,10 @@ export default function usePrompt() {
     const router = useRouter();
     const { data: session } = useSession();
     const { setPrompt } = usePromptStore();
+    const [loading, setLoading ] = useState(false)
 
     const startPracticeHandler = async (values: z.infer<typeof PromptSchema>) => {
-    
+        setLoading(true)
         setPrompt(values.prompt)
         try {
           const response = await fetch(
@@ -57,6 +58,8 @@ export default function usePrompt() {
                 })
             }
           console.error("Error starting practice:", error);
+        } finally {
+          setLoading(false)
         }
       };
 
@@ -120,6 +123,7 @@ export default function usePrompt() {
   return {
     startPracticeHandler,
     watch,
+    loading,
     setValue,
     promptValue,
     handlePromptTemplate,

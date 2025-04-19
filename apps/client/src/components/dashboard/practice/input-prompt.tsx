@@ -10,11 +10,12 @@ import { PromptTopic } from "@/lib/prompt-contant";
 import { AutosizeTextarea } from "./autosize-textarea";
 import usePrompt from "@/hooks/use-prompt";
 import { useSession } from "@/features/auth/auth-client";
+import Loader from "@/components/global/loader";
 
 export default function PromptInput() {
   const { data } = useSession()
   const [roomCount, setRoomCount] = useState<number>(0);
-  const { startPracticeHandler, promptValue, setValue, handlePromptTemplate, promptForm, getRoomCount } = usePrompt();
+  const { startPracticeHandler, promptValue, setValue, handlePromptTemplate, promptForm, getRoomCount, loading } = usePrompt();
 
   useEffect(() => {
     const getCount = async () => {
@@ -69,10 +70,15 @@ export default function PromptInput() {
                         </span>
                         <Button
                           type="submit"
-                          disabled = {(roomCount >= 3) && data?.user.role === 'user'}
+                          disabled = {(roomCount >= 3) && data?.user.role === 'user' || loading}
                           className="rounded-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 transition-all duration-300 shadow-lg shadow-green-500/20"
                         >
-                          <span>Start Practice</span>
+                          {loading ? (
+                            <Loader />
+                          ): (
+                            <span>Start Practice</span>
+                          )}
+                          
                           <ArrowUpRight className="w-4 h-4" />
                         </Button>
                       </div>

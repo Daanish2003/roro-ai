@@ -171,7 +171,6 @@ export class AgentPipeline {
 
     closeStream() {
         this.#userInput.close()
-        const threadId = this.#agentOutput.close()
-        return threadId
+        this.#agentOutput.close()
     }
 }
