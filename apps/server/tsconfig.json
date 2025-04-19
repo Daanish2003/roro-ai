@@ -3,23 +3,17 @@
   "exclude": ["node_modules", "dist"],
   "include": ["src/**/*.ts"],
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "declaration": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": false,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@roro-ai/database": ["@roro-ai/database/src/*"]
+        "@roro-ai/database" : ["@roro-ai/database/src/*"]
     },
     "outDir": "dist",
     "rootDir": "src",
-    "sourceMap": true,
-    "resolveJsonModule": true
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    
   }
 }

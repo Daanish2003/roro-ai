@@ -5,7 +5,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { START, END, StateGraph, MessagesAnnotation } from "@langchain/langgraph";
 import { SystemPrompt } from "./prompt.js";
 import { LLM as BaseLLM, LLMStream as BaseStream } from "./utils.js";
-import { mongoClient, redis } from '@roro-ai/database/client';
+import { mongoClient } from '@roro-ai/database/client';
 import { MongoDBSaver } from  "@langchain/langgraph-checkpoint-mongodb"
 
 

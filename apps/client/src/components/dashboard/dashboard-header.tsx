@@ -1,6 +1,5 @@
 "use client"
 import React from 'react'
-import Logo from '../landing-page/logo'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@roro-ai/ui/components/ui/breadcrumb'
 import GithubStarButton from '../landing-page/github-start-button'
 import { Separator } from '@roro-ai/ui/components/ui/separator'

@@ -7,7 +7,7 @@ import { Input } from '@roro-ai/ui/components/ui/input';
 import { Button } from '@roro-ai/ui/components/ui/button';
 
 export default function ResetPasswordForm() {
-    const { resetPasswordForm, loading, resetPasswordHandler, sentEmailVerificationLink, setSentEmailVerificationLink } = useAuth();
+    const { resetPasswordForm, loading, resetPasswordHandler } = useAuth();
 
     
 
