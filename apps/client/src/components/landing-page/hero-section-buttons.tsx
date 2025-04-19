@@ -27,7 +27,7 @@ export default function HeroSectionButtons() {
                 className='rounded-full'
             >
                 <Link
-                href={"https://githhub.com/Daanish2003/roro-ai"}
+                href={"https://github.com/Daanish2003/roro-ai"}
                 >
                 <Star />
                 Give us a star
