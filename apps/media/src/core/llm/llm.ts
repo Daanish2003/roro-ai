@@ -10,7 +10,6 @@ import { MongoDBSaver } from  "@langchain/langgraph-checkpoint-mongodb"
 
 
 
-
 export class LLM extends BaseLLM {
     #threadId: string;
     private client: ChatGoogleGenerativeAI;
@@ -29,7 +28,7 @@ export class LLM extends BaseLLM {
 
         });
         this.promptTemplate = this.createPromptTemplate(this.prompt);
-        this.#threadId = uuidv4();
+        this.threadId = uuidv4();
 
 
         this.client = new ChatGoogleGenerativeAI({
@@ -65,7 +64,7 @@ export class LLMStream extends BaseStream {
     private task?: Promise<void>;
     private interrupted: boolean = false
 
-    constructor(llm: LLM, client: ChatGoogleGenerativeAI, memory: MongoDBSaver, promptTemplate: ChatPromptTemplate, threadId: string) {
+    constructor(llm: LLM, opts: LLMOptions, client: ChatGoogleGenerativeAI, memory: MongoDBSaver, promptTemplate: ChatPromptTemplate, threadId: string) {
         super(llm);
     
         this.client = client;
@@ -104,6 +103,7 @@ export class LLMStream extends BaseStream {
 
             for await (const chunk of stream) {
                 chunks.push(chunk);
+                console.log(chunk)
                 buffer += chunk.content;
 
                 const sentences = buffer.split(".");
@@ -144,7 +144,3 @@ export class LLMStream extends BaseStream {
     interrupt() {
         this.interrupted = true
     }
-}
-
-
-

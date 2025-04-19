@@ -67,8 +67,7 @@ export class AgentOutput extends EventEmitter {
             try {
                 for await (const text of this.#llmStream!) {
                     if (cancelled || this.#interrupted) break;
-                    console.log(text)
-                    // this.#ttsStream!.push(text);
+                    this.#ttsStream!.push(text);
                 }
             } catch (err) {
                 future.reject(err as Error);
