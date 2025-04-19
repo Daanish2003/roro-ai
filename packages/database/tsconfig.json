@@ -1,33 +1,19 @@
 {
   "extends": "@roro-ai/typescript-config/base.json",
-  "include": [
-    "next-env.d.ts", 
-    "**/*.ts", 
-    "**/*.tsx", 
-    "tsup.config.ts", 
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules", 
-    "dist"
-  ],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "tsup.config.ts", "src/client.ts", "src/**/*"],
+  "exclude": ["node_modules", "dist"],
   "compilerOptions": {
-    "baseUrl": ".", 
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"] 
+      "@/*" : ["./src/*"]
     },
     "rootDir": "src",
     "outDir": "dist",
-    "module": "NodeNext", 
+    "module": "NodeNext",
     "moduleResolution": "nodenext",
     "esModuleInterop": true,
     "declaration": true,
     "declarationMap": true,
-    "emitDeclarationOnly": false, 
-    "target": "ES2022", 
-    "strict": true, 
-    "skipLibCheck": true, 
-    "incremental": true, 
-    "resolveJsonModule": true
+    "emitDeclarationOnly": false,
   }
 }

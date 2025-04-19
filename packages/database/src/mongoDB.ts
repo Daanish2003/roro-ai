@@ -2,7 +2,7 @@ import { MongoClient } from "mongodb"
 
 class Mongo {
     private static instance: Mongo
-    #client: MongoClient
+    private Pclient: MongoClient
 
     constructor() {
         const url = process.env.MONGO_DB_URL
@@ -11,7 +11,7 @@ class Mongo {
             throw new Error("MonogoDB url is not provided")
         }
 
-        this.#client = new MongoClient(url)
+        this.Pclient = new MongoClient(url)
     }
 
     static getInstance() {
@@ -24,7 +24,7 @@ class Mongo {
 
 
     get client() {
-        return this.#client
+        return this.Pclient
     }
 }
 

@@ -118,6 +118,7 @@ export default function AudioVisualizer({ audioRef }: AudioVisualizerProps) {
     return () => {
       if (audioRef.current) {
         audioRef.current.removeEventListener("play", handlePlay);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         audioRef.current.removeEventListener("pause", handlePause);
       }
 
