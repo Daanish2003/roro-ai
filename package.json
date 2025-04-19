@@ -23,12 +23,13 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "latest"
-  },
-  "devDependencies": {
-    "prettier": "^3.2.5",
+    "@prisma/client": "latest",
     "prisma": "latest",
     "tsx": "4.19.1",
     "turbo": "^2.0.3"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
+    
   }
 }
