@@ -45,7 +45,7 @@ export const auth = betterAuth({
         requireEmailVerification: true,
         sendResetPassword: async ({ user, url}) => {
             await resend.emails.send({
-                from: "Acme <onboarding@resend.dev>",
+                from: process.env.RESEND_EMAIL!,
                 to: user.email,
                 subject: "Reset your password",
                 html: `Click the link to reset your password: ${url}`,
@@ -57,7 +57,7 @@ export const auth = betterAuth({
         autoSignInAfterVerification: true,
         sendVerificationEmail: async ({ user, url}) => {
             await resend.emails.send({
-                from: "Acme <onboarding@resend.dev>",
+                from: process.env.RESEND_EMAIL!,
                 to: user.email,
                 subject: "Email Verification Roro AI",
                 html: `Click the link to verify your email: ${url}`
