@@ -18,7 +18,7 @@ type MediasoupProducerState = {
     }
     recvTransport: mediasoupClient.types.Transport | null
     remoteStream: MediaStream | null
-    turn_config: RTCIceServer | null
+    turn_config: RTCIceServer[] | null
     
 
     setDevice: () => Promise<mediasoupClient.types.Device>
@@ -29,7 +29,7 @@ type MediasoupProducerState = {
     createRecvTransport: (roomId: string, device: mediasoupClient.types.Device) => Promise<{ success: boolean; error?: string }>;
     startConsuming: (device: mediasoupClient.types.Device, roomId:string) => Promise<void>;
     exitRoom: (roomId: string, router: AppRouterInstance) => Promise<void>
-    updateTurnConfig: (turn_config: RTCIceServer) => void
+    updateTurnConfig: (turn_config: RTCIceServer[]) => void
     
 }
 
@@ -213,7 +213,7 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
               iceParameters: clientTransportParams.iceParameters,
               iceCandidates: clientTransportParams.iceCandidate,
               dtlsParameters: clientTransportParams.dtlsParameters,
-              iceServers: [turn_config],
+              iceServers: turn_config,
               iceTransportPolicy: 'all'
             });
            
@@ -385,6 +385,6 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     },
 
 
-    updateTurnConfig: (turn_config: RTCIceServer) => set(() => ({ turn_config: turn_config}))
+    updateTurnConfig: (turn_config: RTCIceServer[]) => set(() => ({ turn_config: turn_config}))
 }))
 
