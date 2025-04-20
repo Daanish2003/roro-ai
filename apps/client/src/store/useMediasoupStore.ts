@@ -272,6 +272,11 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
 
     createRecvTransport: async (roomId, device) => {
       const socket = useSocketStore.getState().socket;
+      const { turn_config } = get()
+
+      if(!turn_config) {
+        throw new Error("TURN IS NOT SET, RECEIVER")
+      }
 
       if (!socket || !socket.connected) {
           console.error("Socket is not connected. Cannot join room.");
@@ -289,7 +294,14 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
               }
     
       
-              const transport = device.createRecvTransport(clientTransportParams);
+              const transport = device.createRecvTransport({
+                id: clientTransportParams.id,
+                iceParameters: clientTransportParams.iceParameters,
+                iceCandidates: clientTransportParams.iceCandidates,
+                dtlsParameters: clientTransportParams.dtlsParameters,
+                iceServers: turn_config,
+                iceTransportPolicy: 'all'
+              });
     
       
               transport.on('connectionstatechange', (state) => {
