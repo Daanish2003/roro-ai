@@ -1,4 +1,5 @@
 import { useSession } from '@/features/auth/auth-client';
+import { useMediasoupStore } from '@/store/useMediasoupStore';
 import { usePromptStore } from '@/store/usePrompt';
 import { PromptSchema } from '@/zod/prompt-schema';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +14,7 @@ export default function usePrompt() {
     const { data: session } = useSession();
     const { setPrompt } = usePromptStore();
     const [loading, setLoading ] = useState(false)
+    const { updateTurnConfig } = useMediasoupStore()
 
     const startPracticeHandler = async (values: z.infer<typeof PromptSchema>) => {
         setLoading(true)
@@ -45,6 +47,8 @@ export default function usePrompt() {
                     },
             })
           }
+
+          updateTurnConfig(data.turnCredentials.iceServers)
     
           router.replace(`/room/${data.roomId}`);
         } catch (error) {
