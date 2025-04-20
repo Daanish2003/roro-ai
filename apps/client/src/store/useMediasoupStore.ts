@@ -211,7 +211,7 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
             const transport = device.createSendTransport({
               id: clientTransportParams.id,
               iceParameters: clientTransportParams.iceParameters,
-              iceCandidates: clientTransportParams.iceCandidate,
+              iceCandidates: clientTransportParams.iceCandidates,
               dtlsParameters: clientTransportParams.dtlsParameters,
               iceServers: turn_config,
               iceTransportPolicy: 'all'
