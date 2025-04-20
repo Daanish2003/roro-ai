@@ -36,7 +36,16 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
 
         const { roomName, prompt, topic } = validatedFields.data;
 
-        
+        const turnResponse = await fetch(process.env.TURN_URL!, {
+            method: 'POST',
+            headers: {
+              'Content-Type' : 'application/json',
+              'Authorization' : `Bearer ${process.env.TURN_API_TOKEN}`
+            },
+            body: JSON.stringify({ ttl: 600 })
+        })
+
+        const turnCredentials = await turnResponse.json()
 
         const room = await createRoomService(
           { 
@@ -72,7 +81,8 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
           path: '/',
         }).json(
           {
-            roomId: room.id
+            roomId: room.id,
+            turnCredentials
           }
         )
 

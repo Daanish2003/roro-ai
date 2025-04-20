@@ -4,6 +4,9 @@ import { useSocketStore } from "./useSocketStore";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useMediaStore } from "./useMedia";
 
+
+
+
 type MediasoupProducerState = {
     device: mediasoupClient.types.Device | null
     routerRtpCapabilities: mediasoupClient.types.RtpCapabilities | null
@@ -15,6 +18,8 @@ type MediasoupProducerState = {
     }
     recvTransport: mediasoupClient.types.Transport | null
     remoteStream: MediaStream | null
+    turn_config: RTCIceServer | null
+    
 
     setDevice: () => Promise<mediasoupClient.types.Device>
     joinRoom: (roomId: string, userId: string) => Promise<void>
@@ -24,6 +29,7 @@ type MediasoupProducerState = {
     createRecvTransport: (roomId: string, device: mediasoupClient.types.Device) => Promise<{ success: boolean; error?: string }>;
     startConsuming: (device: mediasoupClient.types.Device, roomId:string) => Promise<void>;
     exitRoom: (roomId: string, router: AppRouterInstance) => Promise<void>
+    updateTurnConfig: (turn_config: RTCIceServer) => void
     
 }
 
@@ -38,7 +44,7 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     },
     remoteStream: null,
     recvTransport: null,
-
+    turn_config: null,
   
 
 
@@ -190,7 +196,11 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
           return;
       }
         try {
-            const { getDevice } = get()
+            const { getDevice, turn_config } = get()
+
+            if(!turn_config) {
+              throw new Error("TURN CONFIG IS SET")
+            }
 
             const device = await getDevice()
 
@@ -198,7 +208,14 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
               roomId,
             });
 
-            const transport = device.createSendTransport(clientTransportParams);
+            const transport = device.createSendTransport({
+              id: clientTransportParams.id,
+              iceParameters: clientTransportParams.iceParameters,
+              iceCandidates: clientTransportParams.iceCandidate,
+              dtlsParameters: clientTransportParams.dtlsParameters,
+              iceServers: [turn_config],
+              iceTransportPolicy: 'all'
+            });
            
             transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
 
@@ -365,6 +382,9 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
         console.error("Failed to exit room")
         throw error
       }
-    }
+    },
+
+
+    updateTurnConfig: (turn_config: RTCIceServer) => set(() => ({ turn_config: turn_config}))
 }))
 

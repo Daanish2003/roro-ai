@@ -25,7 +25,9 @@
     "MONGO_DB_URL",
     "GROQ_API_KEY",
     "TRANSPORT_ADDRESS",
-    "RESEND_API_KEY"
+    "RESEND_API_KEY",
+    "TURN_URL",
+    "TURN_API_TOKEN"
   ],
   "tasks": {
     "build": {
