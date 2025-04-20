@@ -82,7 +82,7 @@ export const createRoomHandler = asyncHandler(async(req: Request, res: Response)
         }).json(
           {
             roomId: room.id,
-            turnCredentials
+            iceServers: turnCredentials.iceServers
           }
         )
 

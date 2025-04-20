@@ -48,7 +48,9 @@ export default function usePrompt() {
             })
           }
 
-          updateTurnConfig(data.turnCredentials.iceServers)
+          console.log(data.iceServers)
+
+          updateTurnConfig(data.iceServers)
     
           router.replace(`/room/${data.roomId}`);
         } catch (error) {
