@@ -1,13 +1,17 @@
 "use client"
 import { useMediasoupStore } from '@/store/useMediasoupStore';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
 const CountdownTimer = () => {
-  const [timeLeft, setTimeLeft] = useState(5 * 60);
-  const { joined } = useMediasoupStore()
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const params = useParams()
   const router = useRouter()
+  const [timeLeft, setTimeLeft] = useState(3 * 60);
+  const { joined, exitRoom } = useMediasoupStore()
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const roomId = (params.roomId as string) || ""
+  
 
   useEffect(() => {
     if (!joined) return;
@@ -16,7 +20,7 @@ const CountdownTimer = () => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
           clearInterval(timerRef.current!);
-          router.push('/practice');
+          exitRoom(roomId, router)
           return 0;
         }
         return prevTime - 1;
@@ -25,8 +29,9 @@ const CountdownTimer = () => {
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      exitRoom(roomId, router)
     };
-  }, [joined, router]);
+  }, [joined, exitRoom, roomId, router]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

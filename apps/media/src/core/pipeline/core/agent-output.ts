@@ -14,12 +14,12 @@ export class AgentOutput extends EventEmitter {
     #producerTrack: Producer;
     #ttsTask?: CancellablePromise<void>;
     #rtpTask?: CancellablePromise<void>;
+    #llmTask?: CancellablePromise<void>;
     #speaking: boolean = false;
     #closed: boolean = false;
     #llmStream?: ReturnType<LLM["chat"]>;
     #ttsStream?: ReturnType<TTS["stream"]>;
     #rtpStream?: ReturnType<RTP["stream"]>;
-    #llmTask?: CancellablePromise<void>;
     #interrupted = false
 
     constructor(tts: TTS, llm: LLM, producerTrack: Producer, ssrc: number) {
@@ -185,7 +185,7 @@ export class AgentOutput extends EventEmitter {
 
     close() {
         this.#closed = true;
-        this.#ttsStream?.closeConnection()
+        this.#ttsStream?.closeConnection();
         this.interrupt();
         this.removeAllListeners();
     }
