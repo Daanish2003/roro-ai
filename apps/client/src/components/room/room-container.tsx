@@ -10,14 +10,16 @@ import Controller from './controller'
 import JoinButton from './join-button'
 import Logo from '../landing-page/logo'
 import CountdownTimer from '@/lib/timer'
+import { useRouter } from 'next/navigation'
 
 
 export default function RoomContainer() {
   const { connect, disconnect, isConnected} = useSocketStore()
-  const { remoteStream, joined} = useMediasoupStore()
+  const { remoteStream, joined, sessionCompleted, updateSession } = useMediasoupStore()
   const getUserMedia = useMediaStore((state) => state.getUserMedia)
   const localVideoRef = React.useRef<HTMLVideoElement | null>(null)
   const remoteAudioRef = React.useRef<HTMLAudioElement | null>(null)
+  const router = useRouter()
   
 
   useEffect(() => {
@@ -70,6 +72,32 @@ export default function RoomContainer() {
       remoteAudioRef.current.autoplay = true
     }
   }, [remoteStream]);
+
+  if (sessionCompleted) {
+    return (
+      <>
+        <div className='h-16 border-b items-center flex px-4 justify-between'>
+          <Logo />
+        </div>
+
+        <div className="flex flex-col items-center mt-8 space-y-4">
+          <div className="bg-card p-6 rounded-lg shadow-md w-80 border">
+            <h2 className="text-xl font-semibold text-center">Session Completed</h2>
+            <p className="mt-2 text-center text-muted-foreground text-sm">Congratulations on completing your session!</p>
+            <button
+              onClick={() => {
+                router.replace('/practice')
+                updateSession(false)
+              }}
+              className="mt-4 w-full bg-red-600 text-white py-2 rounded-lg"
+            >
+              Exit Room
+            </button>
+          </div>
+        </div>
+      </>
+    )
+  }
 
 
   return (

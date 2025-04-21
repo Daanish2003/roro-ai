@@ -7,7 +7,7 @@ const CountdownTimer = () => {
   const params = useParams()
   const router = useRouter()
   const [timeLeft, setTimeLeft] = useState(3 * 60);
-  const { joined, exitRoom } = useMediasoupStore()
+  const { joined, exitRoom, updateSession } = useMediasoupStore()
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const roomId = (params.roomId as string) || ""
@@ -17,21 +17,22 @@ const CountdownTimer = () => {
     if (!joined) return;
 
     timerRef.current = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          clearInterval(timerRef.current!);
-          exitRoom(roomId, router)
-          return 0;
-        }
-        return prevTime - 1;
-      });
+      setTimeLeft((prevTime) => prevTime > 0 ? prevTime - 1 : 0);
     }, 1000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      exitRoom(roomId, router)
+      updateSession(true);
     };
-  }, [joined, exitRoom, roomId, router]);
+  }, [joined, updateSession]);
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      updateSession(true);
+      exitRoom(roomId, router);
+    }
+  }, [timeLeft, updateSession, exitRoom, roomId, router]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
