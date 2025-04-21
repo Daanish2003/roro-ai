@@ -99,10 +99,7 @@ export class LLMStream extends BaseStream {
 
     private async callModel(state: typeof MessagesAnnotation.State) {
         try {
-            console.log(this.app)
-            console.log("state", state.messages)
             const prompt = await this.promptTemplate.invoke(state);
-            console.log("prompt", prompt)
             const stream = await this.client.stream(prompt);
 
             let buffer = "";
@@ -110,7 +107,6 @@ export class LLMStream extends BaseStream {
 
             for await (const chunk of stream) {
                 chunks.push(chunk);
-                console.log(chunk)
                 buffer += chunk.content;
 
                 const sentences = buffer.split(".");

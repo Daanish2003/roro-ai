@@ -85,6 +85,13 @@ export class streamTTS extends BaseStreamTTS {
                 }
                 break;
 
+            case LiveTTSEvents.Warning:
+                console.log("Deepgram STT [WARN]:", data)
+                break
+            case LiveTTSEvents.Unhandled:
+                console.log("Deepgram Unhandled", data)
+                break
+
             case LiveTTSEvents.Audio: {
                 const buffer = Buffer.from(data);
                 this.audioBuffer = Buffer.concat([this.audioBuffer, buffer]);
@@ -96,6 +103,7 @@ export class streamTTS extends BaseStreamTTS {
                     if(this.interrupted) {
                         this.future?.resolve()
                     }
+                    console.log("recieve");
                     this.output.put(chunk);
                     this.audioBuffer = this.audioBuffer.subarray(chunkSize);
                 }
@@ -120,6 +128,7 @@ export class streamTTS extends BaseStreamTTS {
 
             if (typeof text === 'symbol') continue;
             this.future = new Future();
+            console.log(text)
             this.connection.sendText(text);
             this.connection.flush();
 
