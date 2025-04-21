@@ -19,6 +19,7 @@ type MediasoupProducerState = {
     recvTransport: mediasoupClient.types.Transport | null
     remoteStream: MediaStream | null
     turn_config: RTCIceServer[] | null
+    sessionCompleted: boolean
     
 
     setDevice: () => Promise<mediasoupClient.types.Device>
@@ -29,7 +30,8 @@ type MediasoupProducerState = {
     createRecvTransport: (roomId: string, device: mediasoupClient.types.Device) => Promise<{ success: boolean; error?: string }>;
     startConsuming: (device: mediasoupClient.types.Device, roomId:string) => Promise<void>;
     exitRoom: (roomId: string, router: AppRouterInstance) => Promise<void>
-    updateTurnConfig: (turn_config: RTCIceServer[]) => void
+    updateTurnConfig: (turn_config: RTCIceServer[]) => void;
+    updateSession: (completed: boolean) => void
     
 }
 
@@ -45,6 +47,7 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     remoteStream: null,
     recvTransport: null,
     turn_config: null,
+    sessionCompleted: false,
   
 
 
@@ -380,6 +383,7 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     exitRoom: async (roomId: string, router: AppRouterInstance) => {
       const socket = useSocketStore.getState().socket;
       const stopUserMedia = useMediaStore.getState().stopUserMedia
+      const { sessionCompleted } = get()
 
       if (!socket || !socket.connected) {
           console.error("Socket is not connected. Cannot join room.");
@@ -389,7 +393,9 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
         socket?.emit('exit-room', { roomId })
         stopUserMedia()
         useMediasoupStore.setState({ joined: false })
-        router.replace('/practice')
+        if(!sessionCompleted) {
+          router.replace('/practice')
+        }
       } catch (error) {
         console.error("Failed to exit room")
         throw error
@@ -397,6 +403,7 @@ export const useMediasoupStore = create<MediasoupProducerState>((set, get) => ({
     },
 
 
-    updateTurnConfig: (turn_config: RTCIceServer[]) => set(() => ({ turn_config: turn_config}))
+    updateTurnConfig: (turn_config: RTCIceServer[]) => set(() => ({ turn_config: turn_config})),
+    updateSession: (completed: boolean) => set(() => ({ sessionCompleted: completed}))
 }))
 

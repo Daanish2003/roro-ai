@@ -58,6 +58,8 @@ export class streamTTS extends BaseStreamTTS {
         this.connection.on(LiveTTSEvents.Close, () => this.handleEvent(LiveTTSEvents.Close));
         this.connection.on(LiveTTSEvents.Error, (err) => this.handleEvent(LiveTTSEvents.Error, err));
         this.connection.on(LiveTTSEvents.Metadata, (data) => this.handleEvent(LiveTTSEvents.Metadata, data));
+        this.connection.on(LiveTTSEvents.Warning, (data) => this.handleEvent(LiveTTSEvents.Warning, data));
+        this.connection.on(LiveTTSEvents.Unhandled, (data) => this.handleEvent(LiveTTSEvents.Unhandled, data));
         this.connection.on(LiveTTSEvents.Flushed, () => this.handleEvent(LiveTTSEvents.Flushed));
         this.connection.on(LiveTTSEvents.Audio, (data) => this.handleEvent(LiveTTSEvents.Audio, data));
     }
@@ -82,6 +84,7 @@ export class streamTTS extends BaseStreamTTS {
             case LiveTTSEvents.Flushed:
                 if (this.future && !this.future.done) {
                     this.future.resolve();
+                    console.log("Flushed")
                 }
                 break;
 
@@ -103,7 +106,6 @@ export class streamTTS extends BaseStreamTTS {
                     if(this.interrupted) {
                         this.future?.resolve()
                     }
-                    console.log("recieve");
                     this.output.put(chunk);
                     this.audioBuffer = this.audioBuffer.subarray(chunkSize);
                 }
