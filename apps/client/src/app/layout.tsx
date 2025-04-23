@@ -2,6 +2,7 @@ import { ThemeProvider } from '@/components/providers/theme-providers';
 import '@roro-ai/ui/global.css';
 import { Poppins } from "next/font/google";
 import { Toaster } from 'sonner';
+import { Analytics } from "@vercel/analytics/react"
 
 const roboto = Poppins({
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
@@ -33,6 +34,7 @@ export default function RootLayout({
         >
               {children}
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
