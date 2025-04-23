@@ -48,6 +48,8 @@ Roro AI listens intelligently, responds instantly, and adapts to your communicat
 # 🚀 Demo
 Here is a quick demo of the app. We hope you enjoy it.
 
+https://youtu.be/Z0CnmHaWdnk
+
 > [The Demo Link](https://roro-ai.com)
 
 Liked it? Please give a ⭐️ to <b>Roro AI Repo</b>.
