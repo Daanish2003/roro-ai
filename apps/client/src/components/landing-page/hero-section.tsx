@@ -80,15 +80,7 @@ export default function HeroSection() {
           >
             <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-green-700/20 rounded-3xl blur-3xl"></div>
             <div className="relative h-full w-full flex items-center justify-center">
-              <div className="w-[320px] h-[320px] md:w-[400px] md:h-[400px] rounded-2xl shadow-2xl border border-green-500/20 overflow-hidden bg-black/40 backdrop-blur-sm">
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="relative w-24 h-24 rounded-full bg-green-500/20 flex items-center justify-center animate-pulse">
-                    <div className="absolute w-16 h-16 rounded-full bg-green-500/30"></div>
-                    <div className="absolute w-8 h-8 rounded-full bg-green-500/40"></div>
-                    <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                  </div>
-                </div>
-              </div>
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/Z0CnmHaWdnk?si=-3JWTNTxl3qaR_DH" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen className="rounded-xl"></iframe>
             </div>
           </motion.div>
         </div>
