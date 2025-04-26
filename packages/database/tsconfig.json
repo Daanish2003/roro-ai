@@ -12,8 +12,5 @@
     "module": "NodeNext",
     "moduleResolution": "nodenext",
     "esModuleInterop": true,
-    "declaration": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": false,
   }
 }

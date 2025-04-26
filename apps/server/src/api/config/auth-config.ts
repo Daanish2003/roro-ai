@@ -1,9 +1,8 @@
 import 'dotenv/config';
-import { prisma } from "@roro-ai/database/client";
+import { prisma, redis } from "@roro-ai/database";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin, bearer, jwt, oAuthProxy } from "better-auth/plugins";
-import { redis } from '@roro-ai/database/client';
 import { Resend } from 'resend';
 
 export const resend = new Resend(process.env.RESEND_API_KEY)
