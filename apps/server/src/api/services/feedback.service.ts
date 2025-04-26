@@ -1,4 +1,4 @@
-import { prisma } from "@roro-ai/database/client";
+import { prisma } from "@roro-ai/database";
 import { Feedback } from "../schema/feedbackSchema.js";
 
 export const createFeedbackService = async ({

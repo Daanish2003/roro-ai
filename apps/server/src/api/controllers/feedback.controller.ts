@@ -7,12 +7,12 @@ import {
   getFeedbackCount,
   getFeedbackService
 } from "../services/feedback.service.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
+import asyncHandler from "express-async-handler";
 import { auth } from "../config/auth-config.js";
 import { fromNodeHeaders } from "better-auth/node";
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 
-export const createFeedbackHandler = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export const createFeedbackHandler: RequestHandler = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const validatedFields = FeedbackSchema.safeParse(req.body);
 
   const data = await auth.api.getSession({
@@ -56,7 +56,7 @@ export const createFeedbackHandler = asyncHandler(async (req: Request, res: Resp
   res.status(200).json({ success: response.success });
 });
 
-export const getAllFeedbacksHandler = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export const getAllFeedbacksHandler: RequestHandler = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const page = Number(req.query.page) || 1;
   const pageSize = Number(req.query.pageSize) || 10;
   const skip = (page - 1) * pageSize;
@@ -77,7 +77,7 @@ export const getAllFeedbacksHandler = asyncHandler(async (req: Request, res: Res
   });
 });
 
-export const getFeedbackHandler = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export const getFeedbackHandler: RequestHandler = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const feedbackId = req.params.id;
 
   if (!feedbackId) {
@@ -90,7 +90,7 @@ export const getFeedbackHandler = asyncHandler(async (req: Request, res: Respons
   res.status(200).json({ feedback });
 });
 
-export const deleteFeedbackHandler = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export const deleteFeedbackHandler: RequestHandler = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const feedbackId = req.params.id;
 
   if (!feedbackId) {
@@ -103,12 +103,12 @@ export const deleteFeedbackHandler = asyncHandler(async (req: Request, res: Resp
   res.status(200).json({ success: response.success });
 });
 
-export const deleteAllFeedbacksHandler = asyncHandler(async (_req: Request, res: Response): Promise<void> => {
+export const deleteAllFeedbacksHandler: RequestHandler = asyncHandler(async (_req: Request, res: Response): Promise<void> => {
   const feedbacks = await deleteAllFeedbackService();
   res.status(200).json({ feedbacks });
 });
 
-export const getFeedbackCountHandler = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export const getFeedbackCountHandler: RequestHandler = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const data = await auth.api.getSession({
     headers: fromNodeHeaders(req.headers),
   });

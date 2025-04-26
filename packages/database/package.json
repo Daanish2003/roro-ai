@@ -2,8 +2,13 @@
   "name": "@roro-ai/database",
   "version": "1.0.0",
   "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
   "exports": {
-    "./client": "./dist/index.js"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
   "scripts": {
     "db:migrate:deploy": "prisma migrate deploy",
@@ -11,7 +16,6 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx src/seed.ts",
-    "dev": "tsup src/* --watch",
     "format": "prisma format",
     "generate": "prisma generate",
     "lint": "eslint src --max-warnings 0",
@@ -33,7 +37,6 @@
     "@types/redis": "^4.0.11",
     "prisma": "latest",
     "rimraf": "^5.0.5",
-    "tsup": "^8.0.2",
     "tsx": "4.19.1",
     "typescript": "5.5.4"
   }

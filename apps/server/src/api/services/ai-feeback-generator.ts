@@ -1,4 +1,4 @@
-import { mongoClient } from "@roro-ai/database/client"
+import { mongoClient } from "@roro-ai/database"
 
 export const aiFeedbackGenerator = async (threadId: string) => {
     const client = mongoClient.client
