@@ -1,312 +1,291 @@
-import { createRoomSchema } from "../schema/roomSchema.js";
-import { createRoomService, deleteAllRoomService, deleteRoomService, getAllRoomsService, getRoomCountService, getRoomService } from "../services/room.service.js";
-import type { Request, Response } from 'express';
-import { asyncHandler } from "../utils/asyncHandler.js";
+import { createRoomSchema, deleteRoomSchema } from "../schema/roomSchema.js";
+import {
+  createRoomService,
+  deleteAllRoomService,
+  deleteRoomService,
+  getAllRoomsService,
+  getRoomCountService,
+  getRoomService
+} from "../services/room.service.js";
+import asyncHandler from "express-async-handler";
 import { auth } from "../config/auth-config.js";
 import { fromNodeHeaders } from "better-auth/node";
 import { createRoomSession, verifyRoomSession } from "../utils/jwt.js";
-import { v4 as uuidv4} from "uuid"
-import { deleteRoomSchema } from '../schema/roomSchema.js';
+import { v4 as uuidv4 } from "uuid";
 import { redis } from "@roro-ai/database/client";
+import { RequestHandler } from "express";
 
-export const createRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
-    try {
-        const validatedFields = createRoomSchema.safeParse(req.body);
+export const createRoomHandler: RequestHandler = asyncHandler(async (req, res): Promise<void> => {
+  const validatedFields = createRoomSchema.safeParse(req.body);
 
-        const data = await auth.api.getSession({
-          headers: fromNodeHeaders(req.headers),
-        });
+  const data = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers),
+  });
 
-        if(!data) {
-          return res.status(400).json({ error: "Not Authenticated"})
-        }      
-    
-        if (!validatedFields.success) {
-          return res.status(400).json({
-            error: "Invalid fields",
-            details: validatedFields.error.flatten()
-          });
-        }
+  if (!data) {
+    res
+      .status(400)
+      .json({ error: "Not Authenticated" });
 
-        const existingRoomCount = await getRoomCountService(data.session.userId);
+    return;
+  }
 
-        if((existingRoomCount >= 3) && data.user.role !== "admin") {
-          return res.status(403).json({ error: 'Room limit reached (max 3 rooms)' });
-        }
+  if (!validatedFields.success) {
+    res
+      .status(400)
+      .json({
+        error: "Invalid fields",
+        details: validatedFields.error.flatten()
+      });
 
-        const { roomName, prompt, topic } = validatedFields.data;
+      return
+  }
 
-        const turnResponse = await fetch(process.env.TURN_URL!, {
-            method: 'POST',
-            headers: {
-              'Content-Type' : 'application/json',
-              'Authorization' : `Bearer ${process.env.TURN_API_TOKEN}`
-            },
-            body: JSON.stringify({ ttl: 600 })
-        })
+  const existingRoomCount = await getRoomCountService(data.session.userId);
 
-        const turnCredentials = await turnResponse.json()
+  if ((existingRoomCount >= 3) && data.user.role !== "admin") {
+    res
+      .status(403)
+      .json({ error: 'Room limit reached (max 3 rooms)' });
 
-        const room = await createRoomService(
-          { 
-            userId: data.session.userId, 
-            roomName, 
-            username: data.user.name,
-            prompt,
-            topic
-          });
+    return
+  }
 
+  const { roomName, prompt, topic } = validatedFields.data;
 
-        const room_session = await createRoomSession({
-          userId: room.userId,
-          username: room.username,
-          roomId: room.id,
-          roomName: room.name,
-          topic: room.topic,
-          prompt: room.prompt
-        })
+  const turnResponse = await fetch(process.env.TURN_URL!, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.TURN_API_TOKEN}`
+    },
+    body: JSON.stringify({ ttl: 600 })
+  });
 
-        const sessionId = uuidv4();
+  const turnCredentials = await turnResponse.json();
 
-        await redis.set(`room_session:${sessionId}`, room_session, 20*60)
+  const room = await createRoomService({
+    userId: data.session.userId,
+    roomName,
+    username: data.user.name,
+    prompt,
+    topic
+  });
 
-        await redis.publish('createRoom', JSON.stringify(room))
+  const room_session = await createRoomSession({
+    userId: room.userId,
+    username: room.username,
+    roomId: room.id,
+    roomName: room.name,
+    topic: room.topic,
+    prompt: room.prompt
+  });
 
-        res.status(200).cookie('room_session', sessionId, {
-          domain: process.env.NODE_ENV === 'production' ? '.roro-ai.com' : undefined,
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          expires: new Date(Date.now() + 60 * 20 * 1000),
-          sameSite: 'lax' as "lax" | "strict" | "none",
-          path: '/',
-        }).json(
-          {
-            roomId: room.id,
-            iceServers: turnCredentials.iceServers
-          }
-        )
+  const sessionId = uuidv4();
 
-      } catch (error) {
+  await redis.set(`room_session:${sessionId}`, room_session, 20 * 60);
+  await redis.publish('createRoom', JSON.stringify(room));
 
-        console.error("Error creating room:", error);
-
-        return res.status(500).json({
-          error: "Internal server error",
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        });
-      }
-})
-
-export const verifyRoomAccessHandler = asyncHandler(async(req: Request, res:Response): Promise<any> => {
-  
-  try {
-    const roomId = req.params.id
-
-    if (!roomId) {
-      return res.status(400).json({ isValid: false, message: "Missing roomId" });
-    }
-
-    const roomSessionId = req.cookies.room_session;
-
-    const roomSessionToken = await redis.get(`room_session:${roomSessionId}`);
-
-
-    if(!roomSessionToken) {
-      return res.status(401).json({ isValid: false });
-    }
-
-    const { userId, roomId: room_id , expiresAt} = await verifyRoomSession(roomSessionToken);
-
-
-    if(expiresAt <  Date.now()) {
-       await redis.del(`room_session:${roomSessionId}`)
-       return res.status(401).json({ isValid: false });
-    }
-
-    const auth_session = await auth.api.getSession({
-      headers: fromNodeHeaders(req.headers)
+  res
+    .status(200)
+    .cookie('room_session', sessionId, {
+      domain: process.env.NODE_ENV === 'production' ? '.roro-ai.com' : undefined,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      expires: new Date(Date.now() + 60 * 20 * 1000),
+      sameSite: 'lax',
+      path: '/',
     })
-
-    if(auth_session?.session.userId !== userId) {
-      return res.status(401).json({ isValid: false })
-    }
-
-    if (roomId !== room_id) {
-      return res.status(401).json({ isValid: false })
-    }
-
-    return res.status(200).json({ isValid: true })
-  } catch (error) {
-    
-    console.error("Error verifying room:", error);
-
-    return { isValid: false}
-    
-  }
-})
-
-export const getAllUserRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
-  try {
-       const page = Number(req.query.page) || 0
-       const pageSize = Number(req.query.pageSize) || 10;
-
-       const skip = (page - 1) * pageSize;
-        const take = pageSize;
-       
-      if (skip < 0 || take < 1) {
-        return res.status(400).json({ error: "Invalid pagination parameters" });
-      }
-
-        const data = await auth.api.getSession({
-          headers: fromNodeHeaders(req.headers)
-        })
-
-        const { rooms, total} = await getAllRoomsService(
-          {
-            userId: data?.user.id as string,
-            skip,
-            take
-          })
-
-        return res.status(200).json({
-          rooms,
-          total,
-          page,
-          pageSize
-        })
-
-  } catch (error) {
-    console.error("Error getting all room:", error);
-
-        return res.status(500).json({
-          error: "Internal server error",
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        });
-  }
-})
-
-export const getUserRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
-  try {
-      const roomId = req.params.id
-
-        if (!roomId) {
-           return res.status(400).json({ isValid: false, message: "Missing roomId" });
-        }
-
-        const data = await auth.api.getSession({
-          headers: fromNodeHeaders(req.headers)
-        })
-
-
-        const rooms = await getRoomService(
-          {
-            userId: data!.user.id,
-            roomId
-          })
-
-        return res.status(200).json({
-          rooms
-        })
-        
-  } catch (error) {
-    console.error("Error getting room:", error);
-
-        return res.status(500).json({
-          error: "Internal server error",
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        });
-  }
-})
-
-export const deleteRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
-  try {
-      const roomId = req.params.id
-
-        if (!roomId) {
-           return res.status(400).json({ isValid: false, message: "Missing roomId" });
-        }
-
-        const data = await auth.api.getSession({
-          headers: fromNodeHeaders(req.headers)
-        })
-
-
-        const { success } = await deleteRoomService(
-          {
-            userId: data!.user.id,
-            roomId
-          })
-
-        return res.status(200).json({
-          success: success
-        })
-        
-  } catch (error) {
-    console.error("Error deleting room:", error);
-
-        return res.status(500).json({
-          error: "Internal server error",
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        });
-  }
-})
-
-export const deleteAllRoomHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
-  try {
-        const validatedFields = deleteRoomSchema.safeParse(req.body)
-        const data = await auth.api.getSession({
-          headers: fromNodeHeaders(req.headers)
-        })
-
-        if (!validatedFields.success) {
-          return res.status(400).json({
-            error: "Invalid fields",
-            details: validatedFields.error.flatten()
-          });
-        }
-
-        const { roomId } = validatedFields.data
-
-
-        const { success } = await deleteAllRoomService(
-          {
-            userId: data!.user.id,
-            roomId
-          })
-
-        return res.status(200).json({
-          success: success
-  })
-        
-  } catch (error) {
-    console.error("Error deleting room:", error);
-
-        return res.status(500).json({
-          error: "Internal server error",
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        });
-  }
-})
-
-export const getRoomCountHandler = asyncHandler(async(req: Request, res: Response): Promise<any> => {
-  try {
-    const data = await auth.api.getSession({
-      headers: fromNodeHeaders(req.headers),
+    .json({
+      roomId: room.id,
+      iceServers: turnCredentials.iceServers
     });
+});
 
-    if(!data) {
-      return res.status(400).json({ error: "Not Authenticated"})
-    } 
+export const verifyRoomAccessHandler: RequestHandler = asyncHandler(async (req, res): Promise<void> => {
+  const roomId = req.params.id;
 
-    const count = await getRoomCountService(data.user.id)
-    return res.status(200).json({
-      count: count
-    })
-  } catch (error) {
-    console.error("Error Getting room count:", error);
-    return res.status(500).json({
-      error: "Internal server error",
-      message: error instanceof Error ? error.message : "Unknown error occurred"
-    });
+  if (!roomId) {
+    res
+      .status(400)
+      .json({ isValid: false, message: "Missing roomId" });
+
+    return
   }
-})
+
+  const roomSessionId = req.cookies.room_session;
+  const roomSessionToken = await redis.get(`room_session:${roomSessionId}`);
+
+  if (!roomSessionToken) {
+    res
+      .status(401)
+      .json({ isValid: false });
+
+    return
+  }
+
+  const { userId, roomId: room_id, expiresAt } = await verifyRoomSession(roomSessionToken);
+
+  if (expiresAt < Date.now()) {
+    await redis.del(`room_session:${roomSessionId}`);
+    res
+      .status(401)
+      .json({ isValid: false });
+    return
+  }
+
+  const auth_session = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers)
+  });
+
+  if (auth_session?.session.userId !== userId || roomId !== room_id) {
+    res
+      .status(401)
+      .json({ isValid: false });
+
+    return
+  }
+
+  res
+    .status(200)
+    .json({ isValid: true });
+
+});
+
+export const getAllUserRoomHandler: RequestHandler = asyncHandler(async (req, res): Promise<void> => {
+  const page = Number(req.query.page) || 0;
+  const pageSize = Number(req.query.pageSize) || 10;
+  const skip = (page - 1) * pageSize;
+  const take = pageSize;
+
+  if (skip < 0 || take < 1) {
+    res
+      .status(400)
+      .json({ error: "Invalid pagination parameters" });
+
+    return
+  }
+
+  const data = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers)
+  });
+
+  if(!data) {
+    res.status(401).json({ error: "Not Authenticated" });
+    return
+  }
+
+  const { rooms, total } = await getAllRoomsService({
+    userId: data.user.id,
+    skip,
+    take
+  });
+
+  res
+    .status(200)
+    .json({
+      rooms,
+      total,
+      page,
+      pageSize
+    });
+});
+
+export const getUserRoomHandler: RequestHandler = asyncHandler(async (req, res): Promise<void> => {
+  const roomId = req.params.id;
+
+  if (!roomId) {
+    res
+      .status(400)
+      .json({ isValid: false, message: "Missing roomId" });
+
+    return
+  }
+
+  const data = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers)
+  });
+
+  const rooms = await getRoomService({
+    userId: data!.user.id,
+    roomId
+  });
+
+  res
+    .status(200)
+    .json({ rooms });
+});
+
+export const deleteRoomHandler: RequestHandler = asyncHandler(async (req, res): Promise<void> => {
+  const roomId = req.params.id;
+
+  if (!roomId) {
+    res
+      .status(400)
+      .json({ isValid: false, message: "Missing roomId" });
+
+    return
+  }
+
+  const data = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers)
+  });
+
+  const { success } = await deleteRoomService({
+    userId: data!.user.id,
+    roomId
+  });
+
+  res
+    .status(200)
+    .json({ success });
+});
+
+export const deleteAllRoomHandler: RequestHandler = asyncHandler(async (req, res): Promise<void> => {
+  const validatedFields = deleteRoomSchema.safeParse(req.body);
+
+  if (!validatedFields.success) {
+    res
+      .status(400)
+      .json({
+        error: "Invalid fields",
+        details: validatedFields.error.flatten()
+      });
+
+    return
+  }
+
+  const data = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers)
+  });
+
+  const { roomId } = validatedFields.data;
+
+  const { success } = await deleteAllRoomService({
+    userId: data!.user.id,
+    roomId
+  });
+
+  res
+    .status(200)
+    .json({ success });
+});
+
+export const getRoomCountHandler: RequestHandler = asyncHandler(async (req, res): Promise<void> => {
+  const data = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers),
+  });
+
+  if (!data) {
+    res
+      .status(400)
+      .json({ error: "Not Authenticated" });
+      return
+  }
+
+  const count = await getRoomCountService(data.user.id);
+
+  res
+    .status(200)
+    .json({ count });
+});
