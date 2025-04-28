@@ -35,7 +35,7 @@
     "@roro-ai/typescript-config": "workspace:*",
     "@types/node": "^22.12.0",
     "@types/redis": "^4.0.11",
-    "prisma": "latest",
+    "prisma": "6.3.0",
     "rimraf": "^5.0.5",
     "tsx": "4.19.1",
     "typescript": "5.5.4"
