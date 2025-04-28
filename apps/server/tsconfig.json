@@ -12,10 +12,10 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "noEmit": true,
+    "noEmit": false,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
-    "allowImportingTsExtensions": true,
+    "allowImportingTsExtensions": false,
     "baseUrl": ".",
     "paths": {
       "@roro-ai/*": ["../packages/*/src"],
